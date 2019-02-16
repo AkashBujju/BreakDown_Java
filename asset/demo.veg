@@ -1,7 +1,29 @@
+use "demo.veg";
 
-a := 10;
-Color::enum {
-
+Cat::struct {
+	name:string = "";
+	age:int = 0;
 }
 
+a:string = "Hello, World";
 
+Color::enum {
+	BLUE,
+	RED,
+	GREEN
+}
+
+if a == true {
+	print("True");
+}
+else {
+	print("False");
+}
+
+while 1 {
+	print("1");
+}
+
+func add(a:int, b:int) -> int {
+	return (a+b);
+}
