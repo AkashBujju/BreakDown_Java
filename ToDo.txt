@@ -1,0 +1,3 @@
+0) Is there any other way to break_down the input ?????
+	One way is to check for next char_sequence after encountering one, instead
+	of having a "value" variable.

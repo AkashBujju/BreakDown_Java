@@ -159,13 +159,21 @@ class Util {
 		StatementInfo info = null;
 
 		if(type == StatementType.VAR_DECLARE_1)
-			info = new VariableInfo(broken_string, type);
+			info = new VariableDeclarationInfo(broken_string, type);
 		else if(type == StatementType.VAR_DECLARE_2)
-			info = new VariableInfo(broken_string, type);
+			info = new VariableDeclarationInfo(broken_string, type);
 		else if(type == StatementType.VAR_ASSIGN)
-			info = new VariableInfo(broken_string, type);
+			info = new VariableAssignmentInfo(broken_string);
 		else if(type == StatementType.FUNC_DEF)
 			info = new FunctionInfo(broken_string);
+		else if(type == StatementType.STRUCT)
+			info = new StructInfo(broken_string);
+		else if(type == StatementType.ENUM)
+			info = new EnumInfo(broken_string);
+		else if(type == StatementType.IF)
+			info = new IfInfo(broken_string);
+		else if(type == StatementType.ELSE_IF)
+			info = new ElseIfInfo(broken_string);
 		else if(type == StatementType.ERROR)
 			info = new ErrorInfo(broken_string);
 

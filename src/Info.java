@@ -73,13 +73,13 @@ class ErrorInfo extends StatementInfo {
 	}
 }
 
-class VariableInfo extends StatementInfo {
+class VariableDeclarationInfo extends StatementInfo {
 	String name;
 	String type;
 	String value_exp;
 
-	// StatementType has to be one of VAR_DECLARE_1, VAR_DECLARE_2, VAR_ASSIGN
-	VariableInfo(String broken_string, StatementType type) {
+	// StatementType has to be one of VAR_DECLARE_1, VAR_DECLARE_2.
+	VariableDeclarationInfo(String broken_string, StatementType type) {
 		super(broken_string, type);
 		List<String> li = Util.split_using_at(broken_string);
 
@@ -89,7 +89,7 @@ class VariableInfo extends StatementInfo {
 	}
 
 	void print() {
-		System.out.println("Variable");
+		System.out.println("VariableDeclaration");
 		System.out.println("Name: " + name);
 		System.out.println("Type: " + type);
 		System.out.println("Value_Exp: " + value_exp);
@@ -99,6 +99,133 @@ class VariableInfo extends StatementInfo {
 
 	void process() {
 
+	}
+}
+
+class VariableAssignmentInfo extends StatementInfo {
+	String name;
+	String value_exp;
+
+	// StatementType has to be one of VAR_DECLARE_1, VAR_DECLARE_2, VAR_ASSIGN
+	VariableAssignmentInfo(String broken_string) {
+		super(broken_string, StatementType.VAR_ASSIGN);
+		List<String> li = Util.split_using_at(broken_string);
+
+		this.name = li.get(1);
+		this.value_exp = li.get(2);
+	}
+
+	void print() {
+		System.out.println("VariableAssignment");
+		System.out.println("Name: " + name);
+		System.out.println("Value_Exp: " + value_exp);
+
+		System.out.println();
+	}
+
+	void process() {
+
+	}
+}
+
+class StructInfo extends StatementInfo {
+	String name;
+	String vars;
+
+	StructInfo(String broken_string) {
+		super(broken_string, StatementType.STRUCT);
+		List<String> li = Util.split_using_at(broken_string);
+
+		name = li.get(1);
+		vars = li.get(2);
+	}
+
+	void process() {
+
+	}
+
+	void print() {
+		System.out.println("Struct");
+		System.out.println("Name: " + name);
+		System.out.println("Vars: " + vars);
+
+		System.out.println();
+	}
+}
+
+class IfInfo extends StatementInfo {
+	String condition;
+	String value;
+
+	IfInfo(String broken_string) {
+		super(broken_string, StatementType.IF);
+		List<String> li = Util.split_using_at(broken_string);
+
+		condition = li.get(1);
+		value = li.get(2);
+	}
+
+	void process() {
+
+	}
+
+	void print() {
+		System.out.println("If");
+		System.out.println("Condition: " + condition);
+		System.out.println("Value: " + value);
+
+		System.out.println();
+	}
+}
+
+class ElseIfInfo extends StatementInfo {
+	String condition;
+	String value;
+
+	ElseIfInfo(String broken_string) {
+		super(broken_string, StatementType.ELSE_IF);
+		List<String> li = Util.split_using_at(broken_string);
+
+		condition = li.get(1);
+		value = li.get(2);
+	}
+
+	void process() {
+
+	}
+
+	void print() {
+		System.out.println("Else If");
+		System.out.println("Condition: " + condition);
+		System.out.println("Value: " + value);
+
+		System.out.println();
+
+	}
+}
+
+class EnumInfo extends StatementInfo {
+	String name;
+	String value;
+
+	EnumInfo(String broken_string) {
+		super(broken_string, StatementType.ENUM);
+		List<String> li = Util.split_using_at(broken_string);
+
+		name = li.get(1);
+		value = li.get(2);
+	}
+
+	void process() {
+
+	}
+
+	void print() {
+		System.out.println("Enum");
+		System.out.println("Name: " + name);
+		System.out.println("Value: " + value);
+
+		System.out.println();
 	}
 }
 
