@@ -1,6 +1,10 @@
+dasdljasldj
 func add(a:int, b:int) -> int {
 	num_1 := a;
 	num_2 := b;
 
 	return a + b;
 }
+
+a :int = 10;
+

@@ -25,8 +25,10 @@ class Info {
 	}
 
 	void process() {
-		for(StatementInfo stat_info: infos)
-			stat_info.process();
+		for(StatementInfo stat_info: infos) {
+			// stat_info.process();
+			stat_info.print();
+		}
 	}
 }
 
@@ -40,6 +42,7 @@ abstract class StatementInfo {
 	}
 
 	abstract void process();
+	abstract void print(); // @tmp
 }
 
 class ErrorInfo extends StatementInfo {
@@ -49,7 +52,20 @@ class ErrorInfo extends StatementInfo {
 
 	ErrorInfo(String broken_string) {
 		super(broken_string, StatementType.ERROR);
+		List<String> li = Util.split_using_at(broken_string);
 
+		start_index = li.get(1);
+		end_index = li.get(2);
+		value = li.get(3);
+	}
+
+	void print() {
+		System.out.println("Error");
+		System.out.println("StartIndex: " + start_index);
+		System.out.println("EndIndex: " + end_index);
+		System.out.println("Value: " + value);
+
+		System.out.println();
 	}
 
 	void process() {
@@ -65,6 +81,20 @@ class VariableInfo extends StatementInfo {
 	// StatementType has to be one of VAR_DECLARE_1, VAR_DECLARE_2, VAR_ASSIGN
 	VariableInfo(String broken_string, StatementType type) {
 		super(broken_string, type);
+		List<String> li = Util.split_using_at(broken_string);
+
+		this.name = li.get(1);
+		this.type = li.get(2);
+		this.value_exp = li.get(3);
+	}
+
+	void print() {
+		System.out.println("Variable");
+		System.out.println("Name: " + name);
+		System.out.println("Type: " + type);
+		System.out.println("Value_Exp: " + value_exp);
+
+		System.out.println();
 	}
 
 	void process() {
@@ -73,7 +103,7 @@ class VariableInfo extends StatementInfo {
 }
 
 class FunctionInfo extends StatementInfo {
-	String function_name;
+	String name;
 	String return_type;
 	String args;
 	String value;	
@@ -82,10 +112,20 @@ class FunctionInfo extends StatementInfo {
 		super(broken_string, StatementType.FUNC_DEF);
 		List<String> li = Util.split_using_at(broken_string);
 
-		function_name = li.get(1);
+		name = li.get(1);
 		args = li.get(2);
 		return_type = li.get(3);
 		value = li.get(4);
+	}
+
+	void print() {
+		System.out.println("Function");
+		System.out.println("Name: " + name);
+		System.out.println("Args: " + args);
+		System.out.println("ReturnType: " + return_type);
+		System.out.println("Value: " + value);
+
+		System.out.println();
 	}
 
 	void process() {
