@@ -1,3 +1,6 @@
+import java.util.List;
+import java.util.ArrayList;
+
 class Util {
 	// @Redundant: Can be made into a single method
 	static String eat_spaces(String str) {
@@ -108,5 +111,91 @@ class Util {
 		}
 
 		return false;
+	}
+
+	static StatementType get_stat_type_from_broken_str(String broken_string) {
+		if(broken_string.equals(""))
+			return StatementType.NOT_KNOWN;
+
+		char start_char = broken_string.charAt(0);
+		if(start_char != '@')
+			return StatementType.NOT_KNOWN;
+
+		int index_of_second_at = broken_string.indexOf("@", 1);
+		if(index_of_second_at == -1)
+			return StatementType.NOT_KNOWN;
+
+		String type = broken_string.substring(1, index_of_second_at);
+		if(type.equals("func_def"))
+			return StatementType.FUNC_DEF;
+		else if(type.equals("var_declare_1"))
+			return StatementType.VAR_DECLARE_1;
+		else if(type.equals("var_declare_2"))
+			return StatementType.VAR_DECLARE_2;
+		else if(type.equals("var_assign"))
+			return StatementType.VAR_ASSIGN;
+		else if(type.equals("enum"))
+			return StatementType.ENUM;
+		else if(type.equals("struct"))
+			return StatementType.STRUCT;
+		else if(type.equals("if"))
+			return StatementType.IF;
+		else if(type.equals("else"))
+			return StatementType.ELSE;
+		else if(type.equals("elseif"))
+			return StatementType.ELSE_IF;
+		else if(type.equals("while"))
+			return StatementType.WHILE;
+		else if(type.equals("use"))
+			return StatementType.USE;
+		else if(type.equals("error"))
+			return StatementType.ERROR;
+
+		return StatementType.NOT_KNOWN;
+	}
+
+	static StatementInfo get_stat_info_from_broken_str(String broken_string) {
+		StatementType type = get_stat_type_from_broken_str(broken_string);
+		StatementInfo info = null;
+
+		if(type == StatementType.VAR_DECLARE_1)
+			info = new VariableInfo(broken_string, type);
+		else if(type == StatementType.VAR_DECLARE_2)
+			info = new VariableInfo(broken_string, type);
+		else if(type == StatementType.VAR_ASSIGN)
+			info = new VariableInfo(broken_string, type);
+		else if(type == StatementType.FUNC_DEF)
+			info = new FunctionInfo(broken_string);
+		else if(type == StatementType.ERROR)
+			info = new ErrorInfo(broken_string);
+
+		return info;
+	}
+
+	static List<String> split_using_at(String str) {
+		List<String> li = new ArrayList<>();
+
+		int quotes_count = 0;
+		for(int i = 0; i < str.length(); ++i) {
+			char c = str.charAt(i);
+			if(c == '\"')
+				quotes_count++;
+
+			else if(quotes_count % 2 == 0 && c == '@') {
+				// Find the index of next '@', if found then find the the string is between current '@' and next '@'. If not found then find the string b/w current '@' to the end of the string.
+
+				int index_of_next_at = str.indexOf("@", i + 1);
+				if(index_of_next_at != -1) {
+					li.add(str.substring(i + 1, index_of_next_at));
+					i = index_of_next_at - 1; // because i gets incremented.
+				}
+				else {
+					li.add(str.substring(i + 1));
+					break;
+				}
+			}
+		}
+
+		return li;
 	}
 }

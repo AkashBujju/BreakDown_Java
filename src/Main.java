@@ -18,15 +18,24 @@ public class Main {
 			System.out.println();
 
 			// Process character by character ....
-			BreakDown b = new BreakDown(data.toString());
-			List<String> s_li = b.get_broken_string();
+			BreakDown_1 b = new BreakDown_1(data.toString());
+			List<String> bd_1_li = b.get_broken_string();
 
-			
 			System.out.println("-----START-----");
-			for(String s: s_li) {
+			for(String s: bd_1_li) {
 				System.out.println(s);
 			}
 			System.out.println("-----END-----");
+			System.out.println();
+
+			Info info = new Info();
+			for(String s: bd_1_li) {
+				StatementInfo stat_info = Util.get_stat_info_from_broken_str(s);
+				if(stat_info != null)
+					info.add(stat_info);
+			}
+
+			info.process();
 
 		}
 		catch (Exception e) {

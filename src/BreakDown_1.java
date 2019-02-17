@@ -1,46 +1,6 @@
 import java.util.List;
 import java.util.ArrayList;
 
-/*
-	enum StatementType {
-	VAR_DECLARE_1,
-	VAR_DECLARE_2,
-	VAR_ASSIGN,
-	ENUM,
-	STRUCT,
-	IF,
-	ELSE,
-	ELSE_IF,
-	FUNC,
-	WHILE,
-	USE
-	}
-
-	class StatementInfo {
-	StatementType type;
-	}
-	*/
-
-/*
-	class SymbolTable {
-	List<VarInfo> varinfos;
-
-	SymbolTable() {
-	varinfos = new ArrayList<>();
-	}
-	}
-
-	class VarInfo {
-	String name;
-	String type;
-	String value;
-	}
-
-	class StructInfo {
-	String name;
-	}
-	*/
-
 class NotknownRange {
 	int start_index = -1;
 	int end_index = -1;
@@ -51,14 +11,14 @@ class NotknownRange {
 	@Incomplete: Only check if the statements are incomplete. and add messages to the ErrorLog object.
 	*/
 
-class BreakDown {
+class BreakDown_1 {
 	private String str;
 	private int current_index = 0;
 	private int last_sequence_index = -1;
 	private List<NotknownRange> n_range;
 	private String char_sequences;
 
-	BreakDown(String str) {
+	BreakDown_1(String str) {
 		this.str = str;
 		n_range = new ArrayList<>();
 		char_sequences = ":,=,:=,::struct,::enum,func,if,else,elseif,use";
@@ -414,7 +374,7 @@ class BreakDown {
 		return value;
 	}
 
-	private String func_values() {
+	private String func_def_values() {
 		String value = "";
 
 		// Ex: func main() -> int { }
@@ -449,7 +409,7 @@ class BreakDown {
 			if(index_of_closing_bracket == -1)
 				return "";
 
-			value += "@func";
+			value += "@func_def";
 			value += "@" + str.substring(current_index + 4, index_of_open_paren);
 			value += "@" + str.substring(index_of_open_paren + 1, index_of_closing_paren);
 			value += "@" + str.substring(index_of_arrow + 2, index_of_open_bracket);
@@ -466,7 +426,7 @@ class BreakDown {
 		List<String> li = new ArrayList<>();
 
 		for(current_index = 0; current_index < str.length(); current_index++) {
-			String func_value = func_values();
+			String func_def_value = func_def_values();
 			String struct_value = struct_value();
 			String var_declare_1_value = var_declare_1();
 			String var_declare_2_value = var_declare_2();
@@ -496,8 +456,8 @@ class BreakDown {
 				li.add(var_declare_2_value);
 			else if(!var_declare_1_value.equals(""))
 				li.add(var_declare_1_value);
-			else if(!func_value.equals(""))
-				li.add(func_value);
+			else if(!func_def_value.equals(""))
+				li.add(func_def_value);
 			else if(!struct_value.equals(""))
 				li.add(struct_value);
 			else {
@@ -512,7 +472,7 @@ class BreakDown {
 		for(NotknownRange nr: n_range) {
 			// Pattern: <Error><start_index><end_index><sequence>
 			StringBuffer sb = new StringBuffer();
-			sb.append("@Error");
+			sb.append("@error");
 			sb.append("@" + nr.start_index);
 			sb.append("@" + (nr.end_index - 1));
 			sb.append("@" + str.substring(nr.start_index, nr.end_index) + "@");
