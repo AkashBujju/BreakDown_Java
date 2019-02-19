@@ -25,6 +25,6 @@ else if b == true {
 	}
 }
 
-a :int = 10;
-a = 20;
+a :int = b;
+a = 20
 

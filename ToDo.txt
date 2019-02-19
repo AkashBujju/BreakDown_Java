@@ -1,3 +1,21 @@
+
+Alg := 1) Split the input into tokens. ????
+			 It's a token if found ;, {, }, any of the keywords, ::, ->
+			 Store the indices of previous tokens because we might need the
+			 "name" of something.
+
 0) Is there any other way to break_down the input ?????
 	One way is to check for next char_sequence after encountering one, instead
 	of having a "value" variable.
+
+	The char sequences to test for are: @Incomplete...
+
+1) How to detect if we aren't inside quotes ??? Have a global quotes_count
+variable. If we are already inside a quote then don't count incoming quotes.
+
+2) How to detect expressions ????
+
+3) Detecting function calls. A valid function name followed by open
+parenthesis. Inside the function call the number of '(' has to match
+with the number of ')'.
+
