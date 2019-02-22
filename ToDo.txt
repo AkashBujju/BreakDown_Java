@@ -1,21 +1,36 @@
+0) Goto Line line 51 @SequenceInfo.java
+1) Process comments .....
 
-Alg := 1) Split the input into tokens. ????
-			 It's a token if found ;, {, }, any of the keywords, ::, ->
-			 Store the indices of previous tokens because we might need the
-			 "name" of something.
+Alg := 1) Split the input into tokens. But only partially which does not
+			 include :=, = ... etc
 
-0) Is there any other way to break_down the input ?????
-	One way is to check for next char_sequence after encountering one, instead
-	of having a "value" variable.
+		 2) Assign appropriate enums to every token.
+		 3) Find all the function signatures and store then in a func_info
+		 4) Find all struct names and vars inside it and store it in
+		 struct_info.
 
-	The char sequences to test for are: @Incomplete...
+Note: Have a List<Scope> for every function. Every ScopeStack should have
+		Global has default.
+		???? How should scopes be named ??????
 
-1) How to detect if we aren't inside quotes ??? Have a global quotes_count
-variable. If we are already inside a quote then don't count incoming quotes.
+FunctionInfo:
+	1) Name
+	2) List<String> args_name
+	3) List<String> arg_type
+	4) Return Type
 
-2) How to detect expressions ????
+StructInfo:
+	1) Name
+	2)	List<String> varnames
+	3) List<String> vartypes
 
-3) Detecting function calls. A valid function name followed by open
-parenthesis. Inside the function call the number of '(' has to match
-with the number of ')'.
+SymbolTable:
+	1) List<VarInfo> varinfos
+
+VarInfo:
+	1) Name.
+	2) Type.
+	3) Raw Value.
+	4) Scope
+
 

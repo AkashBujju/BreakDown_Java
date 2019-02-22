@@ -1,261 +1,74 @@
 import java.util.List;
 import java.util.ArrayList;
 
-enum StatementType {
-	VAR_DECLARE_1,
-	VAR_DECLARE_2,
-	VAR_ASSIGN,
-	ENUM,
-	STRUCT,
-	IF,
-	ELSE,
-	ELSE_IF,
-	FUNC_DEF,
-	WHILE,
-	USE,
-	ERROR,
-	NOT_KNOWN
-}
-
-class Info {
-	private List<StatementInfo> infos = new ArrayList<>();
-
-	void add(StatementInfo info) {
-		infos.add(info);
-	}
-
-	void process() {
-		for(StatementInfo stat_info: infos) {
-			// stat_info.process();
-			stat_info.print();
-		}
-	}
-}
-
-abstract class StatementInfo {
-	StatementType stat_type;
-	String broken_string;
-
-	StatementInfo(String broken_string, StatementType stat_type) {
-		this.stat_type = stat_type;
-		this.broken_string = broken_string;
-	}
-
-	abstract void process();
-	abstract void print(); // @tmp
-}
-
-class ErrorInfo extends StatementInfo {
-	String start_index;
-	String end_index;
-	String value;
-
-	ErrorInfo(String broken_string) {
-		super(broken_string, StatementType.ERROR);
-		List<String> li = Util.split_using_at(broken_string);
-
-		start_index = li.get(1);
-		end_index = li.get(2);
-		value = li.get(3);
-	}
-
-	void print() {
-		System.out.println("Error");
-		System.out.println("StartIndex: " + start_index);
-		System.out.println("EndIndex: " + end_index);
-		System.out.println("Value: " + value);
-
-		System.out.println();
-	}
-
-	void process() {
-
-	}
-}
-
-class VariableDeclarationInfo extends StatementInfo {
+class VariableInfo {
 	String name;
 	String type;
-	String value_exp;
-
-	// StatementType has to be one of VAR_DECLARE_1, VAR_DECLARE_2.
-	VariableDeclarationInfo(String broken_string, StatementType type) {
-		super(broken_string, type);
-		List<String> li = Util.split_using_at(broken_string);
-
-		this.name = li.get(1);
-		this.type = li.get(2);
-		this.value_exp = li.get(3);
-	}
-
-	void print() {
-		System.out.println("VariableDeclaration");
-		System.out.println("Name: " + name);
-		System.out.println("Type: " + type);
-		System.out.println("Value_Exp: " + value_exp);
-
-		System.out.println();
-	}
-
-	void process() {
-
-	}
+	String raw_value;
+	String scope;
 }
 
-class VariableAssignmentInfo extends StatementInfo {
+class FunctionInfo {
 	String name;
-	String value_exp;
-
-	// StatementType has to be one of VAR_DECLARE_1, VAR_DECLARE_2, VAR_ASSIGN
-	VariableAssignmentInfo(String broken_string) {
-		super(broken_string, StatementType.VAR_ASSIGN);
-		List<String> li = Util.split_using_at(broken_string);
-
-		this.name = li.get(1);
-		this.value_exp = li.get(2);
-	}
-
-	void print() {
-		System.out.println("VariableAssignment");
-		System.out.println("Name: " + name);
-		System.out.println("Value_Exp: " + value_exp);
-
-		System.out.println();
-	}
-
-	void process() {
-
-	}
-}
-
-class StructInfo extends StatementInfo {
-	String name;
-	String vars;
-
-	StructInfo(String broken_string) {
-		super(broken_string, StatementType.STRUCT);
-		List<String> li = Util.split_using_at(broken_string);
-
-		name = li.get(1);
-		vars = li.get(2);
-	}
-
-	void process() {
-
-	}
-
-	void print() {
-		System.out.println("Struct");
-		System.out.println("Name: " + name);
-		System.out.println("Vars: " + vars);
-
-		System.out.println();
-	}
-}
-
-class IfInfo extends StatementInfo {
-	String condition;
-	String value;
-
-	IfInfo(String broken_string) {
-		super(broken_string, StatementType.IF);
-		List<String> li = Util.split_using_at(broken_string);
-
-		condition = li.get(1);
-		value = li.get(2);
-	}
-
-	void process() {
-
-	}
-
-	void print() {
-		System.out.println("If");
-		System.out.println("Condition: " + condition);
-		System.out.println("Value: " + value);
-
-		System.out.println();
-	}
-}
-
-class ElseIfInfo extends StatementInfo {
-	String condition;
-	String value;
-
-	ElseIfInfo(String broken_string) {
-		super(broken_string, StatementType.ELSE_IF);
-		List<String> li = Util.split_using_at(broken_string);
-
-		condition = li.get(1);
-		value = li.get(2);
-	}
-
-	void process() {
-
-	}
-
-	void print() {
-		System.out.println("Else If");
-		System.out.println("Condition: " + condition);
-		System.out.println("Value: " + value);
-
-		System.out.println();
-
-	}
-}
-
-class EnumInfo extends StatementInfo {
-	String name;
-	String value;
-
-	EnumInfo(String broken_string) {
-		super(broken_string, StatementType.ENUM);
-		List<String> li = Util.split_using_at(broken_string);
-
-		name = li.get(1);
-		value = li.get(2);
-	}
-
-	void process() {
-
-	}
-
-	void print() {
-		System.out.println("Enum");
-		System.out.println("Name: " + name);
-		System.out.println("Value: " + value);
-
-		System.out.println();
-	}
-}
-
-class FunctionInfo extends StatementInfo {
-	String name;
+	List<String> var_names;
+	List<String> var_types;
 	String return_type;
-	String args;
-	String value;	
+}
 
-	FunctionInfo(String broken_string) {
-		super(broken_string, StatementType.FUNC_DEF);
-		List<String> li = Util.split_using_at(broken_string);
+class StructInfo {
+	String name;
+	List<String> var_names;
+	List<String> var_types;
+}
 
-		name = li.get(1);
-		args = li.get(2);
-		return_type = li.get(3);
-		value = li.get(4);
+public class Info {
+	private List<FunctionInfo> func_infos;
+	private List<StructInfo> struct_infos;
+	private SymbolTable symbol_table;
+	private ErrorLog error_log;
+	private int current_char_index = -1;
+	private int current_line_number = 0;
+	private MyFile file;
+	List<SequenceInfo> sequence_infos;
+
+	Info(List<SequenceInfo> sequence_infos, MyFile file) {
+		this.sequence_infos = sequence_infos;
+		this.file = file;
+
+		func_infos = new ArrayList<>();
+		struct_infos = new ArrayList<>();
+		symbol_table = new SymbolTable();
+		error_log = new ErrorLog();
 	}
 
-	void print() {
-		System.out.println("Function");
-		System.out.println("Name: " + name);
-		System.out.println("Args: " + args);
-		System.out.println("ReturnType: " + return_type);
-		System.out.println("Value: " + value);
-
-		System.out.println();
+	private void update_line_number() {
+		current_line_number = file.get_line_number(current_char_index);
 	}
 
 	void process() {
+		current_char_index = 0;
+		current_line_number = 1;
 
+		// First func ( name, args name, arg types, return_types )
+		for(SequenceInfo s: sequence_infos) {
+			if(s.seq_type == SequenceType.FUNC_NAME_ARGS) {
+				String msg = s.validate_syntax();
+				if(!msg.equals("none")) {
+					error_log.push(msg, current_line_number);
+				}
+
+			}
+			current_char_index += s.str.length();
+			update_line_number();
+		}
+
+		// Checking and displaying errors and quitting...
+		if(error_log.log.size() > 0) {
+			error_log.show();
+
+			return;
+		}
+
+		//@Incomplete ....
 	}
 }

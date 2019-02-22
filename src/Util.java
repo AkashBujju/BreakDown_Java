@@ -39,171 +39,232 @@ class Util {
 		return tmp;
 	}
 
-	// Example of pattern: "true, false, :=, ::struct"
-	static String get_first_occuring_pattern(String str, int from_index, String pat) {
-		String first_occurring_pattern = "";
-		String new_str = str.substring(from_index);
-		String[] patterns = pat.split(",");
-		int first_occuring_index = 100000; // Sufficiently max.
+	static int get_num_chars(String str, char ch) {
+		int num = 0;
 
-		for(String s: patterns) {
-			int index = new_str.indexOf(s);
-			if(index != -1 && index < first_occuring_index) {
-				first_occurring_pattern = s;
-				first_occuring_index = index;
-			}
-		}
+		for(int i = 0; i < str.length(); ++i)
+			if(str.charAt(i) == ch)
+				num += 1;
 
-		return first_occurring_pattern;
+		return num;
 	}
 
-	// Example of pattern: "true, false, :=, ::struct"
-	static int get_first_index_of(String str, int from_index, String pat) {
-		String new_str = str.substring(from_index);
-		String[] patterns = pat.split(",");
-		int first_occurring_index = 100000; // Sufficiently max.
-
-		for(String s: patterns) {
-			int index = new_str.indexOf(s);
-			if(index != -1 && index < first_occurring_index) {
-				first_occurring_index = index;
-			}
-		}
-
-		if(first_occurring_index == 100000)
-			return -1;
-
-		return first_occurring_index + from_index;
-	}
-
-	static boolean if_matches(String str, int from_index, String match) {
-		int count = 0;
-
-		for(int i = 0; i < match.length(); ++i) {
-			if(i + from_index >= str.length())
-				return false;
-
-			count += 1;
-			char c1 = str.charAt(i + from_index);
-			char c2 = match.charAt(i);
-
-			if(c1 != c2) {
-				return false;
-			}
-		}
-
-		if(count != match.length())
+	static boolean is_index_inside_quotes(int index, List<RangeIndices> li) {
+		if(index < 0)
 			return false;
 
-		return true;
-	}
-
-	// Pattern should be seperated by comma.
-	static boolean if_has_patterns(String str, int from_index, int to_index, String pat) {
-		String[] split_pat = pat.split(",");
-		String new_str = str.substring(from_index, to_index);
-
-		for(String s: split_pat) {
-			int found_index = new_str.indexOf(s);
-
-			if(found_index != -1)
+		for(RangeIndices ri: li) {
+			if(index >= ri.from_index && index <= ri.to_index)
 				return true;
 		}
 
 		return false;
 	}
 
-	static StatementType get_stat_type_from_broken_str(String broken_string) {
-		if(broken_string.equals(""))
-			return StatementType.NOT_KNOWN;
+	static boolean is_char_alpha_digit_underscore(char c) {
+			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
+			return true;
 
-		char start_char = broken_string.charAt(0);
-		if(start_char != '@')
-			return StatementType.NOT_KNOWN;
-
-		int index_of_second_at = broken_string.indexOf("@", 1);
-		if(index_of_second_at == -1)
-			return StatementType.NOT_KNOWN;
-
-		String type = broken_string.substring(1, index_of_second_at);
-		if(type.equals("func_def"))
-			return StatementType.FUNC_DEF;
-		else if(type.equals("var_declare_1"))
-			return StatementType.VAR_DECLARE_1;
-		else if(type.equals("var_declare_2"))
-			return StatementType.VAR_DECLARE_2;
-		else if(type.equals("var_assign"))
-			return StatementType.VAR_ASSIGN;
-		else if(type.equals("enum"))
-			return StatementType.ENUM;
-		else if(type.equals("struct"))
-			return StatementType.STRUCT;
-		else if(type.equals("if"))
-			return StatementType.IF;
-		else if(type.equals("else"))
-			return StatementType.ELSE;
-		else if(type.equals("elseif"))
-			return StatementType.ELSE_IF;
-		else if(type.equals("while"))
-			return StatementType.WHILE;
-		else if(type.equals("use"))
-			return StatementType.USE;
-		else if(type.equals("error"))
-			return StatementType.ERROR;
-
-		return StatementType.NOT_KNOWN;
+			return false;
 	}
 
-	static StatementInfo get_stat_info_from_broken_str(String broken_string) {
-		StatementType type = get_stat_type_from_broken_str(broken_string);
-		StatementInfo info = null;
-
-		if(type == StatementType.VAR_DECLARE_1)
-			info = new VariableDeclarationInfo(broken_string, type);
-		else if(type == StatementType.VAR_DECLARE_2)
-			info = new VariableDeclarationInfo(broken_string, type);
-		else if(type == StatementType.VAR_ASSIGN)
-			info = new VariableAssignmentInfo(broken_string);
-		else if(type == StatementType.FUNC_DEF)
-			info = new FunctionInfo(broken_string);
-		else if(type == StatementType.STRUCT)
-			info = new StructInfo(broken_string);
-		else if(type == StatementType.ENUM)
-			info = new EnumInfo(broken_string);
-		else if(type == StatementType.IF)
-			info = new IfInfo(broken_string);
-		else if(type == StatementType.ELSE_IF)
-			info = new ElseIfInfo(broken_string);
-		else if(type == StatementType.ERROR)
-			info = new ErrorInfo(broken_string);
-
-		return info;
-	}
-
-	static List<String> split_using_at(String str) {
-		List<String> li = new ArrayList<>();
-
-		int quotes_count = 0;
+	static String get_primitive_type(String str) {
+		// is_int
+		boolean is_int = true;
 		for(int i = 0; i < str.length(); ++i) {
 			char c = str.charAt(i);
-			if(c == '\"')
-				quotes_count++;
+			if(c < '0' || c > '9') {
+				is_int = false;
+				break;
+			}
+		}
+		if(is_int)
+			return "int";
 
-			else if(quotes_count % 2 == 0 && c == '@') {
-				// Find the index of next '@', if found then find the the string is between current '@' and next '@'. If not found then find the string b/w current '@' to the end of the string.
+		// is_float
+		boolean is_float = true;
+		int dot_count = 0;
+		for(int i = 0; i < str.length(); ++i) {
+			char c = str.charAt(i);
+			if(c == '.')
+				dot_count += 1;
+			if(dot_count > 1) {
+				is_float = false;
+				break;
+			}
+			else if((c < '0' || c > '9') && c != '.') {
+				is_float = false;
+				break;
+			}
+		}
+		if(is_float)
+			return "float";
 
-				int index_of_next_at = str.indexOf("@", i + 1);
-				if(index_of_next_at != -1) {
-					li.add(str.substring(i + 1, index_of_next_at));
-					i = index_of_next_at - 1; // because i gets incremented.
+		// is_bool
+		if(str.equals("true") || str.equals("false"))
+			return "bool";
+
+		return "not_known";
+	}
+
+	static List<RangeIndices> get_range_indices_of_quotes(String str) {
+		List<RangeIndices> li = new ArrayList<>();
+
+		int len = str.length();
+		int quotes_count = 0;
+		int start_index = -1;
+		boolean is_eligible = false;
+
+		for(int i = 0; i < len; ++i) {
+			is_eligible = false;
+			char c = str.charAt(i);
+			if(c == '\"') {
+				if(i == 0 || (str.charAt(i - 1) != '\\')) {
+					is_eligible = true;
+					quotes_count += 1;
 				}
+			}
+
+			if(is_eligible) {
+				if(quotes_count % 2 != 0)
+					start_index = i;
 				else {
-					li.add(str.substring(i + 1));
-					break;
+					RangeIndices ri = new RangeIndices();
+					ri.from_index = start_index;
+					ri.to_index = i;
+
+					li.add(ri);
 				}
 			}
 		}
 
 		return li;
 	}
+
+	static boolean is_valid_name(String str) {
+		int len = str.length();
+		if(len == 0)
+			return false;
+
+		// First character can be either _ or alphabet
+		char first_char = str.charAt(0);
+		if(first_char == '_' || (first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z')) {
+
+			for(int i = 1; i < len; ++i) {
+				char ch = str.charAt(i);
+				if(ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z' || (ch >= '0' && ch <= '9'))) {
+					// do_nothing
+				}
+				else
+					return false;
+			}
+		}
+		else
+			return false;
+
+		return true;
+	}
 }
+
+/*
+// Example of pattern: "true, false, :=, ::struct"
+static String get_first_occuring_pattern(String str, int from_index, String pat) {
+String first_occurring_pattern = "";
+String new_str = str.substring(from_index);
+String[] patterns = pat.split(",");
+int first_occuring_index = 100000; // Sufficiently max.
+
+for(String s: patterns) {
+int index = new_str.indexOf(s);
+if(index != -1 && index < first_occuring_index) {
+first_occurring_pattern = s;
+first_occuring_index = index;
+}
+}
+
+return first_occurring_pattern;
+}
+
+// Example of pattern: "true, false, :=, ::struct"
+static int get_first_index_of(String str, int from_index, String pat) {
+String new_str = str.substring(from_index);
+String[] patterns = pat.split(",");
+int first_occurring_index = 100000; // Sufficiently max.
+
+for(String s: patterns) {
+int index = new_str.indexOf(s);
+if(index != -1 && index < first_occurring_index) {
+first_occurring_index = index;
+}
+}
+
+if(first_occurring_index == 100000)
+return -1;
+
+return first_occurring_index + from_index;
+}
+
+static boolean if_matches(String str, int from_index, String match) {
+int count = 0;
+
+for(int i = 0; i < match.length(); ++i) {
+if(i + from_index >= str.length())
+return false;
+
+count += 1;
+char c1 = str.charAt(i + from_index);
+char c2 = match.charAt(i);
+
+if(c1 != c2) {
+return false;
+}
+}
+
+if(count != match.length())
+return false;
+
+return true;
+}
+
+// Pattern should be seperated by comma.
+static boolean if_has_patterns(String str, int from_index, int to_index, String pat) {
+String[] split_pat = pat.split(",");
+String new_str = str.substring(from_index, to_index);
+
+for(String s: split_pat) {
+int found_index = new_str.indexOf(s);
+
+if(found_index != -1)
+return true;
+}
+
+return false;
+}
+
+static List<String> split_using_at(String str) {
+	List<String> li = new ArrayList<>();
+
+	int quotes_count = 0;
+	for(int i = 0; i < str.length(); ++i) {
+		char c = str.charAt(i);
+		if(c == '\"')
+			quotes_count++;
+
+		else if(quotes_count % 2 == 0 && c == '@') {
+			// Find the index of next '@', if found then find the the string is between current '@' and next '@'. If not found then find the string b/w current '@' to the end of the string.
+
+			int index_of_next_at = str.indexOf("@", i + 1);
+			if(index_of_next_at != -1) {
+				li.add(str.substring(i + 1, index_of_next_at));
+				i = index_of_next_at - 1; // because i gets incremented.
+			}
+			else {
+				li.add(str.substring(i + 1));
+				break;
+			}
+		}
+	}
+
+	return li;
+}
+*/

@@ -4,6 +4,11 @@ import java.util.ArrayList;
 public class Main {
 		static List<String> keywords = new ArrayList<>(); 
 		static List<String> split_sequences = new ArrayList<>();
+		static List<String> arith_ops = new ArrayList<>();
+		static List<String> logical_ops = new ArrayList<>();
+		static List<String> relational_ops = new ArrayList<>();
+		static List<String> bitwise_ops = new ArrayList<>();
+		static List<RangeIndices> quotes_range_indices = new ArrayList<>();
 
 	public static void main(String[] args) {
 		String filename = "C:\\Users\\Akash\\Documents\\GitHub\\BreakDown_Java\\asset\\demo.veg";
@@ -19,37 +24,27 @@ public class Main {
 			String eaten_string = Util.eat_spaces(data.toString());
 			data = new StringBuffer(eaten_string);
 
+			quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
 			System.out.println("data: " + data);
 			System.out.println("Size: " + data.length());
 			System.out.println();
 
-			List<String> split_str = split_with_tokens(data.toString(), split_sequences);
-			System.out.println("*********************************");
-			System.out.println("Size: " + split_str.size());
-			for(String s: split_str) {
-				System.out.println(s);
+			List<String> tokens = split_into_tokens(data.toString(), split_sequences);
+			List<SequenceType> st_li = SequenceTypeInfo.get_sequence_types(tokens, quotes_range_indices);
+
+			List<SequenceInfo> sq_info = new ArrayList<>();
+			for(int i = 0; i < tokens.size(); ++i) {
+				SequenceInfo info = new SequenceInfo(st_li.get(i), tokens.get(i));
+				sq_info.add(info);
 			}
+			
+			Info info = new Info(sq_info, my_file);
+			info.process();
 
 			/*
-			// Process character by character ....
-			BreakDown_1 b = new BreakDown_1(data.toString());
-			List<String> bd_1_li = b.get_broken_string();
-
-			System.out.println("-----START-----");
-			for(String s: bd_1_li) {
-				System.out.println(s);
+			for(SequenceInfo sq: sq_info) {
+				System.out.println(sq.str + " @@@@@@  " + SequenceTypeInfo.get_in_str(sq.seq_type));
 			}
-			System.out.println("-----END-----");
-			System.out.println();
-
-			Info info = new Info();
-			for(String s: bd_1_li) {
-				StatementInfo stat_info = Util.get_stat_info_from_broken_str(s);
-				if(stat_info != null)
-					info.add(stat_info);
-			}
-
-			info.process();
 			*/
 		}
 		catch (Exception e) {
@@ -86,12 +81,14 @@ public class Main {
 	}
 
 	static void init_ops() {
+		// @Incomplete ... 
+		// @Incomplete ... 
+		
 		keywords.add("func");
 		keywords.add("::struct");
 		keywords.add("::enum");
 		keywords.add("if");
 		keywords.add("else");
-		keywords.add("elseif");
 		keywords.add("while");
 		keywords.add("return");
 		keywords.add("use");
@@ -102,42 +99,69 @@ public class Main {
 		split_sequences.add("->");
 		for(int i = 0; i < keywords.size(); ++i)
 			split_sequences.add(keywords.get(i));
+
+		arith_ops.add("+");
+		arith_ops.add("-");
+		arith_ops.add("*");
+		arith_ops.add("/");
+		arith_ops.add("%");
+
+		logical_ops.add("||");
+		logical_ops.add("&&");
+		logical_ops.add("!");
+		
+		relational_ops.add("==");
+		relational_ops.add("!=");
+		relational_ops.add(">=");
+		relational_ops.add("<=");
+		relational_ops.add("<");
+		relational_ops.add(">");
+
+		bitwise_ops.add("|");
+		bitwise_ops.add("&");
+		bitwise_ops.add("^");
+		bitwise_ops.add(">>>");
+		bitwise_ops.add("<<<");
 	}
 
-	static List<String> split_with_tokens(String str, List<String> tokens) {
+	static List<String> split_into_tokens(String str, List<String> tokens) {
 		List<String> split_list = new ArrayList<>();
+		int len = str.length();
 
-		if(str.length() == 0)
+		if(len == 0)
 			return split_list;
 
 		int current_index = 0;
-		StringAndIndex si = get_first_index_and_str(str, current_index, split_sequences);
+		StringAndIndex si;
+		boolean if_index_inside_quotes = false;
 
-		if(si.index != -1) {
-			split_list.add(si.str);
-			current_index = si.index + si.str.length();
-		}
+		int i = 0;
+		si = get_first_index_and_str(str, current_index + i, split_sequences);
+		while(si.index != -1 || current_index < len) {
+			boolean index_inside_quotes = Util.is_index_inside_quotes(si.index, quotes_range_indices);
+			
+			if(si.index == -1 && !index_inside_quotes) {
+				String substring = str.substring(current_index);
+				if(!substring.equals(""))
+					split_list.add(substring);
 
-		while(current_index < str.length()) {
-			si = get_first_index_and_str(str, current_index, split_sequences);
+				break;
+			}
 
-			if(si.index != -1) {
-				String li_str = si.str;
-				String substr = str.substring(current_index, si.index);
+			if(!index_inside_quotes) {
+				String substring = str.substring(current_index, si.index);
 
-				split_list.add(li_str);
-				if(!substr.equals("")) {
-					split_list.add(substr);
-				}
-
-				current_index = si.index + li_str.length();
+				if(!substring.equals(""))
+					split_list.add(substring);
+				split_list.add(si.str);
+				current_index = si.index + si.str.length();
+				i = 0;
 			}
 			else {
-				String substr = str.substring(current_index);
-				split_list.add(substr);
-				current_index = str.length();
+				i += 1;
 			}
 
+			si = get_first_index_and_str(str, current_index + i, split_sequences);
 		}
 
 		return split_list;
@@ -147,4 +171,9 @@ public class Main {
 class StringAndIndex {
 	int index = -1;
 	String str = "";
+}
+
+class RangeIndices {
+	int from_index = -1;
+	int to_index = -1;
 }

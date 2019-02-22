@@ -1,29 +1,24 @@
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class ErrorLog {
-    List<String> log;
+	List<String> log;
 
-    ErrorLog() {
-        log = new ArrayList<>();
-    }
+	ErrorLog() {
+		log = new ArrayList<>();
+	}
 
-    void push_error(String error_msg, int line_number) {
-        String final_error = "Error at line " + line_number + ": ";
-        final_error += error_msg;
+	void push(String error, int line_number) {
+		String e = "Error: " + error + " at line " + line_number + ".";
+		log.add(e);
+	}
 
-        log.add(final_error);
-    }
+	void show() {
+		int error_number = 0;
 
-    void show_all_error() {
-        if(log.size() == 0) {
-            System.out.println("No Errors");
-        }
-        else {
-            System.out.println("Errors are: ");
-            for(String s: log) {
-                System.out.println(s);
-            }
-        }
-    }
+		for(String s: log) {
+			error_number += 1;
+			System.out.println(error_number + ": " + s);
+		}
+	}
 }

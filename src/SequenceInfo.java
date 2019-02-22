@@ -1,0 +1,239 @@
+import java.util.List;
+import java.util.ArrayList;
+
+enum SequenceType {
+	FUNC_NAME_ARGS,
+	SEMICOLON,
+	EXPRESSION,
+	VAR_DECLARE_OR_DEFINE,
+	OPEN_BRACKET,
+	CLOSED_BRACKET,
+	ENUM,
+	IF,
+	ELSE,
+	STRUCT,
+	ARROW,
+	WHILE,
+	FUNC,
+	RETURN,
+	NOT_KNOWN
+}
+
+public class SequenceInfo {
+	SequenceType seq_type;
+	String str;
+	boolean visited;
+
+	SequenceInfo(SequenceType seq_type, String str) {
+		this.seq_type = seq_type;
+		this.str = str;
+		visited = false;
+	}
+
+	List<String> split_str() {
+		List<String> li;
+
+		switch(seq_type) {
+			case FUNC_NAME_ARGS:
+
+		}
+
+		return li;
+	}
+
+	List<String> split_func_name_args() {
+		List<String> li = new ArrayList<>();
+
+		int index_of_open_paren = str.indexOf('(');
+		String func_name = str.substring(0, index_of_open_paren);
+
+
+		// @ToDo........
+
+		return li;
+	}
+
+	// "none": no errors , "ErrorMsg": errors
+	String validate_syntax() {
+		// Note: Only declaration/definition, expressions, func_name_args will be checked for
+		switch(seq_type) {
+			case FUNC_NAME_ARGS:
+				return validate_func_declaration_syntax();
+		}
+
+		return "none";
+	}
+
+	private String validate_func_declaration_syntax() {
+		// No quotes	
+		int index_of_quotes = str.indexOf("\"");
+		if(index_of_quotes != -1)
+			return "Invalid character '\"' found at index: " + index_of_quotes;
+		
+		// Only one ( and )
+		int num_open_paren = Util.get_num_chars(str, '(');
+		if(num_open_paren != 1)
+			return "Number of '(' should be equal to one";
+
+		int num_close_paren = Util.get_num_chars(str, ')');
+		if(num_close_paren != 1)
+			return "Number of ')' should be equal to one";
+
+		String func_name = str.substring(0, str.indexOf('('));
+		if(!Util.is_valid_name(func_name))
+			return "Function name: " + func_name + " is not valid.";
+
+		int index_of_open_paren = str.indexOf('(');
+		int index_of_close_paren = str.indexOf(')');
+		if(index_of_close_paren == index_of_open_paren + 1)
+			return "none";
+
+		String in_str = str.substring(index_of_open_paren + 1, index_of_close_paren - 1);
+		String[] split_str = in_str.split(",");
+
+		for(int i = 0; i < split_str.length; ++i) {
+			String s = split_str[i];
+			int num_colons = Util.get_num_chars(s, ':');
+			if(num_colons == 0)
+				return "Function " + func_name + " is missing argument type for argument number: " + i;
+			else if(num_colons > 1)
+				return "Function " + func_name + " should have only one ':' b/w name and argument. But contains " + num_colons + " ':' .";
+
+		}
+		return "none";
+	}
+}
+
+class SequenceTypeInfo {
+	public static List<SequenceType> get_sequence_types(List<String> tokens, List<RangeIndices> quote_range_indices) {
+		List<SequenceType> li = new ArrayList<>();
+
+		for(String s: tokens) {
+			SequenceType type = SequenceType.NOT_KNOWN;
+
+			if(s.equals("func"))
+				type = SequenceType.FUNC;
+			else if(s.equals("while"))
+				type = SequenceType.WHILE;
+			else if(s.equals("if"))
+				type = SequenceType.IF;
+			else if(s.equals("else"))
+				type = SequenceType.ELSE;
+			else if(s.equals(";"))
+				type = SequenceType.SEMICOLON;
+			else if(s.equals("::enum"))
+				type = SequenceType.ENUM;
+			else if(s.equals("::struct"))
+				type = SequenceType.STRUCT;
+			else if(s.equals("{"))
+				type = SequenceType.OPEN_BRACKET;
+			else if(s.equals("}"))
+				type = SequenceType.CLOSED_BRACKET;
+			else if(s.equals("->"))
+				type = SequenceType.ARROW;
+			else if(s.equals("return"))
+				type = SequenceType.RETURN;
+			else if(is_func_name_args(s))
+				type = SequenceType.FUNC_NAME_ARGS;
+			else if(if_var_declaration_or_def(s, quote_range_indices)) 
+				type = SequenceType.VAR_DECLARE_OR_DEFINE;
+			else // Might be an expression ie. just type, variable_name, long expression
+				type = SequenceType.EXPRESSION;
+
+			li.add(type);
+		}
+
+		return li;
+	}
+
+	// @Tmp:
+	public static String get_in_str(SequenceType type) {
+		String type_str = "";
+
+		if(type == SequenceType.FUNC)
+			type_str = "FUNC";
+		else if(type == SequenceType.NOT_KNOWN)
+			type_str = "NOT_KNOWN";
+		else if(type == SequenceType.WHILE)
+			type_str = "WHILE";
+		else if(type == SequenceType.IF)
+			type_str = "IF";
+		else if(type == SequenceType.ELSE)
+			type_str = "ELSE";
+		else if(type == SequenceType.OPEN_BRACKET)
+			type_str = "OPEN_BRACKET";
+		else if(type == SequenceType.CLOSED_BRACKET)
+			type_str = "CLOSED_BRACKET";
+		else if(type == SequenceType.SEMICOLON)
+			type_str = "SEMICOLON";
+		else if(type == SequenceType.ARROW)
+			type_str = "ARROW";
+		else if(type == SequenceType.STRUCT)
+			type_str = "STRUCT";
+		else if(type == SequenceType.ENUM)
+			type_str = "ENUM";
+		else if(type == SequenceType.VAR_DECLARE_OR_DEFINE)
+			type_str = "VAR_DECLARE_OR_DEFINE";
+		else if(type == SequenceType.FUNC_NAME_ARGS)
+			type_str = "FUNC_NAME_ARGS";
+		else if(type == SequenceType.EXPRESSION)
+			type_str = "EXPRESSION";
+		else if(type == SequenceType.RETURN)
+			type_str = "RETURN";
+
+		return type_str;
+	}
+
+	private static boolean is_func_name_args(String s) {
+		int alphabet_count = 0;
+		boolean found_open_bracket = false;
+
+		// 3 because name should at min be length 1, and i for ( and 1 for ).
+		if(s.length() < 3)
+			return false;	
+
+		if(!Util.is_char_alpha_digit_underscore(s.charAt(0)))
+			return false;
+
+		int i = 0;
+		for(i = 1; i < s.length(); ++i) {
+			char c = s.charAt(i);
+
+			if(Util.is_char_alpha_digit_underscore(c))
+				alphabet_count += 1;
+			else if(c == '(') {
+				if(Util.is_char_alpha_digit_underscore(s.charAt(i - 1)))
+					found_open_bracket = true;
+				else
+					return false;
+			}
+		}
+
+		if(s.charAt(i - 1) == ')' && found_open_bracket)
+			return true;
+
+		return false;
+	}
+
+	private static boolean if_var_declaration_or_def(String s, List<RangeIndices> quote_range_indices) {
+
+		int len = s.length();
+		char c1 = ' ', c2 = ' ';
+
+		int index_of_double_equal = s.indexOf("==");
+		if(index_of_double_equal != -1) {
+			boolean is_inside_quotes = Util.is_index_inside_quotes(index_of_double_equal, quote_range_indices);
+			if(!is_inside_quotes)
+				return false;
+		}
+
+		int index_of_equal = s.indexOf("=");
+		if(index_of_equal != -1) {
+			boolean is_inside_quotes = Util.is_index_inside_quotes(index_of_equal, quote_range_indices);
+			if(!is_inside_quotes)
+				return true;
+		}
+
+		return false;
+	}
+}
