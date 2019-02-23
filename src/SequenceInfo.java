@@ -12,7 +12,6 @@ enum SequenceType {
 	IF,
 	ELSE,
 	STRUCT,
-	ARROW,
 	WHILE,
 	FUNC,
 	RETURN,
@@ -31,7 +30,7 @@ public class SequenceInfo {
 	}
 
 	List<String> split_str() {
-		List<String> li;
+		List<String> li = new ArrayList<>();
 
 		switch(seq_type) {
 			case FUNC_NAME_ARGS:
@@ -45,10 +44,29 @@ public class SequenceInfo {
 		List<String> li = new ArrayList<>();
 
 		int index_of_open_paren = str.indexOf('(');
+		int index_of_close_paren = str.indexOf(')');
+
 		String func_name = str.substring(0, index_of_open_paren);
+		li.add(func_name);
 
+		if(index_of_close_paren == index_of_open_paren + 1)
+			return li;
 
-		// @ToDo........
+		String args_str = str.substring(index_of_open_paren + 1, index_of_close_paren);
+
+		String[] split_str = args_str.split(",");
+		for(String s: split_str) {
+			int index_of_colon = s.indexOf(':');
+			String name = s.substring(0, index_of_colon);
+			String type = s.substring(index_of_colon + 1);
+			
+			li.add(name);
+			li.add(type);
+		}
+
+		int index_of_arrow = str.indexOf("->");
+		String ret_type = str.substring(index_of_arrow + 2);
+		li.add(ret_type);
 
 		return li;
 	}
@@ -88,18 +106,39 @@ public class SequenceInfo {
 		if(index_of_close_paren == index_of_open_paren + 1)
 			return "none";
 
-		String in_str = str.substring(index_of_open_paren + 1, index_of_close_paren - 1);
-		String[] split_str = in_str.split(",");
+		String in_str = str.substring(index_of_open_paren + 1, index_of_close_paren);
+		List<String> split_str = Util.my_split(in_str, ',');
 
-		for(int i = 0; i < split_str.length; ++i) {
-			String s = split_str[i];
+		for(int i = 0; i < split_str.size(); ++i) {
+			String s = split_str.get(i);
+			if(s.equals("")) {
+				return "Function '" + func_name + "' missing 'arg_name' and 'type' at argument number " + (i + 1) + ".";
+			}
 			int num_colons = Util.get_num_chars(s, ':');
 			if(num_colons == 0)
-				return "Function " + func_name + " is missing argument type for argument number: " + i;
+				return "Function '" + func_name + "' is missing 'argument type' for argument number: " + i;
 			else if(num_colons > 1)
-				return "Function " + func_name + " should have only one ':' b/w name and argument. But contains " + num_colons + " ':' .";
+				return "Function '" + func_name + "' should have only one ':' b/w name and argument. But contains " + num_colons + " ':' .";
 
+			int index_of_colon = s.indexOf(':');
+			String name = s.substring(0, index_of_colon);
+			if(!Util.is_valid_name(name)) {
+				return "In function '" + func_name + "' argument name '" + name + "' is not a valid name";
+			}
+
+			String arg_type = s.substring(index_of_colon + 1);
+			if(arg_type.equals(""))
+				return "In function '" + func_name + "' argument type is missing for argument '" + name + "' at argument number " + (i + 1) + ".";
 		}
+
+		int index_of_arrow = str.indexOf("->");
+		if(index_of_arrow == -1)
+			return "Function '" + func_name + "' does not have a '->'";
+
+		String return_type = str.substring(index_of_arrow + 2);
+		if(return_type.equals(""))
+			return "Function '" + func_name + "' is missing a return type after '->'.";
+
 		return "none";
 	}
 }
@@ -129,8 +168,6 @@ class SequenceTypeInfo {
 				type = SequenceType.OPEN_BRACKET;
 			else if(s.equals("}"))
 				type = SequenceType.CLOSED_BRACKET;
-			else if(s.equals("->"))
-				type = SequenceType.ARROW;
 			else if(s.equals("return"))
 				type = SequenceType.RETURN;
 			else if(is_func_name_args(s))
@@ -166,8 +203,6 @@ class SequenceTypeInfo {
 			type_str = "CLOSED_BRACKET";
 		else if(type == SequenceType.SEMICOLON)
 			type_str = "SEMICOLON";
-		else if(type == SequenceType.ARROW)
-			type_str = "ARROW";
 		else if(type == SequenceType.STRUCT)
 			type_str = "STRUCT";
 		else if(type == SequenceType.ENUM)
@@ -185,8 +220,8 @@ class SequenceTypeInfo {
 	}
 
 	private static boolean is_func_name_args(String s) {
-		int alphabet_count = 0;
-		boolean found_open_bracket = false;
+		if(s.indexOf('\"') != -1)
+			return false;
 
 		// 3 because name should at min be length 1, and i for ( and 1 for ).
 		if(s.length() < 3)
@@ -195,21 +230,26 @@ class SequenceTypeInfo {
 		if(!Util.is_char_alpha_digit_underscore(s.charAt(0)))
 			return false;
 
-		int i = 0;
-		for(i = 1; i < s.length(); ++i) {
+		/*
+			int i = 0;
+			for(i = 1; i < s.length(); ++i) {
 			char c = s.charAt(i);
 
 			if(Util.is_char_alpha_digit_underscore(c))
-				alphabet_count += 1;
+			alphabet_count += 1;
 			else if(c == '(') {
-				if(Util.is_char_alpha_digit_underscore(s.charAt(i - 1)))
-					found_open_bracket = true;
-				else
-					return false;
+			if(Util.is_char_alpha_digit_underscore(s.charAt(i - 1)))
+			found_open_bracket = true;
+			else
+			return false;
 			}
-		}
+			else if(c == ')')
+			found_close_bracket = true;
+			}
+			*/
 
-		if(s.charAt(i - 1) == ')' && found_open_bracket)
+		int index_of_arrow = s.indexOf("->");
+		if(index_of_arrow != -1)
 			return true;
 
 		return false;

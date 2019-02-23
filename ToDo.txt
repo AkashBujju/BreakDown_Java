@@ -1,6 +1,15 @@
-0) Goto Line line 51 @SequenceInfo.java
-1) Process comments .....
+--------------------------------------------------------------
+ToDo:
+	1) Goto Line line 132 @Info.java
+	2) Goto Line line 67 @Info.java
+--------------------------------------------------------------
 
+--------------------------------------------------------------
+NoteDone:
+	1) Process comments .....
+--------------------------------------------------------------
+
+--------------------------------------------------------------
 Alg := 1) Split the input into tokens. But only partially which does not
 			 include :=, = ... etc
 
@@ -13,24 +22,4 @@ Note: Have a List<Scope> for every function. Every ScopeStack should have
 		Global has default.
 		???? How should scopes be named ??????
 
-FunctionInfo:
-	1) Name
-	2) List<String> args_name
-	3) List<String> arg_type
-	4) Return Type
-
-StructInfo:
-	1) Name
-	2)	List<String> varnames
-	3) List<String> vartypes
-
-SymbolTable:
-	1) List<VarInfo> varinfos
-
-VarInfo:
-	1) Name.
-	2) Type.
-	3) Raw Value.
-	4) Scope
-
-
+--------------------------------------------------------------

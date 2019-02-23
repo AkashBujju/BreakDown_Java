@@ -37,15 +37,15 @@ public class Main {
 				SequenceInfo info = new SequenceInfo(st_li.get(i), tokens.get(i));
 				sq_info.add(info);
 			}
-			
+
 			Info info = new Info(sq_info, my_file);
 			info.process();
 
 			/*
-			for(SequenceInfo sq: sq_info) {
+				for(SequenceInfo sq: sq_info) {
 				System.out.println(sq.str + " @@@@@@  " + SequenceTypeInfo.get_in_str(sq.seq_type));
-			}
-			*/
+				}
+				*/
 		}
 		catch (Exception e) {
 			System.out.println("Exception caught in class Main: ");
@@ -83,7 +83,7 @@ public class Main {
 	static void init_ops() {
 		// @Incomplete ... 
 		// @Incomplete ... 
-		
+
 		keywords.add("func");
 		keywords.add("::struct");
 		keywords.add("::enum");
@@ -96,7 +96,7 @@ public class Main {
 		split_sequences.add(";");
 		split_sequences.add("{");
 		split_sequences.add("}");
-		split_sequences.add("->");
+		// split_sequences.add("->");
 		for(int i = 0; i < keywords.size(); ++i)
 			split_sequences.add(keywords.get(i));
 
@@ -109,7 +109,7 @@ public class Main {
 		logical_ops.add("||");
 		logical_ops.add("&&");
 		logical_ops.add("!");
-		
+
 		relational_ops.add("==");
 		relational_ops.add("!=");
 		relational_ops.add(">=");
@@ -139,7 +139,7 @@ public class Main {
 		si = get_first_index_and_str(str, current_index + i, split_sequences);
 		while(si.index != -1 || current_index < len) {
 			boolean index_inside_quotes = Util.is_index_inside_quotes(si.index, quotes_range_indices);
-			
+
 			if(si.index == -1 && !index_inside_quotes) {
 				String substring = str.substring(current_index);
 				if(!substring.equals(""))

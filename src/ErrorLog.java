@@ -8,8 +8,8 @@ public class ErrorLog {
 		log = new ArrayList<>();
 	}
 
-	void push(String error, int line_number) {
-		String e = "Error: " + error + " at line " + line_number + ".";
+	void push(String error, String str, int line_number) {
+		String e = "------> " + str + "\n" + "Error: " + error + " @@ line " + line_number + ".";
 		log.add(e);
 	}
 
