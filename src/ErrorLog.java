@@ -16,10 +16,15 @@ public class ErrorLog {
 	void show() {
 		int error_number = 0;
 
+		System.out.println();
+		System.out.println(log.size() + " ERRORS found ....");
+		System.out.println("-----------------------------");
 		for(String s: log) {
 			error_number += 1;
 			System.out.println(error_number + ": " + s);
 			System.out.println();
 		}
+		System.out.println("-----------------------------");
+		System.out.println();
 	}
 }

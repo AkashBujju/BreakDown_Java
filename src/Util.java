@@ -1,7 +1,17 @@
 import java.util.List;
 import java.util.ArrayList;
 
-class Util {
+class StringAndIndex {
+	int index = -1;
+	String str = "";
+}
+
+class RangeIndices {
+	int from_index = -1;
+	int to_index = -1;
+}
+
+public class Util {
 	// @Redundant: Can be made into a single method
 	static String eat_spaces(String str) {
 		String tmp = "";
@@ -47,6 +57,20 @@ class Util {
 				num += 1;
 
 		return num;
+	}
+
+	static int get_num_chars_outside_quotes(String str, char ch, List<RangeIndices> ri) {
+		int count = 0;
+		for(int i = 0; i < str.length(); ++i) {
+			if(is_index_inside_quotes(i, ri))
+				continue;
+
+			char c = str.charAt(i);
+			if(c == ch)
+				count += 1;
+		}
+
+		return count;
 	}
 
 	static boolean is_index_inside_quotes(int index, List<RangeIndices> li) {
@@ -282,5 +306,51 @@ class Util {
 		li.add(s);
 
 		return li;
+	}
+
+	static int get_num_quotes(String str) {
+		int quotes_count = 0;
+		for(int i = 0; i < str.length(); ++i) {
+			char c = str.charAt(i);
+			if(c == '\"') {
+				if(i == 0 || (str.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
+			}
+		}
+		
+		return quotes_count;
+	}
+
+	static String is_valid_exp(String s, List<RangeIndices> ri) {
+		int quotes_count = get_num_quotes(s);
+		if(quotes_count % 2 != 0)
+			return "Number of open quotes not matching with the number of closing quotes.";
+
+		int open_paren_count = 0;
+		int close_paren_count = 0;
+		int open_square_count = 0;
+		int close_square_count = 0;
+		for(int i = 0; i < s.length(); ++i) {
+			char c = s.charAt(i);
+			if(is_index_inside_quotes(i, ri))
+				continue;
+
+			if(c == '(')
+				open_paren_count += 1;
+			else if(c == ')')
+				close_paren_count += 1;
+			else if(c == '[')
+				open_square_count += 1;
+			else if(c == ']')
+				close_square_count += 1;
+		}
+
+		if(open_paren_count != close_paren_count)
+			return "Number of '(' not matching number of ')' in the expression.";
+		if(open_square_count != close_square_count)
+			return "Number if '[' not matching number of ']' in the expression.";
+		
+		return "none";
 	}
 }

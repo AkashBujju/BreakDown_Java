@@ -83,20 +83,20 @@ public class SequenceInfo {
 	}
 
 	// "none": no errors , "ErrorMsg": errors
-	String validate_syntax() {
+	String validate_syntax(List<RangeIndices> ri) {
 		// Note: Only declaration/definition, expressions, func_name_args will be checked for
 		switch(seq_type) {
 			case FUNC_NAME_ARGS:
 				return validate_func_declaration_syntax();
 			case VAR_DECLARE_OR_DEFINE:
-				return validate_var_decl_def();
+				return validate_var_decl_def(ri);
 		}
 
 		return "none";
 	}
 
-	private String validate_var_decl_def() {
-		String var_name, var_type = "", exp_value;
+	private String validate_var_decl_def(List<RangeIndices> ri) {
+		String var_name, var_type = "", exp_value = "";
 
 		int index_of_equal_colon = str.indexOf(":=");	
 		if(index_of_equal_colon != -1) {
@@ -128,11 +128,10 @@ public class SequenceInfo {
 
 		if(!Util.is_valid_name(var_name))
 			return "Variable name '" + var_name + "' is not valid.";
-		else if(!var_type.equals("") && !Util.is_valid_name(var_type))
+		if(!var_type.equals("") && !Util.is_valid_name(var_type))
 			return "Identifier '" + var_type + "' is not found.";
-
-		// Checking matching (), [], quotes
-		// @Incomplete ......
+		
+		String exp_msg = Util.is_valid_exp(exp_value, ri);
 
 		return "none";
 	}
@@ -294,30 +293,17 @@ class SequenceTypeInfo {
 
 	private static boolean if_var_declaration_or_def(String s, List<RangeIndices> quote_range_indices) {
 
-		int len = s.length();
-		char c1 = ' ', c2 = ' ';
+		if(s.length() < 3)
+			return false;
 
-		int index_of_double_equal = s.indexOf("==");
-		if(index_of_double_equal != -1) {
-			boolean is_inside_quotes = Util.is_index_inside_quotes(index_of_double_equal, quote_range_indices);
-			if(!is_inside_quotes)
-				return false;
-		}
+		int num_equals = Util.get_num_chars_outside_quotes(s, '=', quote_range_indices);
+		if(num_equals > 1)
+			return false;
 
-		int index_of_equal = s.indexOf("=");
-		if(index_of_equal != -1) {
-			boolean is_inside_quotes = Util.is_index_inside_quotes(index_of_equal, quote_range_indices);
-			if(!is_inside_quotes)
-				return true;
-		}
+		int num_colons = Util.get_num_chars_outside_quotes(s, ':', quote_range_indices);
+		if(num_colons != 1)
+			return false;
 
-		int index_of_colon = s.indexOf(":");
-		if(index_of_colon != -1) {
-			boolean is_inside_quotes = Util.is_index_inside_quotes(index_of_colon, quote_range_indices);
-			if(!is_inside_quotes)
-				return true;
-		}
-
-		return false;
+		return true;
 	}
 }

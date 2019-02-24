@@ -39,11 +39,13 @@ public class Main {
 				sq_info.add(info);
 			}
 
+			/*
 			for(SequenceInfo sq: sq_info) {
 				System.out.println(sq.str + " @@@@@@  " + SequenceTypeInfo.get_in_str(sq.seq_type));
 			}
+			*/
 
-			Info info = new Info(sq_info, my_file);
+			Info info = new Info(sq_info, my_file, quotes_range_indices);
 			info.process();
 		}
 		catch (Exception e) {
@@ -80,14 +82,4 @@ public class Main {
 		bitwise_ops.add("^"); bitwise_ops.add(">>>");
 		bitwise_ops.add("<<<");
 	}
-}
-
-class StringAndIndex {
-	int index = -1;
-	String str = "";
-}
-
-class RangeIndices {
-	int from_index = -1;
-	int to_index = -1;
 }

@@ -31,10 +31,12 @@ public class Info {
 	private MyFile file;
 	private int num_sequences;
 	private List<String> primitive_types;
+	private List<RangeIndices> ri;
 	List<SequenceInfo> sequence_infos;
 
-	Info(List<SequenceInfo> sequence_infos, MyFile file) {
+	Info(List<SequenceInfo> sequence_infos, MyFile file, List<RangeIndices> ri) {
 		this.sequence_infos = sequence_infos;
+		this.ri = ri;
 		this.file = file;
 
 		func_infos = new ArrayList<>();
@@ -148,20 +150,52 @@ public class Info {
 				break;
 
 			SequenceInfo var_decl_info = sequence_infos.get(i);
-			if(var_decl_info.seq_type != SequenceType.VAR_DECLARE_OR_DEFINE)
-				break;
+			if(var_decl_info.seq_type == SequenceType.VAR_DECLARE_OR_DEFINE) {
+				update_line_number(var_decl_info.str, true);
+				var_decl_info.validate_syntax(ri);
+				// @Incomplete: The right-hand side ie. the expression should be a literal value .... or should be left empty.
 
-			var_decl_info.validate_syntax();
+				if((i + 1) < num_sequences) {
+					SequenceInfo semi_colon_info = sequence_infos.get(i + 1);
+
+					if(semi_colon_info.seq_type != SequenceType.SEMICOLON) {
+						error_log.push("Missing ';' after declaration of variable inside struct '" + expr_seq_info.str + "'.", var_decl_info.str, current_line_number);
+						System.out.println("Index: " + current_char_index);
+						break;
+					}
+					else {
+						update_line_number(semi_colon_info.str, true);
+						i += 1;
+					}
+				}
+			}
+			else if(var_decl_info.seq_type == SequenceType.CLOSED_BRACKET)
+				break;
+			else {
+				error_log.push("Invalid Statement found inside struct '" + expr_seq_info.str + "'.", var_decl_info.str, current_line_number);
+				break;
+			}
 
 			i += 1;
 		}
+
+		SequenceInfo close_bracket_info = sequence_infos.get(i);
+		if(close_bracket_info.seq_type != SequenceType.CLOSED_BRACKET) {
+			error_log.push("Needed a '}' after the definition of struct '" + 		expr_seq_info.str + "'.", close_bracket_info.str, current_line_number);
+
+			return -1;
+		}
+		update_line_number(close_bracket_info.str, true);
+
+		// @Incomplete ........
+		// @Incomplete ........
+		// @Incomplete ........
 
 		// tmp
 		return 0;
 	}
 
 	private int process_func_sig(int index) {
-
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing function signature after keyword 'func'.", "func", current_line_number);
 
@@ -176,7 +210,7 @@ public class Info {
 			return index + 1;
 		}
 
-		String msg = func_seq_info.validate_syntax();
+		String msg = func_seq_info.validate_syntax(ri);
 		if(!msg.equals("none")) {
 			error_log.push(msg, func_seq_info.str, current_line_number);
 			return index + 1;

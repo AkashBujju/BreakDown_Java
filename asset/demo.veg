@@ -1,5 +1,5 @@
 Dog::struct 
 {
-	animal:Animal;	
+	animal:Animal;
 	color := "black";
 }
