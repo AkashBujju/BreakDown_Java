@@ -1,5 +1,6 @@
 Dog::struct 
 {
-	animal:Animal;
+	animal: Animal*;
 	color := "black";
+	age: uint_8 = 0;
 }

@@ -64,6 +64,8 @@ public class Info {
 			current_char_index -= len;
 
 		current_line_number = file.get_line_number(current_char_index);
+		if(current_line_number == -1)
+			current_line_number = file.get_line_number(file.data.length() - 1);
 	}
 
 	void process() {
@@ -152,15 +154,41 @@ public class Info {
 			SequenceInfo var_decl_info = sequence_infos.get(i);
 			if(var_decl_info.seq_type == SequenceType.VAR_DECLARE_OR_DEFINE) {
 				update_line_number(var_decl_info.str, true);
-				var_decl_info.validate_syntax(ri);
+				String msg = var_decl_info.validate_syntax(ri);
+				if(msg.equals("=")) {
+					error_log.push("Only variable declaration/definition is allowed inside struct '" + expr_seq_info.str + "'", var_decl_info.str, current_line_number);
+					break;
+				}
+				else if(msg.length() > 4) { // There is some error
+					error_log.push(msg, var_decl_info.str, current_line_number);
+					break;
+				}
+
 				// @Incomplete: The right-hand side ie. the expression should be a literal value .... or should be left empty.
+				List<String> split_str = var_decl_info.split_str(ri);
+				String name = split_str.get(0);
+				String exp = "";
+				String type = "";
+
+				if(msg.equals(":="))
+					exp = split_str.get(1);
+				else if(msg.equals(":"))
+					type = split_str.get(1);
+				else if(msg.equals(":..=")) {
+					type = split_str.get(1);
+					exp = split_str.get(2);
+				}
+
+				// Note: Valdity of name is already check. Need to check if exp is primitve or empty and Type is available
+				// @Incomplete: ........
+				// @Incomplete: ........
+				// @Incomplete: ........
 
 				if((i + 1) < num_sequences) {
 					SequenceInfo semi_colon_info = sequence_infos.get(i + 1);
 
 					if(semi_colon_info.seq_type != SequenceType.SEMICOLON) {
 						error_log.push("Missing ';' after declaration of variable inside struct '" + expr_seq_info.str + "'.", var_decl_info.str, current_line_number);
-						System.out.println("Index: " + current_char_index);
 						break;
 					}
 					else {
@@ -179,13 +207,19 @@ public class Info {
 			i += 1;
 		}
 
-		SequenceInfo close_bracket_info = sequence_infos.get(i);
-		if(close_bracket_info.seq_type != SequenceType.CLOSED_BRACKET) {
-			error_log.push("Needed a '}' after the definition of struct '" + 		expr_seq_info.str + "'.", close_bracket_info.str, current_line_number);
+		if(i < num_sequences) {
+			SequenceInfo close_bracket_info = sequence_infos.get(i);
+			if(close_bracket_info.seq_type != SequenceType.CLOSED_BRACKET) {
+				error_log.push("Needed a '}' after the definition of struct '" + expr_seq_info.str + "'.", close_bracket_info.str, current_line_number);
 
+				return -1;
+			}
+			update_line_number(close_bracket_info.str, true);
+		}
+		else {
+			error_log.push("Missing '}' after definition of struct '" + expr_seq_info.str + "'.", expr_seq_info.str, current_line_number);
 			return -1;
 		}
-		update_line_number(close_bracket_info.str, true);
 
 		// @Incomplete ........
 		// @Incomplete ........
@@ -216,7 +250,7 @@ public class Info {
 			return index + 1;
 		}
 
-		List<String> split_str = func_seq_info.split_str();
+		List<String> split_str = func_seq_info.split_str(ri);
 		String func_name = split_str.get(0);
 		String ret_type = split_str.get(split_str.size() - 1);
 
@@ -228,7 +262,7 @@ public class Info {
 			// Checking if the types are available....
 
 			// if primitive type ????
-			boolean is_valid_primitive_type = Util.is_valid_type(arg_type, primitive_types);
+			boolean is_valid_primitive_type = Util.is_valid_primitive_type(arg_type, primitive_types);
 			if(!is_valid_primitive_type) {
 				error_log.push("Could not find type '" + arg_type + "'.", func_seq_info.str, current_line_number);
 

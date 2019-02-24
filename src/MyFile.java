@@ -14,9 +14,11 @@ class LineInfo {
 class MyFile {
 	private String filename;
 	private List<LineInfo> line_info = new ArrayList<>();
+	StringBuffer data;
 
 	MyFile(String filename) throws FileNotFoundException {
 		this.filename = filename;
+		data = new StringBuffer();
 
 		// Storing the beginning and ending index of each line, ignoring the new_line character
 		try (Scanner s = new Scanner(new BufferedReader(new FileReader(filename)))) {
@@ -27,6 +29,7 @@ class MyFile {
 				line_number += 1;
 				String current_line = s.nextLine();
 				current_line = Util.eat_only_spaces(current_line);
+				data.append(current_line);
 
 				int end_index = 0;
 				if(current_line.equals(""))

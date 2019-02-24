@@ -189,7 +189,39 @@ public class Util {
 		return true;
 	}
 
-	static boolean is_valid_type(String type, List<String> all_types) {
+	static boolean is_valid_type_name(String type) {
+		if(type.equals(""))
+			return false;
+
+		char first_char = type.charAt(0);
+		if(first_char == '_' || (first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z')) {} // do nothing
+		else
+			return false;
+
+		if(first_char == '_') {
+			if(type.length() == 1)
+				return false;
+
+			char second_char = type.charAt(1);
+			if(second_char == '*')
+				return false;
+		}
+
+		for(int i = 1; i < type.length(); ++i) {
+			char c = type.charAt(i);
+			if(!is_char_alpha_digit_underscore(c)) {
+				for(int j = i + 1; j < type.length(); ++j) {
+					char c2 = type.charAt(j);
+					if(c2 != '*')
+						return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	static boolean is_valid_primitive_type(String type, List<String> all_types) {
 		// Should also count for pointers ie. *
 
 		for(int i = 0; i < all_types.size(); ++i) {

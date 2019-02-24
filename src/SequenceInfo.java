@@ -29,7 +29,7 @@ public class SequenceInfo {
 		visited = false;
 	}
 
-	List<String> split_str() {
+	List<String> split_str(List<RangeIndices> ri) {
 		List<String> li;
 
 		switch(seq_type) {
@@ -37,7 +37,8 @@ public class SequenceInfo {
 				li = split_func_name_args();
 				break;
 			case VAR_DECLARE_OR_DEFINE:
-				li = split_var_declare_or_define();
+				li = split_var_declare_or_define(ri);
+				break;
 			default:
 				li = new ArrayList<>();
 		}
@@ -45,8 +46,40 @@ public class SequenceInfo {
 		return li;
 	}
 
-	List<String> split_var_declare_or_define() {
+	List<String> split_var_declare_or_define(List<RangeIndices> ri) {
 		List<String> li = new ArrayList<>();
+		String msg = validate_var_decl_def(ri);
+
+		int index_of_equal_colon = str.indexOf(":=");
+		int index_of_equal = str.indexOf("=");
+		int index_of_colon = str.indexOf(":");
+
+		if(msg.equals(":=")) {
+			String name = str.substring(0, index_of_equal_colon);
+			String exp = str.substring(index_of_equal_colon + 2);
+			li.add(name);
+			li.add(exp);
+		}
+		else if(msg.equals("=")) {
+			String name = str.substring(0, index_of_equal);
+			String exp = str.substring(index_of_equal + 1);
+			li.add(name);
+			li.add(exp);
+		}
+		else if(msg.equals(":")) {
+			String name = str.substring(0, index_of_colon);
+			String type = str.substring(index_of_colon + 1);
+			li.add(name);
+			li.add(type);
+		}
+		else if(msg.equals(":..=")) {
+			String name = str.substring(0, index_of_colon);
+			String type = str.substring(index_of_colon + 1, index_of_equal);
+			String exp = str.substring(index_of_equal + 1);
+			li.add(name);
+			li.add(type);
+			li.add(exp);
+		}
 
 		return li;
 	}
@@ -70,7 +103,7 @@ public class SequenceInfo {
 			int index_of_colon = s.indexOf(':');
 			String name = s.substring(0, index_of_colon);
 			String type = s.substring(index_of_colon + 1);
-			
+
 			li.add(name);
 			li.add(type);
 		}
@@ -97,43 +130,62 @@ public class SequenceInfo {
 
 	private String validate_var_decl_def(List<RangeIndices> ri) {
 		String var_name, var_type = "", exp_value = "";
+		boolean is_define_1 = false; // :=
+		boolean is_define_2 = false; // :int=
+		boolean is_declare = false; // :
+		boolean is_assign = false; // =
 
 		int index_of_equal_colon = str.indexOf(":=");	
 		if(index_of_equal_colon != -1) {
 			var_name = str.substring(0, index_of_equal_colon);
 			exp_value = str.substring(index_of_equal_colon + 2);	
+			is_define_1 = true;
 		}
 		else {
 			int index_of_equal = str.indexOf("=");
 			int index_of_colon = str.indexOf(":");
 
-			if(index_of_equal > index_of_colon) {
+			if(index_of_equal < index_of_colon && index_of_equal != -1) {
 				return "In declaring variables ':' has to come before '='.";
 			}
 
 			if(index_of_equal == -1) {
 				var_name = str.substring(0, index_of_colon);
 				var_type = str.substring(index_of_colon + 1);
+				is_declare = true;
 			}
 			else if(index_of_colon == -1) {
 				var_name = str.substring(0, index_of_equal);
 				exp_value = str.substring(index_of_equal + 1);
+				is_assign = true;
 			}
 			else {
 				var_name = str.substring(0, index_of_colon);
 				var_type = str.substring(index_of_colon + 1, index_of_equal);
 				exp_value = str.substring(index_of_equal + 1);
+				is_define_2 = true;
 			}
 		}
 
 		if(!Util.is_valid_name(var_name))
 			return "Variable name '" + var_name + "' is not valid.";
-		if(!var_type.equals("") && !Util.is_valid_name(var_type))
-			return "Identifier '" + var_type + "' is not found.";
-		
-		String exp_msg = Util.is_valid_exp(exp_value, ri);
+		if(!var_type.equals("") && !Util.is_valid_type_name(var_type))
+			return "Identifier '" + var_type + "' is not a valid Type name";
 
-		return "none";
+		String exp_msg = Util.is_valid_exp(exp_value, ri);
+		if(!exp_msg.equals("none"))
+			return exp_msg;
+
+		if(is_define_1)
+			return ":=";
+		else if(is_define_2)
+			return ":..=";
+		else if(is_declare)
+			return ":";
+		else if(is_assign)
+			return "=";
+
+		return exp_msg;
 	}
 
 	private String validate_func_declaration_syntax() {
@@ -141,7 +193,7 @@ public class SequenceInfo {
 		int index_of_quotes = str.indexOf("\"");
 		if(index_of_quotes != -1)
 			return "Invalid character '\"' found at index: " + index_of_quotes;
-		
+
 		// Only one ( and )
 		int num_open_paren = Util.get_num_chars(str, '(');
 		if(num_open_paren != 1)
@@ -292,16 +344,15 @@ class SequenceTypeInfo {
 	}
 
 	private static boolean if_var_declaration_or_def(String s, List<RangeIndices> quote_range_indices) {
-
 		if(s.length() < 3)
 			return false;
 
 		int num_equals = Util.get_num_chars_outside_quotes(s, '=', quote_range_indices);
+		int num_colons = Util.get_num_chars_outside_quotes(s, ':', quote_range_indices);
+
 		if(num_equals > 1)
 			return false;
-
-		int num_colons = Util.get_num_chars_outside_quotes(s, ':', quote_range_indices);
-		if(num_colons != 1)
+		else if(num_equals == 0 && num_colons != 1)
 			return false;
 
 		return true;
