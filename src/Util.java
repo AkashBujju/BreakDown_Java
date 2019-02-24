@@ -62,10 +62,10 @@ class Util {
 	}
 
 	static boolean is_char_alpha_digit_underscore(char c) {
-			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
+		if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
 			return true;
 
-			return false;
+		return false;
 	}
 
 	static String get_primitive_type(String str) {
@@ -167,7 +167,7 @@ class Util {
 
 	static boolean is_valid_type(String type, List<String> all_types) {
 		// Should also count for pointers ie. *
-		
+
 		for(int i = 0; i < all_types.size(); ++i) {
 			String current_type = all_types.get(i);
 			int index_of_type = type.indexOf(current_type);
@@ -183,6 +183,76 @@ class Util {
 		}
 
 		return false;
+	}
+
+	static List<String> split_into_tokens(String str, List<String> split_sequences, List<RangeIndices> quotes_range_indices) {
+		List<String> split_list = new ArrayList<>();
+		int len = str.length();
+
+		if(len == 0)
+			return split_list;
+
+		int current_index = 0;
+		StringAndIndex si;
+		boolean if_index_inside_quotes = false;
+
+		int i = 0;
+		si = get_first_index_and_str(str, current_index + i, split_sequences);
+		while(si.index != -1 || current_index < len) {
+			boolean index_inside_quotes = Util.is_index_inside_quotes(si.index, quotes_range_indices);
+
+			if(si.index == -1 && !index_inside_quotes) {
+				String substring = str.substring(current_index);
+				if(!substring.equals(""))
+					split_list.add(substring);
+
+				break;
+			}
+
+			if(!index_inside_quotes) {
+				String substring = str.substring(current_index, si.index);
+
+				if(!substring.equals(""))
+					split_list.add(substring);
+				split_list.add(si.str);
+				current_index = si.index + si.str.length();
+				i = 0;
+			}
+			else {
+				i += 1;
+			}
+
+			si = get_first_index_and_str(str, current_index + i, split_sequences);
+		}
+
+		return split_list;
+	}
+
+	static StringAndIndex get_first_index_and_str(String str, int from_index, List<String> li) {
+		StringAndIndex si = new StringAndIndex();
+		final int max_index = 100000;
+		int str_index = max_index;
+		int li_index = -1;
+
+		for(int i = 0; i < li.size(); ++i) {
+			String s = li.get(i);
+			int index = str.indexOf(s, from_index);
+			if(index != -1 && index < str_index) {
+				str_index = index;
+				li_index = i;
+			}
+		}
+
+		if(str_index == max_index) {
+			si.index = -1;
+			si.str = "";
+		}
+		else {
+			si.index = str_index;
+			si.str = li.get(li_index);
+		}
+
+		return si;
 	}
 
 	static List<String> my_split(String str, char ch) {

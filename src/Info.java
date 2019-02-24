@@ -54,9 +54,13 @@ public class Info {
 		num_sequences = sequence_infos.size();
 	}
 
-	private void update_line_number(String str) {
+	private void update_line_number(String str, boolean increase) {
 		int len = str.length();
-		current_char_index += len;
+		if(increase)
+			current_char_index += len;
+		else
+			current_char_index -= len;
+
 		current_line_number = file.get_line_number(current_char_index);
 	}
 
@@ -67,8 +71,24 @@ public class Info {
 		// @Note: first process all the structs ....
 
 		// structs
+		for(int i = 0; i < num_sequences; ++i) {
+			SequenceInfo s = sequence_infos.get(i);
 
-		// func ( name, args name, arg types, return_types )
+			if(s.seq_type == SequenceType.STRUCT) {
+				process_struct(i);
+			}
+
+			update_line_number(s.str, true);
+		}
+
+		// Checking and displaying errors and quitting...
+		if(error_log.log.size() > 0) {
+			error_log.show();
+			return;
+		}
+
+		// function signature
+		current_line_number = 1;
 		for(int i = 0; i < num_sequences; ++i) {
 			SequenceInfo s = sequence_infos.get(i);
 
@@ -76,7 +96,7 @@ public class Info {
 				i = process_func_sig(i);
 			}
 
-			update_line_number(s.str);
+			update_line_number(s.str, true);
 		}
 
 		// Checking and displaying errors and quitting...
@@ -88,6 +108,58 @@ public class Info {
 		//@Incomplete ....
 	}
 
+	private int process_struct(int index) {
+		if((index - 1) < 0) {
+			error_log.push("Missing name for struct", "::struct", current_line_number);
+			return -1;
+		}
+
+		SequenceInfo expr_seq_info = sequence_infos.get(index - 1);
+		update_line_number(expr_seq_info.str, false);
+		if(expr_seq_info.seq_type != SequenceType.EXPRESSION) {
+			error_log.push("Needed a 'name' before struct but found invalid string", expr_seq_info.str, current_line_number);
+			return -1;
+		}
+
+		// Checking if struct name is valid ???
+		if(!Util.is_valid_name(expr_seq_info.str)) {
+			error_log.push("Name of struct '" + expr_seq_info.str + "' is not a valid name.", expr_seq_info.str, current_line_number);
+			return -1;
+		}
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Needed a '{' after ::struct but found nothing.", expr_seq_info.str, current_line_number);
+			return -1;
+		}
+
+		SequenceInfo open_bracket_info = sequence_infos.get(index + 1);
+		update_line_number(expr_seq_info.str, true);
+		update_line_number("::struct", true);
+		if(open_bracket_info.seq_type != SequenceType.OPEN_BRACKET) {
+			error_log.push("'{' is missing after '" + expr_seq_info.str + "::struct", expr_seq_info.str + "::struct", current_line_number);
+			return -1;
+		}
+		update_line_number(open_bracket_info.str, true);
+
+		// getting all the variable declarations inside the struct
+		int i = index + 2;
+		while(true) {
+			if(i >= num_sequences)
+				break;
+
+			SequenceInfo var_decl_info = sequence_infos.get(i);
+			if(var_decl_info.seq_type != SequenceType.VAR_DECLARE_OR_DEFINE)
+				break;
+
+			var_decl_info.validate_syntax();
+
+			i += 1;
+		}
+
+		// tmp
+		return 0;
+	}
+
 	private int process_func_sig(int index) {
 
 		if(index + 1 >= num_sequences) {
@@ -97,7 +169,7 @@ public class Info {
 		}
 
 		SequenceInfo func_seq_info = sequence_infos.get(index + 1);
-		update_line_number(func_seq_info.str);
+		update_line_number(func_seq_info.str, true);
 
 		if(func_seq_info.seq_type != SequenceType.FUNC_NAME_ARGS) {
 			error_log.push("Invalid function signature", func_seq_info.str, current_line_number);
@@ -110,7 +182,7 @@ public class Info {
 			return index + 1;
 		}
 
-		List<String> split_str = func_seq_info.split_func_name_args();
+		List<String> split_str = func_seq_info.split_str();
 		String func_name = split_str.get(0);
 		String ret_type = split_str.get(split_str.size() - 1);
 
@@ -125,7 +197,7 @@ public class Info {
 			boolean is_valid_primitive_type = Util.is_valid_type(arg_type, primitive_types);
 			if(!is_valid_primitive_type) {
 				error_log.push("Could not find type '" + arg_type + "'.", func_seq_info.str, current_line_number);
-				
+
 				return index + 1;
 			}
 

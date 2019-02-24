@@ -1,21 +1,21 @@
 --------------------------------------------------------------
 ToDo:
-	1) Goto Line line 132 @Info.java
-	2) Goto Line line 67 @Info.java
+	1) Goto line 132 @Info.java
+	2) Goto line 67 @Info.java
 --------------------------------------------------------------
 
 --------------------------------------------------------------
-NoteDone:
+NotDone:
 	1) Process comments .....
 --------------------------------------------------------------
 
 --------------------------------------------------------------
 Alg := 1) Split the input into tokens. But only partially which does not
-			 include :=, = ... etc
+			 include split with :=, = ... etc
 
 		 2) Assign appropriate enums to every token.
-		 3) Find all the function signatures and store then in a func_info
-		 4) Find all struct names and vars inside it and store it in
+		 3) Find all struct names and vars inside it and store it in
+		 4) Find all the function signatures and store then in a func_info
 		 struct_info.
 
 Note: Have a List<Scope> for every function. Every ScopeStack should have

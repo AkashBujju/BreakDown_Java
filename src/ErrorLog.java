@@ -19,6 +19,7 @@ public class ErrorLog {
 		for(String s: log) {
 			error_number += 1;
 			System.out.println(error_number + ": " + s);
+			System.out.println();
 		}
 	}
 }

@@ -30,12 +30,23 @@ public class SequenceInfo {
 	}
 
 	List<String> split_str() {
-		List<String> li = new ArrayList<>();
+		List<String> li;
 
 		switch(seq_type) {
 			case FUNC_NAME_ARGS:
-
+				li = split_func_name_args();
+				break;
+			case VAR_DECLARE_OR_DEFINE:
+				li = split_var_declare_or_define();
+			default:
+				li = new ArrayList<>();
 		}
+
+		return li;
+	}
+
+	List<String> split_var_declare_or_define() {
+		List<String> li = new ArrayList<>();
 
 		return li;
 	}
@@ -77,7 +88,51 @@ public class SequenceInfo {
 		switch(seq_type) {
 			case FUNC_NAME_ARGS:
 				return validate_func_declaration_syntax();
+			case VAR_DECLARE_OR_DEFINE:
+				return validate_var_decl_def();
 		}
+
+		return "none";
+	}
+
+	private String validate_var_decl_def() {
+		String var_name, var_type = "", exp_value;
+
+		int index_of_equal_colon = str.indexOf(":=");	
+		if(index_of_equal_colon != -1) {
+			var_name = str.substring(0, index_of_equal_colon);
+			exp_value = str.substring(index_of_equal_colon + 2);	
+		}
+		else {
+			int index_of_equal = str.indexOf("=");
+			int index_of_colon = str.indexOf(":");
+
+			if(index_of_equal > index_of_colon) {
+				return "In declaring variables ':' has to come before '='.";
+			}
+
+			if(index_of_equal == -1) {
+				var_name = str.substring(0, index_of_colon);
+				var_type = str.substring(index_of_colon + 1);
+			}
+			else if(index_of_colon == -1) {
+				var_name = str.substring(0, index_of_equal);
+				exp_value = str.substring(index_of_equal + 1);
+			}
+			else {
+				var_name = str.substring(0, index_of_colon);
+				var_type = str.substring(index_of_colon + 1, index_of_equal);
+				exp_value = str.substring(index_of_equal + 1);
+			}
+		}
+
+		if(!Util.is_valid_name(var_name))
+			return "Variable name '" + var_name + "' is not valid.";
+		else if(!var_type.equals("") && !Util.is_valid_name(var_type))
+			return "Identifier '" + var_type + "' is not found.";
+
+		// Checking matching (), [], quotes
+		// @Incomplete ......
 
 		return "none";
 	}
@@ -230,24 +285,6 @@ class SequenceTypeInfo {
 		if(!Util.is_char_alpha_digit_underscore(s.charAt(0)))
 			return false;
 
-		/*
-			int i = 0;
-			for(i = 1; i < s.length(); ++i) {
-			char c = s.charAt(i);
-
-			if(Util.is_char_alpha_digit_underscore(c))
-			alphabet_count += 1;
-			else if(c == '(') {
-			if(Util.is_char_alpha_digit_underscore(s.charAt(i - 1)))
-			found_open_bracket = true;
-			else
-			return false;
-			}
-			else if(c == ')')
-			found_close_bracket = true;
-			}
-			*/
-
 		int index_of_arrow = s.indexOf("->");
 		if(index_of_arrow != -1)
 			return true;
@@ -270,6 +307,13 @@ class SequenceTypeInfo {
 		int index_of_equal = s.indexOf("=");
 		if(index_of_equal != -1) {
 			boolean is_inside_quotes = Util.is_index_inside_quotes(index_of_equal, quote_range_indices);
+			if(!is_inside_quotes)
+				return true;
+		}
+
+		int index_of_colon = s.indexOf(":");
+		if(index_of_colon != -1) {
+			boolean is_inside_quotes = Util.is_index_inside_quotes(index_of_colon, quote_range_indices);
 			if(!is_inside_quotes)
 				return true;
 		}
