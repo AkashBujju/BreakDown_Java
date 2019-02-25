@@ -193,6 +193,8 @@ public class Util {
 		if(type.equals(""))
 			return false;
 
+		int len = type.length();
+
 		char first_char = type.charAt(0);
 		if(first_char == '_' || (first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z')) {} // do nothing
 		else
@@ -207,15 +209,72 @@ public class Util {
 				return false;
 		}
 
-		for(int i = 1; i < type.length(); ++i) {
+		// Normal single variable type.
+		boolean is_valid = true;
+		for(int i = 1; i < len; ++i) {
 			char c = type.charAt(i);
 			if(!is_char_alpha_digit_underscore(c)) {
-				for(int j = i + 1; j < type.length(); ++j) {
+				for(int j = i + 1; j < len; ++j) {
 					char c2 = type.charAt(j);
-					if(c2 != '*')
-						return false;
+					if(c2 != '*') {
+						is_valid = false;
+						break;
+					}
 				}
 			}
+		}
+
+		if(is_valid)
+			return true;
+
+		// Checking if its an array.
+		int i = 1;
+		if(i < len) {
+			char c = type.charAt(i);
+			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {} // do nothing
+			else
+				return false;
+		}
+
+		boolean array_square_encountered = false;
+		for(i = 2; i < len; ++i) {
+			char c = type.charAt(i);
+			if(!Util.is_char_alpha_digit_underscore(c)) {
+				int num_close_square = 0;
+				int num_digits = 0;
+				char open_square_char = ' ';
+
+				open_square_char = type.charAt(i);
+				if(open_square_char != '[')
+					return false;
+
+				int j = i + 1;
+				if(j >= len)
+					return false;
+
+				while(j < type.length()) {
+					char c2 = type.charAt(j);
+					if(c2 < '0' || c2 > '9') {
+						if(c2 == ']') {
+							num_close_square += 1;
+							array_square_encountered = true;
+							i = j;
+							break;
+						}
+						else
+							return false;
+					}
+					else
+						num_digits += 1;
+
+					j += 1;
+				}
+
+				if(num_close_square != 1 || num_digits == 0)
+					return false;
+			}
+			else if(array_square_encountered)
+				return false;
 		}
 
 		return true;

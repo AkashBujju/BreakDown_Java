@@ -209,32 +209,32 @@ public class SequenceInfo {
 
 		int index_of_open_paren = str.indexOf('(');
 		int index_of_close_paren = str.indexOf(')');
-		if(index_of_close_paren == index_of_open_paren + 1)
-			return "none";
+		if(index_of_close_paren == index_of_open_paren + 1) {} // Do nothing
+		else { // There are args present
+			String in_str = str.substring(index_of_open_paren + 1, index_of_close_paren);
+			List<String> split_str = Util.my_split(in_str, ',');
 
-		String in_str = str.substring(index_of_open_paren + 1, index_of_close_paren);
-		List<String> split_str = Util.my_split(in_str, ',');
+			for(int i = 0; i < split_str.size(); ++i) {
+				String s = split_str.get(i);
+				if(s.equals("")) {
+					return "Function '" + func_name + "' missing 'arg_name' and 'type' at argument number " + (i + 1) + ".";
+				}
+				int num_colons = Util.get_num_chars(s, ':');
+				if(num_colons == 0)
+					return "Function '" + func_name + "' is missing 'argument type' for argument number: " + i;
+				else if(num_colons > 1)
+					return "Function '" + func_name + "' should have only one ':' b/w name and argument. But contains " + num_colons + " ':' .";
 
-		for(int i = 0; i < split_str.size(); ++i) {
-			String s = split_str.get(i);
-			if(s.equals("")) {
-				return "Function '" + func_name + "' missing 'arg_name' and 'type' at argument number " + (i + 1) + ".";
+				int index_of_colon = s.indexOf(':');
+				String name = s.substring(0, index_of_colon);
+				if(!Util.is_valid_name(name)) {
+					return "In function '" + func_name + "' argument name '" + name + "' is not a valid name";
+				}
+
+				String arg_type = s.substring(index_of_colon + 1);
+				if(arg_type.equals(""))
+					return "In function '" + func_name + "' argument type is missing for argument '" + name + "' at argument number " + (i + 1) + ".";
 			}
-			int num_colons = Util.get_num_chars(s, ':');
-			if(num_colons == 0)
-				return "Function '" + func_name + "' is missing 'argument type' for argument number: " + i;
-			else if(num_colons > 1)
-				return "Function '" + func_name + "' should have only one ':' b/w name and argument. But contains " + num_colons + " ':' .";
-
-			int index_of_colon = s.indexOf(':');
-			String name = s.substring(0, index_of_colon);
-			if(!Util.is_valid_name(name)) {
-				return "In function '" + func_name + "' argument name '" + name + "' is not a valid name";
-			}
-
-			String arg_type = s.substring(index_of_colon + 1);
-			if(arg_type.equals(""))
-				return "In function '" + func_name + "' argument type is missing for argument '" + name + "' at argument number " + (i + 1) + ".";
 		}
 
 		int index_of_arrow = str.indexOf("->");

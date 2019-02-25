@@ -3,4 +3,14 @@ Dog::struct
 	animal: Animal*;
 	color := "black";
 	age: uint_8 = 0;
+	name: char[50];
+}
+
+func main(argc:int_32) -> int{ 
+
+}
+
+Cat::struct
+{
+	animal: Animal*;
 }

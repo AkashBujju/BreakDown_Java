@@ -6,19 +6,40 @@ class VariableInfo {
 	String type;
 	String raw_value;
 	String scope;
+
+	void display() {
+		System.out.println("Name:" + name + ", Type:" + type + ", " + "Value:" + raw_value + ", Scope:" + scope);
+	}
 }
 
 class FunctionInfo {
 	String name;
-	List<String> var_names;
-	List<String> var_types;
 	String return_type;
+	List<String> arg_names = new ArrayList<>();
+	List<String> arg_types = new ArrayList<>();
 }
 
 class StructInfo {
 	String name;
-	List<String> var_names;
-	List<String> var_types;
+	List<VariableInfo> vars = new ArrayList<>();
+
+	boolean add(VariableInfo vi) {
+		for(VariableInfo v: vars) {
+			if(v.name.equals(vi.name))
+				return false;
+		}
+
+		vars.add(vi);
+
+		return true;
+	}
+
+	void display() {
+		System.out.println("StructName: " + name);
+		System.out.println("Members are: ");
+		for(VariableInfo vi: vars)
+			vi.display();
+	}
 }
 
 public class Info {
@@ -77,10 +98,8 @@ public class Info {
 		// structs
 		for(int i = 0; i < num_sequences; ++i) {
 			SequenceInfo s = sequence_infos.get(i);
-
-			if(s.seq_type == SequenceType.STRUCT) {
+			if(s.seq_type == SequenceType.STRUCT)
 				process_struct(i);
-			}
 
 			update_line_number(s.str, true);
 		}
@@ -91,14 +110,19 @@ public class Info {
 			return;
 		}
 
+
+		// @Tmp: Displying struct_infos
+		for(StructInfo si: struct_infos) {
+			si.display();
+			System.out.println();
+		}
+
 		// function signature
 		current_line_number = 1;
 		for(int i = 0; i < num_sequences; ++i) {
 			SequenceInfo s = sequence_infos.get(i);
-
-			if(s.seq_type == SequenceType.FUNC) {
-				i = process_func_sig(i);
-			}
+			if(s.seq_type == SequenceType.FUNC)
+				process_func_sig(i);
 
 			update_line_number(s.str, true);
 		}
@@ -145,6 +169,10 @@ public class Info {
 		}
 		update_line_number(open_bracket_info.str, true);
 
+		// Creating a StructInfo
+		StructInfo si = new StructInfo();
+		si.name = expr_seq_info.str;
+
 		// getting all the variable declarations inside the struct
 		int i = index + 2;
 		while(true) {
@@ -179,10 +207,25 @@ public class Info {
 					exp = split_str.get(2);
 				}
 
-				// Note: Valdity of name is already check. Need to check if exp is primitve or empty and Type is available
-				// @Incomplete: ........
-				// @Incomplete: ........
-				// @Incomplete: ........
+				// Note: Valdity of name is already checked
+				// Adding the variables to struct_info
+				VariableInfo vi = new VariableInfo();
+				vi.name = name;
+				if(type.equals(""))
+					vi.type = "not_known";
+				else
+					vi.type = type;
+				if(exp.equals(""))
+					vi.raw_value = "not_known";
+				else
+					vi.raw_value = exp;
+				vi.scope = "struct";
+
+				if(!si.add(vi)) { // Variable name already in struct
+					error_log.push("Redeclaration of name '" + name + "' inside struct '" + si.name + "'.", var_decl_info.str, current_line_number);
+
+					break;
+				}
 
 				if((i + 1) < num_sequences) {
 					SequenceInfo semi_colon_info = sequence_infos.get(i + 1);
@@ -221,11 +264,9 @@ public class Info {
 			return -1;
 		}
 
-		// @Incomplete ........
-		// @Incomplete ........
-		// @Incomplete ........
+		// Adding the StructInfo si to struct_infos
+		struct_infos.add(si);
 
-		// tmp
 		return 0;
 	}
 
@@ -233,7 +274,7 @@ public class Info {
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing function signature after keyword 'func'.", "func", current_line_number);
 
-			return index + 1;
+			return -1;
 		}
 
 		SequenceInfo func_seq_info = sequence_infos.get(index + 1);
@@ -241,13 +282,13 @@ public class Info {
 
 		if(func_seq_info.seq_type != SequenceType.FUNC_NAME_ARGS) {
 			error_log.push("Invalid function signature", func_seq_info.str, current_line_number);
-			return index + 1;
+			return -1;
 		}
 
 		String msg = func_seq_info.validate_syntax(ri);
 		if(!msg.equals("none")) {
 			error_log.push(msg, func_seq_info.str, current_line_number);
-			return index + 1;
+			return -1;
 		}
 
 		List<String> split_str = func_seq_info.split_str(ri);
@@ -266,13 +307,31 @@ public class Info {
 			if(!is_valid_primitive_type) {
 				error_log.push("Could not find type '" + arg_type + "'.", func_seq_info.str, current_line_number);
 
-				return index + 1;
+				return -1;
 			}
 
 			// @Incomplete: Check if its a user defined type ??????????
 			// @Incomplete: Check if its a user defined type ??????????
 		}
 
-		return index + 1;
+		return 0;
 	}
+
+	boolean hasStructName(String name) {
+		for(StructInfo si: struct_infos)
+			if(name.equals(si.name))
+				return true;
+
+		return false;
+	}
+
+	boolean addStrucInfo(StructInfo si) {
+		boolean already_exists = hasStructName(si.name);
+		if(already_exists == true)
+			return false;
+
+		struct_infos.add(si);
+		return true;
+	}
+
 }
