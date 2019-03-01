@@ -5,7 +5,7 @@ enum SequenceType {
 	FUNC_NAME_ARGS,
 	SEMICOLON,
 	EXPRESSION,
-	VAR_DECLARE_OR_DEFINE,
+	VAR_STAT,
 	OPEN_BRACKET,
 	CLOSED_BRACKET,
 	ENUM,
@@ -36,7 +36,7 @@ public class SequenceInfo {
 			case FUNC_NAME_ARGS:
 				li = split_func_name_args();
 				break;
-			case VAR_DECLARE_OR_DEFINE:
+			case VAR_STAT:
 				li = split_var_declare_or_define(ri);
 				break;
 			default:
@@ -121,11 +121,17 @@ public class SequenceInfo {
 		switch(seq_type) {
 			case FUNC_NAME_ARGS:
 				return validate_func_declaration_syntax();
-			case VAR_DECLARE_OR_DEFINE:
+			case VAR_STAT:
 				return validate_var_decl_def(ri);
+			case EXPRESSION:
+				return validate_exp(ri);
 		}
 
 		return "none";
+	}
+
+	private String validate_exp(List<RangeIndices> ri) {
+		return Util.is_valid_exp(str, ri);	
 	}
 
 	private String validate_var_decl_def(List<RangeIndices> ri) {
@@ -279,7 +285,7 @@ class SequenceTypeInfo {
 			else if(is_func_name_args(s))
 				type = SequenceType.FUNC_NAME_ARGS;
 			else if(if_var_declaration_or_def(s, quote_range_indices)) 
-				type = SequenceType.VAR_DECLARE_OR_DEFINE;
+				type = SequenceType.VAR_STAT;
 			else // Might be an expression ie. just type, variable_name, long expression
 				type = SequenceType.EXPRESSION;
 
@@ -313,8 +319,8 @@ class SequenceTypeInfo {
 			type_str = "STRUCT";
 		else if(type == SequenceType.ENUM)
 			type_str = "ENUM";
-		else if(type == SequenceType.VAR_DECLARE_OR_DEFINE)
-			type_str = "VAR_DECLARE_OR_DEFINE";
+		else if(type == SequenceType.VAR_STAT)
+			type_str = "VAR_STAT";
 		else if(type == SequenceType.FUNC_NAME_ARGS)
 			type_str = "FUNC_NAME_ARGS";
 		else if(type == SequenceType.EXPRESSION)

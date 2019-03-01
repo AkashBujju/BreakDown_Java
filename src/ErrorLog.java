@@ -15,7 +15,6 @@ public class ErrorLog {
 
 	void show() {
 		int error_number = 0;
-
 		System.out.println();
 		System.out.println(log.size() + " ERRORS found ....");
 		System.out.println("-----------------------------");

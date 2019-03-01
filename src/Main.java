@@ -18,15 +18,18 @@ public class Main {
 		init_ops();
 
 		try {
-			my_file = new MyFile(filename);
-			data = my_file.get_data();
+			my_file = new MyFile();
+			data = my_file.get_data(filename, quotes_range_indices, false);
+			quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
 
+			data = my_file.get_data(filename, quotes_range_indices, true);
 			String eaten_string = Util.eat_spaces(data.toString());
 			data = new StringBuffer(eaten_string);
-
 			quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
+
 			System.out.println("data: " + data);
 			System.out.println("Size: " + data.length());
+			System.out.println("Lines: " + my_file.line_number);
 			System.out.println("----------------------------------------------");
 			System.out.println();
 
@@ -39,14 +42,21 @@ public class Main {
 				sq_info.add(info);
 			}
 
-			/*
-			for(SequenceInfo sq: sq_info) {
-				System.out.println(sq.str + " @@@@@@  " + SequenceTypeInfo.get_in_str(sq.seq_type));
-			}
-			*/
+			System.out.println("Num Sequences: "+ sq_info.size());
+			System.out.println();
 
-			Info info = new Info(sq_info, my_file, quotes_range_indices);
-			info.process();
+			for(SequenceInfo sq: sq_info) {
+				System.out.println("<" + sq.str + "> -------->  " + SequenceTypeInfo.get_in_str(sq.seq_type));
+			}
+
+			ErrorLog error_log = SyntaxChecker.validate_syntax(sq_info, my_file, quotes_range_indices);
+			if(error_log.log.size() > 0) {
+				error_log.show();
+				return;
+			}
+
+			System.out.println();
+			System.out.println("No syntax errors.");
 		}
 		catch (Exception e) {
 			System.out.println("Exception caught in class Main: ");
@@ -65,6 +75,7 @@ public class Main {
 
 		split_sequences.add(";"); split_sequences.add("{");
 		split_sequences.add("}");
+		split_sequences.add("#");
 		for(int i = 0; i < keywords.size(); ++i)
 			split_sequences.add(keywords.get(i));
 

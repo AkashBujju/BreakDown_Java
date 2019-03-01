@@ -15,11 +15,15 @@ public class Util {
 	// @Redundant: Can be made into a single method
 	static String eat_spaces(String str) {
 		String tmp = "";
+
 		int quotes_count = 0;
 		for(int i = 0; i < str.length(); i++) {
 			char c = str.charAt(i);
-			if(c == '\"')
-				quotes_count += 1;
+			if(c == '\"') {
+				if(i == 0 || (str.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
+			}
 
 			if(quotes_count % 2 != 0)
 				tmp += c;
@@ -31,14 +35,17 @@ public class Util {
 	}
 
 	// @Redundant: Can be made into a single method
-	static String eat_only_spaces(String str)  {
+	static String eat_only_spaces(String str) {
 		String tmp = "";
 
 		int quotes_count = 0;
 		for(int i = 0; i < str.length(); i++) {
 			char c = str.charAt(i);
-			if(c == '\"')
-				quotes_count += 1;
+			if(c == '\"') {
+				if(i == 0 || (str.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
+			}
 
 			if(quotes_count % 2 != 0)
 				tmp += c;
@@ -416,7 +423,7 @@ public class Util {
 	static String is_valid_exp(String s, List<RangeIndices> ri) {
 		int quotes_count = get_num_quotes(s);
 		if(quotes_count % 2 != 0)
-			return "Number of open quotes not matching with the number of closing quotes.";
+			return "Number of open quotes not matching with the number of closing quotes in the expression.";
 
 		int open_paren_count = 0;
 		int close_paren_count = 0;

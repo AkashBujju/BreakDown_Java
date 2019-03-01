@@ -14,21 +14,37 @@ class LineInfo {
 class MyFile {
 	private String filename;
 	private List<LineInfo> line_info = new ArrayList<>();
+	int line_number = 0;
 	StringBuffer data;
 
-	MyFile(String filename) throws FileNotFoundException {
+	StringBuffer get_data(String filename, List<RangeIndices> ri, boolean ignore_comments) throws FileNotFoundException {
 		this.filename = filename;
+		line_info.clear();
 		data = new StringBuffer();
 
 		// Storing the beginning and ending index of each line, ignoring the new_line character
 		try (Scanner s = new Scanner(new BufferedReader(new FileReader(filename)))) {
 			int current_begin_index = 0;
-			int line_number = 0;
+			line_number = 0;
 
 			while (s.hasNextLine()) {
 				line_number += 1;
 				String current_line = s.nextLine();
 				current_line = Util.eat_only_spaces(current_line);
+
+				if(ignore_comments) {
+					for(int i = 0; i < current_line.length(); ++i) {
+						char c = current_line.charAt(i);
+						if(c == '#') {
+							boolean is_inside_quotes = Util.is_index_inside_quotes(data.length() + i, ri);
+							if(!is_inside_quotes) {
+								current_line = current_line.substring(0, i);
+								break;
+							}
+						}
+					}
+				}
+
 				data.append(current_line);
 
 				int end_index = 0;
@@ -47,6 +63,8 @@ class MyFile {
 				current_begin_index = end_index + 1;
 			}
 		}
+
+		return data;
 	}
 
 	int get_line_number(int index) {
@@ -56,17 +74,5 @@ class MyFile {
 		}
 
 		return -1;
-	}
-
-	StringBuffer get_data() throws FileNotFoundException {
-		StringBuffer data = new StringBuffer();
-
-		try (Scanner s = new Scanner(new BufferedReader(new FileReader(filename)))) {
-			while (s.hasNextLine()) {
-				data.append(s.nextLine());
-			}
-		}
-
-		return data;
 	}
 }
