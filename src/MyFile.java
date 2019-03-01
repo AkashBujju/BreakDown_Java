@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.HashMap;
 
 class LineInfo {
 	int line_number = -1;
@@ -48,23 +49,34 @@ class MyFile {
 				data.append(current_line);
 
 				int end_index = 0;
-				if(current_line.equals(""))
-					end_index = current_line.length() + current_begin_index;
-				else
-					end_index = current_line.length() + current_begin_index - 1;
+				end_index = current_line.length() + current_begin_index - 1;
 
-				LineInfo tmp_line_info = new LineInfo();
-				tmp_line_info.line_number = line_number;
-				tmp_line_info.start_index = current_begin_index;
-				tmp_line_info.end_index = end_index;
+				if(!current_line.equals("")) {
+					LineInfo tmp_line_info = new LineInfo();
+					tmp_line_info.line_number = line_number;
+					tmp_line_info.start_index = current_begin_index;
+					tmp_line_info.end_index = end_index;
 
-				line_info.add(tmp_line_info);
+					line_info.add(tmp_line_info);
+				}
 
 				current_begin_index = end_index + 1;
 			}
 		}
 
 		return data;
+	}
+
+	HashMap<Integer, Integer> get_index_map(List<SequenceInfo> li) {
+		HashMap<Integer, Integer> hm = new HashMap<>();
+		int current_char_index = 0;
+
+		for(SequenceInfo si: li) {
+			hm.put(si.id, get_line_number(current_char_index));
+			current_char_index += si.str.length();
+		}
+
+		return hm;
 	}
 
 	int get_line_number(int index) {

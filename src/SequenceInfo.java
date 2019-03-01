@@ -21,12 +21,12 @@ enum SequenceType {
 public class SequenceInfo {
 	SequenceType seq_type;
 	String str;
-	boolean visited;
+	int id;
 
-	SequenceInfo(SequenceType seq_type, String str) {
+	SequenceInfo(SequenceType seq_type, String str, int id) {
 		this.seq_type = seq_type;
 		this.str = str;
-		visited = false;
+		this.id = id;
 	}
 
 	List<String> split_str(List<RangeIndices> ri) {

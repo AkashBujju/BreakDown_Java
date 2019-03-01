@@ -6,5 +6,6 @@ Foo::struct
 
 func main(argc: int) -> int {
 	a := arr[10];
-	if a ;
+	if  a {
+	}
 }

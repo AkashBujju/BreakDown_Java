@@ -1,5 +1,8 @@
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Iterator;
 
 public class Main {
 		static List<String> keywords = new ArrayList<>(); 
@@ -38,9 +41,11 @@ public class Main {
 
 			List<SequenceInfo> sq_info = new ArrayList<>();
 			for(int i = 0; i < tokens.size(); ++i) {
-				SequenceInfo info = new SequenceInfo(st_li.get(i), tokens.get(i));
+				SequenceInfo info = new SequenceInfo(st_li.get(i), tokens.get(i), i);
 				sq_info.add(info);
 			}
+
+			HashMap<Integer, Integer> id_number = my_file.get_index_map(sq_info);
 
 			System.out.println("Num Sequences: "+ sq_info.size());
 			System.out.println();
@@ -49,7 +54,7 @@ public class Main {
 				System.out.println("<" + sq.str + "> -------->  " + SequenceTypeInfo.get_in_str(sq.seq_type));
 			}
 
-			ErrorLog error_log = SyntaxChecker.validate_syntax(sq_info, my_file, quotes_range_indices);
+			ErrorLog error_log = SyntaxChecker.validate_syntax(sq_info, my_file, quotes_range_indices, id_number);
 			if(error_log.log.size() > 0) {
 				error_log.show();
 				return;
