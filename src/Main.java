@@ -45,6 +45,7 @@ public class Main {
 				sq_info.add(info);
 			}
 
+			SequenceInfo[] sq_arr = (sq_info.toArray(new SequenceInfo[0]));
 			HashMap<Integer, Integer> id_number = my_file.get_index_map(sq_info);
 
 			System.out.println("Num Sequences: "+ sq_info.size());
@@ -54,7 +55,8 @@ public class Main {
 				System.out.println("<" + sq.str + "> -------->  " + SequenceTypeInfo.get_in_str(sq.seq_type));
 			}
 
-			ErrorLog error_log = SyntaxChecker.validate_syntax(sq_info, my_file, quotes_range_indices, id_number);
+			SyntaxChecker sc = new SyntaxChecker(sq_arr, my_file, quotes_range_indices, id_number);
+			ErrorLog error_log = sc.validate_syntax();
 			if(error_log.log.size() > 0) {
 				error_log.show();
 				return;

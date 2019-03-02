@@ -6,6 +6,19 @@ Foo::struct
 
 func main(argc: int) -> int {
 	a := arr[10];
-	if  a {
+	while a == true {
+		if a == 10 {
+			while b {
+
+			}
+		}
+	}
+		
+	if a == 2 {
+		if b {
+			if a {
+				b := 10;
+			}
+		}
 	}
 }

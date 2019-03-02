@@ -16,33 +16,43 @@ import java.util.Iterator;
 */
 
 public class SyntaxChecker {
-	private static int num_sequences;
-	private static HashMap<Integer, Boolean> visited_ids;
-	private static ErrorLog error_log;
+	private int num_sequences;
+	private HashMap<Integer, Boolean> visited_ids;
+	private HashMap<Integer, Integer> id_line;
+	private List<RangeIndices> ri;
+	private SequenceInfo[] sequence_infos;
+	private MyFile file;
+	private ErrorLog error_log;
 
-	static ErrorLog validate_syntax(List<SequenceInfo> sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line) {
+	SyntaxChecker(SequenceInfo[] sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line) {
+		this.sequence_infos = sequence_infos;
+		this.id_line = id_line;
+		this.file = file;
+		this.ri = ri;
+
+		num_sequences = sequence_infos.length;
 		error_log = new ErrorLog();
-		num_sequences = sequence_infos.size();
 		visited_ids = new HashMap<>();
+	}
 
+	ErrorLog validate_syntax() {
 		for(int i = 0; i < num_sequences; ++i)
 			visited_ids.put(i, false);
 
-		// structs
 		for(int i = 0; i < num_sequences; ++i) {
-			SequenceInfo s = sequence_infos.get(i);
+			SequenceInfo s = sequence_infos[i];
 			visited_ids.put(s.id, true);
 			int res = -2;
 
 			switch(s.seq_type) {
 				case STRUCT:
-					res = validate_struct(i, sequence_infos, ri, file, id_line);
+					res = validate_struct(i);
 					break;
 				case FUNC:
-					res = validate_func(i, sequence_infos, ri, file, id_line);
+					res = validate_func(i);
 					break;
 				case VAR_STAT:
-					// global variables....
+					res = validate_var_stat(i);
 					break;
 			}
 
@@ -53,17 +63,23 @@ public class SyntaxChecker {
 			}
 		}
 
+		Iterator it = visited_ids.keySet().iterator();
+		while(it.hasNext()) {
+			Integer i = (Integer)(it.next());
+			System.out.println("id: " + i + ", vtd: " + visited_ids.get(i));
+		}
+
 		return error_log;
 	}
 
-	private static int validate_struct(int index, List<SequenceInfo> sequence_infos, List<RangeIndices> ri, MyFile file, HashMap<Integer, Integer> id_line) {
-		SequenceInfo struct_info = sequence_infos.get(index);
+	private int validate_struct(int index) {
+		SequenceInfo struct_info = sequence_infos[index];
 		if((index - 1) < 0) {
 			error_log.push("Missing name for struct", "::struct", id_line.get(struct_info.id));
 			return -1;
 		}
 
-		SequenceInfo expr_seq_info = sequence_infos.get(index - 1);
+		SequenceInfo expr_seq_info = sequence_infos[index - 1];
 		visited_ids.put(expr_seq_info.id, true);
 		if(expr_seq_info.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("Needed a 'name' before struct but found invalid string", expr_seq_info.str, id_line.get(expr_seq_info.id));
@@ -81,7 +97,7 @@ public class SyntaxChecker {
 			return -1;
 		}
 
-		SequenceInfo open_bracket_info = sequence_infos.get(index + 1);
+		SequenceInfo open_bracket_info = sequence_infos[index + 1];
 		visited_ids.put(open_bracket_info.id, true);
 		if(open_bracket_info.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("'{' is missing after '" + expr_seq_info.str + "::struct", expr_seq_info.str + "::struct", id_line.get(open_bracket_info.id));
@@ -95,7 +111,7 @@ public class SyntaxChecker {
 			if(i >= num_sequences)
 				break;
 
-			SequenceInfo var_decl_info = sequence_infos.get(i);
+			SequenceInfo var_decl_info = sequence_infos[i];
 			visited_ids.put(var_decl_info.id, true);
 			if(var_decl_info.seq_type == SequenceType.VAR_STAT) {
 				String msg = var_decl_info.validate_syntax(ri);
@@ -124,7 +140,7 @@ public class SyntaxChecker {
 				}
 
 				if((i + 1) < num_sequences) {
-					SequenceInfo semi_colon_info = sequence_infos.get(i + 1);
+					SequenceInfo semi_colon_info = sequence_infos[i + 1];
 					visited_ids.put(semi_colon_info.id, true);
 
 					if(semi_colon_info.seq_type != SequenceType.SEMICOLON) {
@@ -149,7 +165,7 @@ public class SyntaxChecker {
 		}
 
 		if(i < num_sequences) {
-			SequenceInfo close_bracket_info = sequence_infos.get(i);
+			SequenceInfo close_bracket_info = sequence_infos[i];
 			if(close_bracket_info.seq_type != SequenceType.CLOSED_BRACKET) {
 				error_log.push("Needed a '}' after the definition of struct '" + expr_seq_info.str + "'.", close_bracket_info.str, id_line.get(close_bracket_info.id));
 
@@ -165,15 +181,15 @@ public class SyntaxChecker {
 		return index + (2 + num_variables * 2);
 	}
 
-	private static int validate_func(int index, List<SequenceInfo> sequence_infos, List<RangeIndices> ri, MyFile file, HashMap<Integer, Integer> id_line) {
-		SequenceInfo func_info = sequence_infos.get(index);
+	private int validate_func(int index) {
+		SequenceInfo func_info = sequence_infos[index];
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing function signature after keyword 'func'.", "func", id_line.get(func_info.id));
 
 			return -1;
 		}
 
-		SequenceInfo func_seq_info = sequence_infos.get(index + 1);
+		SequenceInfo func_seq_info = sequence_infos[index + 1];
 		visited_ids.put(func_seq_info.id, true);
 
 		if(func_seq_info.seq_type != SequenceType.FUNC_NAME_ARGS) {
@@ -203,18 +219,18 @@ public class SyntaxChecker {
 			return -1;
 		}
 
-		SequenceInfo open_brac = sequence_infos.get(index + 2);
-		visited_ids.put(open_brac.id, true);
+		SequenceInfo open_brac = sequence_infos[index + 2];
 		if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("Needed '{' after function '" + func_name + "'. but found '" + open_brac.str + "'.", func_seq_info.str, id_line.get(func_seq_info.id));
 
 			return -1;
 		}
+		visited_ids.put(open_brac.id, true);
 		
 		int i = index + 3;
 		SequenceInfo si = null;
 		for(; i < num_sequences; ++i) {
-			si = sequence_infos.get(i);
+			si = sequence_infos[i];
 			if(si.seq_type == SequenceType.CLOSED_BRACKET) {
 				boolean vtd = visited_ids.get(si.id);
 				if(vtd)
@@ -223,26 +239,29 @@ public class SyntaxChecker {
 					break;
 			}
 
-			if(si.seq_type == SequenceType.VAR_STAT) {
-				int res = validate_var_stat(i, sequence_infos, ri, file, id_line);
-				if(res == -1)
-					return -1;
-				
-				i = res;
+			else if(si.seq_type == SequenceType.WHILE) {
+				i = validate_while(i);
+			}
+			else if(si.seq_type == SequenceType.VAR_STAT) {
+				i = validate_var_stat(i);
 			}
 			else if(si.seq_type == SequenceType.IF) {
-				int res = validate_ifs(i, sequence_infos, ri, file, id_line);
-				if(res == -1)
-					return -1;
-
-				i = res;
+				i = validate_ifs(i);
 			}
+			else {
+				error_log.push("Invalid statement '" + si.str + "' found", si.str, id_line.get(si.id));
+
+				return -1;
+			}
+
+			if(i == -1)
+				return -1;
 
 			visited_ids.put(si.id, true);
 		}
 
 		if(i >= num_sequences) {
-			error_log.push("Missing '}' at line '" + id_line.get(si.id) + ".'", func_seq_info.str, id_line.get(si.id));
+			error_log.push("Missing '}' at line '" + id_line.get(si.id) + ".'", si.str, id_line.get(si.id));
 
 			return -1;
 		}
@@ -250,8 +269,8 @@ public class SyntaxChecker {
 		return index + 1; // tmp;
 	}
 
-	private static int validate_ifs(int index, List<SequenceInfo> sequence_infos, List<RangeIndices> ri, MyFile file, HashMap<Integer, Integer> id_line) {
-		SequenceInfo if_info = sequence_infos.get(index);
+	private int validate_ifs(int index) {
+		SequenceInfo if_info = sequence_infos[index];
 		visited_ids.put(if_info.id, true);
 		
 		if(index + 1 >= num_sequences) {
@@ -261,7 +280,7 @@ public class SyntaxChecker {
 		}
 
 		// @Note: An if condition cannot be an expression for another if.
-		SequenceInfo exp_info = sequence_infos.get(index + 1);
+		SequenceInfo exp_info = sequence_infos[index + 1];
 		if(exp_info.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("Needed an expression after 'if' but found '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
 
@@ -276,7 +295,7 @@ public class SyntaxChecker {
 			return -1;
 		}
 
-		SequenceInfo open_brac = sequence_infos.get(index + 2);
+		SequenceInfo open_brac = sequence_infos[index + 2];
 		if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("Needed a '{' after expression in 'if' but found '" + open_brac.str + "'.", open_brac.str, id_line.get(open_brac.id));
 
@@ -284,22 +303,120 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(open_brac.id, true);
 
-		for(int i = index + 3; i < num_sequences; ++i) {
-			SequenceInfo si = sequence_infos.get(i);
-			if(si.seq_type == SequenceType.CLOSED_BRACKET) {
+		SequenceInfo si = null;
+		int i = index + 3;
+		for(; i < num_sequences; ++i) {
+			si = sequence_infos[i];
+			if(si.seq_type == SequenceType.IF) {
+				 i = validate_ifs(i);
+			}
+			else if(si.seq_type == SequenceType.WHILE) {
+				i = validate_while(i);
+			}
+			else if(si.seq_type == SequenceType.VAR_STAT) {
+				i = validate_var_stat(i);
+			}
+			else if(si.seq_type == SequenceType.CLOSED_BRACKET) {
 				boolean vtd = visited_ids.get(si.id);
 				if(!vtd) {
 					visited_ids.put(si.id, true);
 					break;
 				}
 			}
+			else {
+				error_log.push("Invalid Statement '" + si.str + "' found.", si.str, id_line.get(si.id));
+
+				return -1;
+			}
+
+			if(i == -1)
+				return -1;
+
+			visited_ids.put(si.id, true);
 		}
 
-		return index + 3;
+		if(i >= num_sequences) {
+			error_log.push("'if' is missing '}'.", si.str, id_line.get(si.id));
+			return -1;
+		}
+
+		return i;
 	}
 
-	private static int validate_var_stat(int index, List<SequenceInfo> sequence_infos, List<RangeIndices> ri, MyFile file, HashMap<Integer, Integer> id_line) {
-		SequenceInfo si = sequence_infos.get(index);
+	private int validate_while(int index) {
+		SequenceInfo while_info = sequence_infos[index];
+		visited_ids.put(while_info.id, true);
+
+		if((index + 1) >= num_sequences) {
+			error_log.push("Missing expression after '" + while_info.str + "'", while_info.str, id_line.get(while_info.id));
+
+			return -1;
+		}
+
+		SequenceInfo exp_info = sequence_infos[index + 1];
+		if(exp_info.seq_type != SequenceType.EXPRESSION) {
+			error_log.push("Needed expression after 'while' but found '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
+
+			return -1;
+		}
+		visited_ids.put(exp_info.id, true);
+
+		if((index + 2) >= num_sequences) {
+			error_log.push("Missing '{' after 'while'", exp_info.str, id_line.get(exp_info.id));
+
+			return -1;
+		}
+
+		SequenceInfo open_brac_info = sequence_infos[index + 2];
+		if(open_brac_info.seq_type != SequenceType.OPEN_BRACKET) {
+			error_log.push("Needed '{' after 'while' but found '" + open_brac_info.str + "'.", open_brac_info.str, id_line.get(open_brac_info.id));
+
+			return -1;
+		}
+		visited_ids.put(open_brac_info.id, true);
+
+		int i = index + 3;
+		SequenceInfo si = null;
+		for(; i < num_sequences; ++i) {
+			si = sequence_infos[i];
+			if(si.seq_type == SequenceType.WHILE) {
+				i = validate_while(i);
+			}
+			else if(si.seq_type == SequenceType.IF) {
+				 i = validate_ifs(i);
+			}
+			else if(si.seq_type == SequenceType.VAR_STAT) {
+				i = validate_var_stat(i);
+			}
+			else if(si.seq_type == SequenceType.CLOSED_BRACKET) {
+				boolean vtd = visited_ids.get(si.id);
+				if(!vtd) {
+					visited_ids.put(si.id, true);
+					break;
+				}
+			}
+			else {
+				error_log.push("Invalid Statement '" + si.str + "' found.", si.str, id_line.get(si.id));
+
+				return -1;
+			}
+
+			if(i == -1)
+				return -1;
+
+			visited_ids.put(si.id, true);
+		}
+
+		if(i >= num_sequences) {
+			error_log.push("'if' is missing '}'.", si.str, id_line.get(si.id));
+			return -1;
+		}
+		
+		return i;
+	}
+
+	private int validate_var_stat(int index) {
+		SequenceInfo si = sequence_infos[index];
 		visited_ids.put(si.id, true);
 
 		if((index + 1) >= num_sequences) {
@@ -314,11 +431,11 @@ public class SyntaxChecker {
 			return -1;	
 		}
 
-		SequenceInfo si_2 = sequence_infos.get(index + 1);
+		SequenceInfo si_2 = sequence_infos[index + 1];
 		visited_ids.put(si_2.id, true);
 		if(si_2.seq_type != SequenceType.SEMICOLON) {
 			error_log.push("Needed ';' after '" + si.str + "' but found '" + 
-					si_2.str + ".", si_2.str, id_line.get(si_2.id));
+					si_2.str + "'.", si_2.str, id_line.get(si_2.id));
 		}
 		
 		return index + 1;
