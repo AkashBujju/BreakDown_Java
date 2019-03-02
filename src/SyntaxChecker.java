@@ -58,6 +58,8 @@ public class SyntaxChecker {
 				case USE:
 					res = validate_use(i);
 					break;
+				case ENUM:
+					res = validate_enum(i);
 			}
 
 			if(res == -1)
@@ -249,7 +251,6 @@ public class SyntaxChecker {
 					visited_ids.put(si.id, true);
 					break;
 			}
-
 			else if(si.seq_type == SequenceType.WHILE) {
 				i = validate_while(i);
 			}
@@ -546,5 +547,84 @@ public class SyntaxChecker {
 		visited_ids.put(semicolon_info.id, true);
 		
 		return index + 2;
+	}
+
+	private int validate_enum(int index) {
+		SequenceInfo enum_seq = sequence_infos[index];
+		visited_ids.put(enum_seq.id, true);
+
+		if(index - 1 < 0) {
+			error_log.push("Enum missing 'name' before '::enum'.", enum_seq.str,id_line.get(enum_seq.id));
+
+			return -1;
+		}
+
+		SequenceInfo enum_name_seq = sequence_infos[index - 1];
+		if(enum_name_seq.seq_type != SequenceType.EXPRESSION) {
+			error_log.push("'" + enum_name_seq.str + "' cannot be a name of an 'enum'.", enum_name_seq.str, id_line.get(enum_name_seq.id));
+
+			return -1;
+		}
+
+		if(!Util.is_valid_name(enum_name_seq.str)) {
+			error_log.push("'" + enum_name_seq.str + "' is not a valid name for an 'enum'.", enum_name_seq.str, id_line.get(enum_name_seq.id));
+
+			return -1;
+		}
+		visited_ids.put(enum_name_seq.id, true);
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Missing '{' after '::enum'", enum_seq.str, id_line.get(enum_seq.id));
+
+			return -1;
+		}
+
+		SequenceInfo open_brac = sequence_infos[index + 1];
+		if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
+			error_log.push("Needed '{' after '::enum' but found '" + open_brac.str + "'.", open_brac.str, id_line.get(open_brac.id));
+
+			return -1;
+		}
+		visited_ids.put(open_brac.id, true);
+
+		if(index + 2 >= num_sequences) {
+			error_log.push("Needed enum constants inside enum '" + enum_name_seq.str + "'.", enum_name_seq.str + "::enum", id_line.get(enum_seq.id));
+
+			return -1;
+		}
+
+		SequenceInfo value_seq = sequence_infos[index + 2];
+		if(value_seq.seq_type != SequenceType.EXPRESSION) {
+			error_log.push("Invalid constants found inside enum '" + enum_name_seq.str + "'.", value_seq.str, id_line.get(value_seq.id));
+
+			return -1;
+		}
+
+		String value = value_seq.str;
+		List<String> split_value = Util.my_split(value, ',');
+		for(String s: split_value) {
+			if(!Util.is_all_caps(s)) {
+				error_log.push("'" + s + "' is not a valid enum constant name(Only A to Z is valid).", s, id_line.get(value_seq.id));
+
+				return -1;
+			}
+		}
+		visited_ids.put(value_seq.id, true);
+
+		if(index + 3 >= num_sequences) {
+			error_log.push("Needed '}' after definition of enum '" + enum_name_seq.str + "'.", enum_name_seq.str, id_line.get(value_seq.id));
+
+			return -1;
+		}
+
+		SequenceInfo close_brac = sequence_infos[index + 3];
+		if(close_brac.seq_type != SequenceType.CLOSED_BRACKET) {
+			error_log.push("Needed '}' after definition of enum '" + enum_name_seq.str + "' but found '" + close_brac.str + "'.", close_brac.str, id_line.get(close_brac.id));
+
+			return -1;
+		}
+		visited_ids.put(close_brac.id, true);
+		
+		return index + 3;
 	}
 }

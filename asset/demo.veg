@@ -4,6 +4,10 @@ Foo::struct
 	a := 3.14;#Comment
 }
 
+Color::enum {
+	RED, BLUE
+}
+
 use "daksl";
 
 func main(argc: int) -> int {

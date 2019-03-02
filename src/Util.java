@@ -377,6 +377,16 @@ public class Util {
 		return si;
 	}
 
+	static boolean is_all_caps(String str) {
+		for(int i = 0; i < str.length(); ++i) {
+			char c = str.charAt(i);
+			if(c < 'A' || c > 'Z')
+				return false;
+		}
+
+		return true;
+	}
+
 	static List<String> my_split(String str, char ch) {
 		List<String> li = new ArrayList<>();
 		int index_of_prev_ch = 0;
@@ -391,16 +401,11 @@ public class Util {
 				String s = str.substring(index_of_prev_ch, i);
 				li.add(s);
 
-				index_of_prev_ch = i;
+				index_of_prev_ch = i + 1;
 			}
 		}
 
-		String s;
-		if(li.size() == 0)
-			s = str.substring(index_of_prev_ch);
-		else
-			s = str.substring(index_of_prev_ch + 1);
-
+		String s = str.substring(index_of_prev_ch);
 		li.add(s);
 
 		return li;
