@@ -4,13 +4,13 @@ Foo::struct
 	a := 3.14;#Comment
 }
 
+use "daksl";
+
 func main(argc: int) -> int {
 	a := arr[10];
 	while a == true {
-		if a == 10 {
-			while b {
-
-			}
+		if true {
+			break;
 		}
 	}
 		

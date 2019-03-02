@@ -15,6 +15,9 @@ enum SequenceType {
 	WHILE,
 	FUNC,
 	RETURN,
+	BREAK,
+	CONTINUE,
+	USE,
 	NOT_KNOWN
 }
 
@@ -282,6 +285,12 @@ class SequenceTypeInfo {
 				type = SequenceType.CLOSED_BRACKET;
 			else if(s.equals("return"))
 				type = SequenceType.RETURN;
+			else if(s.equals("break"))
+				type = SequenceType.BREAK;
+			else if(s.equals("continue"))
+				type = SequenceType.CONTINUE;
+			else if(s.equals("use"))
+				type = SequenceType.USE;
 			else if(is_func_name_args(s))
 				type = SequenceType.FUNC_NAME_ARGS;
 			else if(if_var_declaration_or_def(s, quote_range_indices)) 
@@ -327,6 +336,12 @@ class SequenceTypeInfo {
 			type_str = "EXPRESSION";
 		else if(type == SequenceType.RETURN)
 			type_str = "RETURN";
+		else if(type == SequenceType.BREAK)
+			type_str = "BREAK";
+		else if(type == SequenceType.CONTINUE)
+			type_str = "CONTINUE";
+		else if(type == SequenceType.USE)
+			type_str = "USE";
 
 		return type_str;
 	}

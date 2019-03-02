@@ -23,6 +23,7 @@ public class SyntaxChecker {
 	private SequenceInfo[] sequence_infos;
 	private MyFile file;
 	private ErrorLog error_log;
+	private boolean inside_while = false;
 
 	SyntaxChecker(SequenceInfo[] sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line) {
 		this.sequence_infos = sequence_infos;
@@ -41,7 +42,7 @@ public class SyntaxChecker {
 
 		for(int i = 0; i < num_sequences; ++i) {
 			SequenceInfo s = sequence_infos[i];
-			visited_ids.put(s.id, true);
+			// visited_ids.put(s.id, true);
 			int res = -2;
 
 			switch(s.seq_type) {
@@ -53,6 +54,9 @@ public class SyntaxChecker {
 					break;
 				case VAR_STAT:
 					res = validate_var_stat(i);
+					break;
+				case USE:
+					res = validate_use(i);
 					break;
 			}
 
@@ -66,7 +70,11 @@ public class SyntaxChecker {
 		Iterator it = visited_ids.keySet().iterator();
 		while(it.hasNext()) {
 			Integer i = (Integer)(it.next());
-			System.out.println("id: " + i + ", vtd: " + visited_ids.get(i));
+			boolean vtd = visited_ids.get(i);
+			if(!vtd) {
+				SequenceInfo si = sequence_infos[i];
+				error_log.push("Invalid statement '" + si.str + "' found.", si.str, id_line.get(si.id));
+			}
 		}
 
 		return error_log;
@@ -78,6 +86,7 @@ public class SyntaxChecker {
 			error_log.push("Missing name for struct", "::struct", id_line.get(struct_info.id));
 			return -1;
 		}
+		visited_ids.put(struct_info.id, true);
 
 		SequenceInfo expr_seq_info = sequence_infos[index - 1];
 		visited_ids.put(expr_seq_info.id, true);
@@ -188,6 +197,7 @@ public class SyntaxChecker {
 
 			return -1;
 		}
+		visited_ids.put(func_info.id, true);
 
 		SequenceInfo func_seq_info = sequence_infos[index + 1];
 		visited_ids.put(func_seq_info.id, true);
@@ -236,6 +246,7 @@ public class SyntaxChecker {
 				if(vtd)
 					continue;
 				else
+					visited_ids.put(si.id, true);
 					break;
 			}
 
@@ -316,6 +327,12 @@ public class SyntaxChecker {
 			else if(si.seq_type == SequenceType.VAR_STAT) {
 				i = validate_var_stat(i);
 			}
+			else if(si.seq_type == SequenceType.BREAK && inside_while) {
+				i = validate_break(i);
+			}
+			else if(si.seq_type == SequenceType.CONTINUE && inside_while) {
+				i = validate_continue(i);
+			}
 			else if(si.seq_type == SequenceType.CLOSED_BRACKET) {
 				boolean vtd = visited_ids.get(si.id);
 				if(!vtd) {
@@ -375,6 +392,8 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(open_brac_info.id, true);
 
+		inside_while = true;
+
 		int i = index + 3;
 		SequenceInfo si = null;
 		for(; i < num_sequences; ++i) {
@@ -387,6 +406,12 @@ public class SyntaxChecker {
 			}
 			else if(si.seq_type == SequenceType.VAR_STAT) {
 				i = validate_var_stat(i);
+			}
+			else if(si.seq_type == SequenceType.BREAK) {
+				i = validate_break(i);
+			}
+			else if(si.seq_type == SequenceType.CONTINUE) {
+				i = validate_continue(i);
 			}
 			else if(si.seq_type == SequenceType.CLOSED_BRACKET) {
 				boolean vtd = visited_ids.get(si.id);
@@ -411,8 +436,48 @@ public class SyntaxChecker {
 			error_log.push("'if' is missing '}'.", si.str, id_line.get(si.id));
 			return -1;
 		}
+
+		inside_while = false;
 		
 		return i;
+	}
+
+	private int validate_break(int index) {
+		SequenceInfo si = sequence_infos[index];
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Needed ';' after 'break'", si.str, id_line.get(si.id));
+			return -1;
+		}
+		visited_ids.put(si.id, true);
+
+		SequenceInfo semi_colon_info = sequence_infos[index + 1];
+		if(semi_colon_info.seq_type != SequenceType.SEMICOLON) {
+			error_log.push("Needed ';' after 'break' but found '" + semi_colon_info.str + "'.", semi_colon_info.str, id_line.get(semi_colon_info.id));
+			return -1;
+		}
+		visited_ids.put(semi_colon_info.id, true);
+
+		return index + 1;
+	}
+
+	private int validate_continue(int index) {
+		SequenceInfo si = sequence_infos[index];
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Needed ';' after 'continue'", si.str, id_line.get(si.id));
+			return -1;
+		}
+		visited_ids.put(si.id, true);
+
+		SequenceInfo semi_colon_info = sequence_infos[index + 1];
+		if(semi_colon_info.seq_type != SequenceType.SEMICOLON) {
+			error_log.push("Needed ';' after 'continue' but found '" + semi_colon_info.str + "'.", semi_colon_info.str, id_line.get(semi_colon_info.id));
+			return -1;
+		}
+		visited_ids.put(semi_colon_info.id, true);
+
+		return index + 1;
 	}
 
 	private int validate_var_stat(int index) {
@@ -439,5 +504,47 @@ public class SyntaxChecker {
 		}
 		
 		return index + 1;
+	}
+
+	private int validate_use(int index) {
+		SequenceInfo use_info = sequence_infos[index];
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Missing \"filename\" after 'use'.", use_info.str, id_line.get(use_info.id));
+
+			return -1;
+		}
+		visited_ids.put(use_info.id, true);
+
+		SequenceInfo filename_info = sequence_infos[index + 1];
+		if(filename_info.seq_type != SequenceType.EXPRESSION) {
+			error_log.push("Needed \"filename\" expression after 'use' but found '" + filename_info.str + "'.", filename_info.str, id_line.get(filename_info.id));
+
+			return -1;
+		}
+		
+		String filename = filename_info.str;
+		if(filename.charAt(0) != '\"' || filename.charAt(filename.length() - 1) != '\"') {
+			error_log.push("Enclose 'filename' inside double quotes.", filename_info.str, id_line.get(filename_info.id));
+
+			return -1;
+		}
+		visited_ids.put(filename_info.id, true);
+
+		if(index + 2 >= num_sequences) {
+			error_log.push("Missing ';' after '" + use_info.str + " " + filename_info.str + "'.", filename_info.str, id_line.get(filename_info.id));
+
+			return -1;
+		}
+
+		SequenceInfo semicolon_info = sequence_infos[index + 2];
+		if(semicolon_info.seq_type != SequenceType.SEMICOLON) {
+			error_log.push("Needed ';' after '" + filename_info.str + "' but found '" + semicolon_info.str + "'.", semicolon_info.str, id_line.get(semicolon_info.id));
+
+			return -1;
+		}
+		visited_ids.put(semicolon_info.id, true);
+		
+		return index + 2;
 	}
 }
