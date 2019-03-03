@@ -97,6 +97,10 @@ public class SyntaxChecker {
 			return -1;
 		}
 
+		// @Incomplete: Validate the expression.
+		// @Incomplete: Validate the expression.
+		// @Incomplete: Validate the expression.
+
 		// Checking if struct name is valid ???
 		if(!Util.is_valid_name(expr_seq_info.str)) {
 			error_log.push("Name of struct '" + expr_seq_info.str + "' is not a valid name.", expr_seq_info.str, id_line.get(expr_seq_info.id));
@@ -265,6 +269,10 @@ public class SyntaxChecker {
 				i = validate_ifs(i);
 				recv_after_if = true;
 			}
+			else if(si.seq_type == SequenceType.RETURN) {
+				i = validate_return(i);
+				recv_after_if = false;
+			}
 			else if(si.seq_type == SequenceType.ELSE) {
 				if(recv_after_if == false) {
 					error_log.push("@else if: 'else if' can only be followed after an 'if'.", si.str, id_line.get(si.id));
@@ -286,7 +294,7 @@ public class SyntaxChecker {
 		}
 
 		if(i >= num_sequences) {
-			error_log.push("Missing '}' at line '" + id_line.get(si.id) + ".'", si.str, id_line.get(si.id));
+			error_log.push("Missing '}' for '" + si.str + "' which is at line " + id_line.get(si.id), si.str, id_line.get(si.id));
 
 			return -1;
 		}
@@ -312,6 +320,10 @@ public class SyntaxChecker {
 			return -1;
 		}
 		visited_ids.put(exp_info.id, true);
+
+		// @Incomplete: Validate the expression.
+		// @Incomplete: Validate the expression.
+		// @Incomplete: Validate the expression.
 
 		// Checking for {
 		if(index + 2 >= num_sequences) {
@@ -346,6 +358,9 @@ public class SyntaxChecker {
 				}
 
 				i = validate_else_if(i);
+			}
+			else if(si.seq_type == SequenceType.RETURN) {
+				i = validate_return(i);
 			}
 			else if(si.seq_type == SequenceType.WHILE) {
 				i = validate_while(i);
@@ -405,6 +420,10 @@ public class SyntaxChecker {
 			return -1;
 		}
 		visited_ids.put(exp_info.id, true);
+
+		// @Incomplete: Validate the expression.
+		// @Incomplete: Validate the expression.
+		// @Incomplete: Validate the expression.
 
 		if((index + 2) >= num_sequences) {
 			error_log.push("Missing '{' after 'while'", exp_info.str, id_line.get(exp_info.id));
@@ -697,6 +716,10 @@ public class SyntaxChecker {
 			}
 			visited_ids.put(exp_info.id, true);
 
+			// @Incomplete: Validate the expression.
+			// @Incomplete: Validate the expression.
+			// @Incomplete: Validate the expression.
+
 			if(index + 3 >= num_sequences) {
 				error_log.push("Missing '{' after '" + exp_info + "' in 'else if'.", exp_info.str, id_line.get(exp_info.id));
 
@@ -728,6 +751,9 @@ public class SyntaxChecker {
 				else if(s.seq_type == SequenceType.IF) {
 					i = validate_ifs(i);
 					recv_after_if = true;
+				}
+				else if(s.seq_type == SequenceType.RETURN) {
+					i = validate_return(i);
 				}
 				else if(s.seq_type == SequenceType.WHILE) {
 					i = validate_while(i);
@@ -788,6 +814,9 @@ public class SyntaxChecker {
 					i = validate_while(i);
 					recv_after_if = false;
 				}
+				else if(s.seq_type == SequenceType.RETURN) {
+					i = validate_return(i);
+				}
 				else if(s.seq_type == SequenceType.VAR_STAT) {
 					i = validate_var_stat(i);
 					recv_after_if = false;
@@ -828,4 +857,43 @@ public class SyntaxChecker {
 
 		return return_val;
 	}
+
+	private int validate_return(int index) {
+		SequenceInfo ret_seq_info = sequence_infos[index];
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Missing 'expression' after 'return'.", ret_seq_info.str, id_line.get(ret_seq_info.id));
+
+			return -1;
+		}
+		visited_ids.put(ret_seq_info.id, true);
+
+		SequenceInfo exp_info = sequence_infos[index + 1];
+		if(exp_info.seq_type != SequenceType.EXPRESSION) {
+			error_log.push("Needed 'expression' after 'return' but found '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
+
+			return -1;
+		}
+		visited_ids.put(exp_info.id, true);
+
+		// @Incomplete: Validate the expression.
+		// @Incomplete: Validate the expression.
+		// @Incomplete: Validate the expression.
+
+		if(index + 2 >= num_sequences) {
+			error_log.push("Missing ';' after expression '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
+
+			return -1;
+		}
+
+		SequenceInfo semicolon_info = sequence_infos[index + 2];
+		if(semicolon_info.seq_type != SequenceType.SEMICOLON) {
+			error_log.push("Needed ';' after expression '" + exp_info.str + "' but found '" + semicolon_info.str + "'.", semicolon_info.str, id_line.get(semicolon_info.id));
+
+			return -1;
+		}
+		visited_ids.put(semicolon_info.id, true);
+
+		return index + 2;
 	}
+}

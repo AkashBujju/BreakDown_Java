@@ -11,39 +11,6 @@ Color::enum {
 use "daksl";
 
 func main(argc: int) -> int {
-	while true {
-		if a == true {
-		}
-		else if a {
-
-		}
-		else {
-			if true {
-			}
-			else if a {
-			}
-		}
-	}
-
-	if true {
-		if false {
-			while true {
-				if true {
-
-				}
-				else {
-
-				}
-			}
-		}
-	}
-	else {
-		if true {
-
-		}
-		else {
-
-		}
-	}
+	return add(1);
 }
 

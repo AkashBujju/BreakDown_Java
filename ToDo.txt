@@ -1,9 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-	1) Instead of updating the line number every time, map the sequence info id
-	and it's line number.
-	2) update_line_number() is not working for validate_ifs()
-	3) Validate if and while loops ...
+	1) 
 --------------------------------------------------------------
 
 --------------------------------------------------------------
