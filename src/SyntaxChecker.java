@@ -13,7 +13,7 @@ import java.util.Iterator;
 	primitive_types.add("double");
 	primitive_types.add("bool");
 	primitive_types.add("char");
-*/
+	*/
 
 public class SyntaxChecker {
 	private int num_sequences;
@@ -238,7 +238,9 @@ public class SyntaxChecker {
 			return -1;
 		}
 		visited_ids.put(open_brac.id, true);
-		
+
+		boolean recv_after_if = false;
+
 		int i = index + 3;
 		SequenceInfo si = null;
 		for(; i < num_sequences; ++i) {
@@ -249,16 +251,27 @@ public class SyntaxChecker {
 					continue;
 				else
 					visited_ids.put(si.id, true);
-					break;
+				break;
 			}
 			else if(si.seq_type == SequenceType.WHILE) {
 				i = validate_while(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.VAR_STAT) {
 				i = validate_var_stat(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.IF) {
 				i = validate_ifs(i);
+				recv_after_if = true;
+			}
+			else if(si.seq_type == SequenceType.ELSE) {
+				if(recv_after_if == false) {
+					error_log.push("@else if: 'else if' can only be followed after an 'if'.", si.str, id_line.get(si.id));
+
+					return -1;
+				}
+				i = validate_else_if(i);
 			}
 			else {
 				error_log.push("Invalid statement '" + si.str + "' found", si.str, id_line.get(si.id));
@@ -279,12 +292,12 @@ public class SyntaxChecker {
 		}
 
 		return index + 1; // tmp;
-	}
+		}
 
 	private int validate_ifs(int index) {
 		SequenceInfo if_info = sequence_infos[index];
 		visited_ids.put(if_info.id, true);
-		
+
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing expression after 'if'", "if", id_line.get(if_info.id));
 
@@ -315,18 +328,32 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(open_brac.id, true);
 
+		boolean recv_after_if = false;
+
 		SequenceInfo si = null;
 		int i = index + 3;
 		for(; i < num_sequences; ++i) {
 			si = sequence_infos[i];
 			if(si.seq_type == SequenceType.IF) {
-				 i = validate_ifs(i);
+				i = validate_ifs(i);
+				recv_after_if = true;
+			}
+			else if(si.seq_type == SequenceType.ELSE) {
+				if(recv_after_if == false) {
+					error_log.push("'else' or 'else if' can only be followed after an 'if'.", si.str, id_line.get(si.id));
+
+					return -1;
+				}
+
+				i = validate_else_if(i);
 			}
 			else if(si.seq_type == SequenceType.WHILE) {
 				i = validate_while(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.VAR_STAT) {
 				i = validate_var_stat(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.BREAK && inside_while) {
 				i = validate_break(i);
@@ -359,7 +386,7 @@ public class SyntaxChecker {
 		}
 
 		return i;
-	}
+		}
 
 	private int validate_while(int index) {
 		SequenceInfo while_info = sequence_infos[index];
@@ -394,6 +421,7 @@ public class SyntaxChecker {
 		visited_ids.put(open_brac_info.id, true);
 
 		inside_while = true;
+		boolean recv_after_if = false;
 
 		int i = index + 3;
 		SequenceInfo si = null;
@@ -401,12 +429,24 @@ public class SyntaxChecker {
 			si = sequence_infos[i];
 			if(si.seq_type == SequenceType.WHILE) {
 				i = validate_while(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.IF) {
-				 i = validate_ifs(i);
+				i = validate_ifs(i);
+				recv_after_if = true;
+			}
+			else if(si.seq_type == SequenceType.ELSE) {
+				if(recv_after_if == false) {
+					error_log.push("@while: 'else' or 'else if' can only be followed after an 'if'.", si.str, id_line.get(si.id));
+
+					return -1;
+				}
+
+				i = validate_else_if(i);
 			}
 			else if(si.seq_type == SequenceType.VAR_STAT) {
 				i = validate_var_stat(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.BREAK) {
 				i = validate_break(i);
@@ -439,7 +479,7 @@ public class SyntaxChecker {
 		}
 
 		inside_while = false;
-		
+
 		return i;
 	}
 
@@ -503,7 +543,7 @@ public class SyntaxChecker {
 			error_log.push("Needed ';' after '" + si.str + "' but found '" + 
 					si_2.str + "'.", si_2.str, id_line.get(si_2.id));
 		}
-		
+
 		return index + 1;
 	}
 
@@ -523,7 +563,7 @@ public class SyntaxChecker {
 
 			return -1;
 		}
-		
+
 		String filename = filename_info.str;
 		if(filename.charAt(0) != '\"' || filename.charAt(filename.length() - 1) != '\"') {
 			error_log.push("Enclose 'filename' inside double quotes.", filename_info.str, id_line.get(filename_info.id));
@@ -545,7 +585,7 @@ public class SyntaxChecker {
 			return -1;
 		}
 		visited_ids.put(semicolon_info.id, true);
-		
+
 		return index + 2;
 	}
 
@@ -624,7 +664,168 @@ public class SyntaxChecker {
 			return -1;
 		}
 		visited_ids.put(close_brac.id, true);
-		
+
 		return index + 3;
 	}
-}
+
+	private int validate_else_if(int index) {
+		SequenceInfo else_seq = sequence_infos[index];
+		int return_val = -1;
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Missing '{' after 'else'.", else_seq.str, id_line.get(else_seq.id));
+
+			return -1;
+		}
+		visited_ids.put(else_seq.id, true);
+
+		SequenceInfo si_info = sequence_infos[index + 1];
+		visited_ids.put(si_info.id, true);
+		if(si_info.seq_type == SequenceType.IF) {
+
+			if(index + 2 >= num_sequences) {
+				error_log.push("Missing 'expression' after 'else if'.", "else if", id_line.get(si_info.id));
+
+				return -1;
+			}
+
+			SequenceInfo exp_info = sequence_infos[index + 2];
+			if(exp_info.seq_type != SequenceType.EXPRESSION) {
+				error_log.push("Needed 'expression' after 'else if' but found '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
+
+				return -1;
+			}
+			visited_ids.put(exp_info.id, true);
+
+			if(index + 3 >= num_sequences) {
+				error_log.push("Missing '{' after '" + exp_info + "' in 'else if'.", exp_info.str, id_line.get(exp_info.id));
+
+				return -1;
+			}
+
+			SequenceInfo open_brac = sequence_infos[index + 3];
+			if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
+				error_log.push("Needed '{' after 'else if' expression but found '" + open_brac.str + "'.", open_brac.str, id_line.get(open_brac.id));
+
+				return -1;
+			}
+			visited_ids.put(open_brac.id, true);
+
+			boolean recv_after_if = false;
+
+			int i = index + 4;
+			SequenceInfo s = null;
+			for(; i <= num_sequences; ++i) {
+				s = sequence_infos[i];
+				if(s.seq_type == SequenceType.ELSE) {
+					if(recv_after_if == false) {
+						error_log.push("@else: 'else' or 'else if' can only be followed after an 'if'.", s.str, id_line.get(s.id));
+						return -1;
+					}
+
+					i = validate_else_if(i);
+				}
+				else if(s.seq_type == SequenceType.IF) {
+					i = validate_ifs(i);
+					recv_after_if = true;
+				}
+				else if(s.seq_type == SequenceType.WHILE) {
+					i = validate_while(i);
+					recv_after_if = false;
+				}
+				else if(s.seq_type == SequenceType.VAR_STAT) {
+					i = validate_var_stat(i);
+					recv_after_if = false;
+				}
+				else if(s.seq_type == SequenceType.BREAK && inside_while) {
+					i = validate_break(i);
+				}
+				else if(s.seq_type == SequenceType.CONTINUE && inside_while) {
+					i = validate_continue(i);
+				}
+				else if(s.seq_type == SequenceType.CLOSED_BRACKET) {
+					boolean vtd = visited_ids.get(s.id);
+					if(!vtd) {
+						visited_ids.put(s.id, true);
+						break;
+					}
+				}
+				else {
+					error_log.push("Invalid statement '" + s.str + "' found", s.str, id_line.get(s.id));
+					return -1;	
+				}
+
+				if(i == -1)
+					return -1;
+
+				visited_ids.put(s.id, true);
+			}
+
+			return_val = i;
+		}
+
+		else if(si_info.seq_type == SequenceType.OPEN_BRACKET) {
+			boolean recv_after_if = false;
+
+			int i = index + 2;
+			SequenceInfo s = null;
+			for(; i <= num_sequences; ++i) {
+				s = sequence_infos[i];
+				if(s.seq_type == SequenceType.ELSE) {
+					if(recv_after_if == false) {
+						error_log.push("@else if: 'else if' can only be followed after an 'if'.", s.str, id_line.get(s.id));
+
+						return -1;
+					}
+
+					i = validate_else_if(i);
+				}
+				else if(s.seq_type == SequenceType.IF) {
+					i = validate_ifs(i);
+					recv_after_if = true;
+				}
+				else if(s.seq_type == SequenceType.WHILE) {
+					i = validate_while(i);
+					recv_after_if = false;
+				}
+				else if(s.seq_type == SequenceType.VAR_STAT) {
+					i = validate_var_stat(i);
+					recv_after_if = false;
+				}
+				else if(s.seq_type == SequenceType.BREAK && inside_while) {
+					i = validate_break(i);
+				}
+				else if(s.seq_type == SequenceType.CONTINUE && inside_while) {
+					i = validate_continue(i);
+				}
+				else if(s.seq_type == SequenceType.CLOSED_BRACKET) {
+					boolean vtd = visited_ids.get(s.id);
+					if(!vtd) {
+						visited_ids.put(s.id, true);
+						break;
+					}
+				}
+				else {
+					error_log.push("Invalid statement '" + s.str + "' found", s.str, id_line.get(s.id));
+					return -1;	
+				}
+
+				if(i == -1)
+					return -1;
+
+				visited_ids.put(s.id, true);
+			}
+
+			recv_after_if = false;
+
+			return_val = i;
+		}
+		else {
+			error_log.push("Needed '{' after 'else' but found '" + si_info.str + "'.", si_info.str, id_line.get(si_info.id));
+
+			return -1;
+		}
+
+		return return_val;
+	}
+	}
