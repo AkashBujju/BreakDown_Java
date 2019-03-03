@@ -5,29 +5,24 @@ import java.util.Set;
 import java.util.Iterator;
 
 public class Main {
-		static List<String> keywords = new ArrayList<>(); 
-		static List<String> split_sequences = new ArrayList<>();
-		static List<String> arith_ops = new ArrayList<>();
-		static List<String> logical_ops = new ArrayList<>();
-		static List<String> relational_ops = new ArrayList<>();
-		static List<String> bitwise_ops = new ArrayList<>();
-		static List<RangeIndices> quotes_range_indices = new ArrayList<>();
+	static List<String> keywords = new ArrayList<>(); 
+	static List<String> split_sequences = new ArrayList<>();
+	static List<String> arith_ops = new ArrayList<>();
+	static List<String> logical_ops = new ArrayList<>();
+	static List<String> relational_ops = new ArrayList<>();
+	static List<String> bitwise_ops = new ArrayList<>();
+	static List<RangeIndices> quotes_range_indices = new ArrayList<>();
 
 	public static void main(String[] args) {
 		String filename = "C:\\Users\\Akash\\Documents\\GitHub\\BreakDown_Java\\asset\\demo.veg";
 		StringBuffer data;
 		MyFile my_file;
-		
+
 		init_ops();
 
 		try {
 			my_file = new MyFile();
-			data = my_file.get_data(filename, quotes_range_indices, false);
-			quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
-
-			data = my_file.get_data(filename, quotes_range_indices, true);
-			String eaten_string = Util.eat_spaces(data.toString());
-			data = new StringBuffer(eaten_string);
+			data = my_file.get_data(filename);
 			quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
 
 			System.out.println("data: " + data);

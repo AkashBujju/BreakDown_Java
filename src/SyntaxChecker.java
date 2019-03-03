@@ -97,9 +97,11 @@ public class SyntaxChecker {
 			return -1;
 		}
 
-		// @Incomplete: Validate the expression.
-		// @Incomplete: Validate the expression.
-		// @Incomplete: Validate the expression.
+		String valid_exp = expr_seq_info.validate_syntax(ri);
+		if(!valid_exp.equals("none")) {
+			error_log.push(valid_exp, expr_seq_info.str, id_line.get(expr_seq_info.id));
+			return -1;
+		}
 
 		// Checking if struct name is valid ???
 		if(!Util.is_valid_name(expr_seq_info.str)) {
@@ -279,7 +281,16 @@ public class SyntaxChecker {
 
 					return -1;
 				}
-				i = validate_else_if(i);
+
+				SequenceInfo si_2 = null;
+				if(i + 1 < num_sequences)
+					si_2 = sequence_infos[i + 1];
+				if(si_2 != null && si_2.seq_type == SequenceType.IF)
+					i = validate_else_if(i);
+				else  {
+					i = validate_else(i);
+					recv_after_if = false;
+				}
 			}
 			else {
 				error_log.push("Invalid statement '" + si.str + "' found", si.str, id_line.get(si.id));
@@ -321,9 +332,11 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		// @Incomplete: Validate the expression.
-		// @Incomplete: Validate the expression.
-		// @Incomplete: Validate the expression.
+		String valid_exp = exp_info.validate_syntax(ri);
+		if(!valid_exp.equals("none")) {
+			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
+			return -1;
+		}
 
 		// Checking for {
 		if(index + 2 >= num_sequences) {
@@ -357,7 +370,15 @@ public class SyntaxChecker {
 					return -1;
 				}
 
-				i = validate_else_if(i);
+				SequenceInfo si_2 = null;
+				if(i + 1 < num_sequences)
+					si_2 = sequence_infos[i + 1];
+				if(si_2 != null && si_2.seq_type == SequenceType.IF)
+					i = validate_else_if(i);
+				else  {
+					i = validate_else(i);
+					recv_after_if = false;
+				}
 			}
 			else if(si.seq_type == SequenceType.RETURN) {
 				i = validate_return(i);
@@ -421,9 +442,11 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		// @Incomplete: Validate the expression.
-		// @Incomplete: Validate the expression.
-		// @Incomplete: Validate the expression.
+		String valid_exp = exp_info.validate_syntax(ri);
+		if(!valid_exp.equals("none")) {
+			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
+			return -1;
+		}
 
 		if((index + 2) >= num_sequences) {
 			error_log.push("Missing '{' after 'while'", exp_info.str, id_line.get(exp_info.id));
@@ -461,7 +484,15 @@ public class SyntaxChecker {
 					return -1;
 				}
 
-				i = validate_else_if(i);
+				SequenceInfo si_2 = null;
+				if(i + 1 < num_sequences)
+					si_2 = sequence_infos[i + 1];
+				if(si_2 != null && si_2.seq_type == SequenceType.IF)
+					i = validate_else_if(i);
+				else {
+					i = validate_else(i);
+					recv_after_if = false;
+				}
 			}
 			else if(si.seq_type == SequenceType.VAR_STAT) {
 				i = validate_var_stat(i);
@@ -687,6 +718,92 @@ public class SyntaxChecker {
 		return index + 3;
 	}
 
+	private int validate_else(int index) {
+		SequenceInfo else_seq = sequence_infos[index];
+		int return_val = -1;
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Missing '{' after 'else'.", else_seq.str, id_line.get(else_seq.id));
+
+			return -1;
+		}
+		visited_ids.put(else_seq.id, true);
+
+		SequenceInfo open_brac = sequence_infos[index + 1];
+		if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
+			error_log.push("Needed '{' after 'else' but found '" + open_brac.str + "'.", open_brac.str, id_line.get(open_brac.id));
+
+			return -1;
+		}
+		visited_ids.put(open_brac.id, true);
+
+		boolean recv_after_if = false;
+		int i = index + 2;
+		SequenceInfo s = null;
+		for(; i <= num_sequences; ++i) {
+			s = sequence_infos[i];
+			if(s.seq_type == SequenceType.ELSE) {
+				if(recv_after_if == false) {
+					error_log.push("@else if: 'else if' can only be followed after an 'if'.", s.str, id_line.get(s.id));
+
+					return -1;
+				}
+
+				SequenceInfo si_2 = null;
+				if(i + 1 < num_sequences)
+					si_2 = sequence_infos[i + 1];
+				if(si_2 != null && si_2.seq_type == SequenceType.IF)
+					i = validate_else_if(i);
+				else {
+					i = validate_else(i);
+					recv_after_if = false;
+				}
+			}
+			else if(s.seq_type == SequenceType.IF) {
+				i = validate_ifs(i);
+				recv_after_if = true;
+			}
+			else if(s.seq_type == SequenceType.WHILE) {
+				i = validate_while(i);
+				recv_after_if = false;
+			}
+			else if(s.seq_type == SequenceType.RETURN) {
+				i = validate_return(i);
+			}
+			else if(s.seq_type == SequenceType.VAR_STAT) {
+				i = validate_var_stat(i);
+				recv_after_if = false;
+			}
+			else if(s.seq_type == SequenceType.BREAK && inside_while) {
+				i = validate_break(i);
+			}
+			else if(s.seq_type == SequenceType.CONTINUE && inside_while) {
+				i = validate_continue(i);
+			}
+			else if(s.seq_type == SequenceType.CLOSED_BRACKET) {
+				boolean vtd = visited_ids.get(s.id);
+				if(!vtd) {
+					visited_ids.put(s.id, true);
+					break;
+				}
+			}
+			else {
+				error_log.push("Invalid statement '" + s.str + "' found", s.str, id_line.get(s.id));
+				return -1;	
+			}
+
+			if(i == -1)
+				return -1;
+
+			visited_ids.put(s.id, true);
+		}
+
+		recv_after_if = false;
+		return_val = i;
+
+		return return_val;
+	}
+
 	private int validate_else_if(int index) {
 		SequenceInfo else_seq = sequence_infos[index];
 		int return_val = -1;
@@ -716,9 +833,11 @@ public class SyntaxChecker {
 			}
 			visited_ids.put(exp_info.id, true);
 
-			// @Incomplete: Validate the expression.
-			// @Incomplete: Validate the expression.
-			// @Incomplete: Validate the expression.
+			String valid_exp = exp_info.validate_syntax(ri);
+			if(!valid_exp.equals("none")) {
+				error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
+				return -1;
+			}
 
 			if(index + 3 >= num_sequences) {
 				error_log.push("Missing '{' after '" + exp_info + "' in 'else if'.", exp_info.str, id_line.get(exp_info.id));
@@ -746,7 +865,15 @@ public class SyntaxChecker {
 						return -1;
 					}
 
-					i = validate_else_if(i);
+					SequenceInfo si_2 = null;
+					if(i + 1 < num_sequences)
+						si_2 = sequence_infos[i + 1];
+					if(si_2 != null && si_2.seq_type == SequenceType.IF)
+						i = validate_else_if(i);
+					else {
+						i = validate_else(i);
+						recv_after_if = false;
+					}
 				}
 				else if(s.seq_type == SequenceType.IF) {
 					i = validate_ifs(i);
@@ -786,66 +913,6 @@ public class SyntaxChecker {
 
 				visited_ids.put(s.id, true);
 			}
-
-			return_val = i;
-		}
-
-		else if(si_info.seq_type == SequenceType.OPEN_BRACKET) {
-			boolean recv_after_if = false;
-
-			int i = index + 2;
-			SequenceInfo s = null;
-			for(; i <= num_sequences; ++i) {
-				s = sequence_infos[i];
-				if(s.seq_type == SequenceType.ELSE) {
-					if(recv_after_if == false) {
-						error_log.push("@else if: 'else if' can only be followed after an 'if'.", s.str, id_line.get(s.id));
-
-						return -1;
-					}
-
-					i = validate_else_if(i);
-				}
-				else if(s.seq_type == SequenceType.IF) {
-					i = validate_ifs(i);
-					recv_after_if = true;
-				}
-				else if(s.seq_type == SequenceType.WHILE) {
-					i = validate_while(i);
-					recv_after_if = false;
-				}
-				else if(s.seq_type == SequenceType.RETURN) {
-					i = validate_return(i);
-				}
-				else if(s.seq_type == SequenceType.VAR_STAT) {
-					i = validate_var_stat(i);
-					recv_after_if = false;
-				}
-				else if(s.seq_type == SequenceType.BREAK && inside_while) {
-					i = validate_break(i);
-				}
-				else if(s.seq_type == SequenceType.CONTINUE && inside_while) {
-					i = validate_continue(i);
-				}
-				else if(s.seq_type == SequenceType.CLOSED_BRACKET) {
-					boolean vtd = visited_ids.get(s.id);
-					if(!vtd) {
-						visited_ids.put(s.id, true);
-						break;
-					}
-				}
-				else {
-					error_log.push("Invalid statement '" + s.str + "' found", s.str, id_line.get(s.id));
-					return -1;	
-				}
-
-				if(i == -1)
-					return -1;
-
-				visited_ids.put(s.id, true);
-			}
-
-			recv_after_if = false;
 
 			return_val = i;
 		}
@@ -876,9 +943,11 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		// @Incomplete: Validate the expression.
-		// @Incomplete: Validate the expression.
-		// @Incomplete: Validate the expression.
+		String valid_exp = exp_info.validate_syntax(ri);
+		if(!valid_exp.equals("none")) {
+			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
+			return -1;
+		}
 
 		if(index + 2 >= num_sequences) {
 			error_log.push("Missing ';' after expression '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));

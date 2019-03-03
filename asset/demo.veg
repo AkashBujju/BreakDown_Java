@@ -1,16 +1,23 @@
 
-Foo::struct
-{
-	a := 3.14;#Comment
+Foo::struct {
+	a := "#Name"; #Comment
 }
 
-Color::enum {
-	RED, BLUE
-}
+func main() -> int {
+	a := "Hell#o, World";
+	b := "ldkak#lfsdl"; # Comment
+	# comment
+	b := "ldkak#lfsdl"; # Comment
+	# comment
 
-use "daksl";
+	if true {
 
-func main(argc: int) -> int {
-	return add(1);
+	}
+	else {
+		else if false {
+
+		}
+
+	}
 }
 

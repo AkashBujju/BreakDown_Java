@@ -18,7 +18,7 @@ class MyFile {
 	int line_number = 0;
 	StringBuffer data;
 
-	StringBuffer get_data(String filename, List<RangeIndices> ri, boolean ignore_comments) throws FileNotFoundException {
+	StringBuffer get_data(String filename) throws FileNotFoundException {
 		this.filename = filename;
 		line_info.clear();
 		data = new StringBuffer();
@@ -33,16 +33,19 @@ class MyFile {
 				String current_line = s.nextLine();
 				current_line = Util.eat_only_spaces(current_line);
 
-				if(ignore_comments) {
-					for(int i = 0; i < current_line.length(); ++i) {
-						char c = current_line.charAt(i);
-						if(c == '#') {
-							boolean is_inside_quotes = Util.is_index_inside_quotes(data.length() + i, ri);
-							if(!is_inside_quotes) {
-								current_line = current_line.substring(0, i);
-								break;
-							}
+				int quotes_count = 0;
+				for(int i = 0; i < current_line.length(); ++i) {
+					char c = current_line.charAt(i);
+
+					if(c == '\"') {
+						if(i == 0 || (current_line.charAt(i - 1) != '\\')) {
+							quotes_count += 1;
 						}
+					}
+
+					else if(quotes_count % 2 == 0 && c == '#') {
+						current_line = current_line.substring(0, i);
+						break;
 					}
 				}
 
