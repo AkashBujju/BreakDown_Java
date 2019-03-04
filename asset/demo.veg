@@ -10,14 +10,16 @@ func main() -> int {
 	b := "ldkak#lfsdl"; # Comment
 	# comment
 
+	add(1, 2) + sub(23);
+
 	if true {
 
 	}
-	else {
-		else if false {
-
-		}
-
+	else if true { #Comment
 	}
-}
+	else {
+		return -1;
+	}
 
+	return -1;
+}

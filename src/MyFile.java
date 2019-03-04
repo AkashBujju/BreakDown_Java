@@ -82,6 +82,18 @@ class MyFile {
 		return hm;
 	}
 
+	HashMap<Integer, Integer> get_char_index_map(List<SequenceInfo> li) {
+		HashMap<Integer, Integer> hm = new HashMap<>();
+		int current_char_index = 0;
+
+		for(SequenceInfo si: li) {
+			hm.put(si.id, current_char_index);
+			current_char_index += si.str.length();
+		}
+
+		return hm;
+	}
+
 	int get_line_number(int index) {
 		for(LineInfo l: line_info) {
 			if(index >= l.start_index && index <= l.end_index)

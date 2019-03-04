@@ -425,7 +425,7 @@ public class Util {
 		return quotes_count;
 	}
 
-	static String is_valid_exp(String s, List<RangeIndices> ri) {
+	static String is_valid_exp(String s, List<RangeIndices> ri, int from_index) {
 		int quotes_count = get_num_quotes(s);
 		if(quotes_count % 2 != 0)
 			return "Number of open quotes not matching with the number of closing quotes in the expression.";
@@ -436,8 +436,9 @@ public class Util {
 		int close_square_count = 0;
 		for(int i = 0; i < s.length(); ++i) {
 			char c = s.charAt(i);
-			if(is_index_inside_quotes(i, ri))
+			if(is_index_inside_quotes(i + from_index, ri)) {
 				continue;
+			}
 
 			if(c == '(')
 				open_paren_count += 1;

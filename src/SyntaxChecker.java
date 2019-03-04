@@ -19,17 +19,19 @@ public class SyntaxChecker {
 	private int num_sequences;
 	private HashMap<Integer, Boolean> visited_ids;
 	private HashMap<Integer, Integer> id_line;
+	private HashMap<Integer, Integer> id_char_index;
 	private List<RangeIndices> ri;
 	private SequenceInfo[] sequence_infos;
 	private MyFile file;
 	private ErrorLog error_log;
 	private boolean inside_while = false;
 
-	SyntaxChecker(SequenceInfo[] sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line) {
+	SyntaxChecker(SequenceInfo[] sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line, HashMap<Integer, Integer> id_char_index) {
 		this.sequence_infos = sequence_infos;
 		this.id_line = id_line;
 		this.file = file;
 		this.ri = ri;
+		this.id_char_index = id_char_index;
 
 		num_sequences = sequence_infos.length;
 		error_log = new ErrorLog();
@@ -97,7 +99,7 @@ public class SyntaxChecker {
 			return -1;
 		}
 
-		String valid_exp = expr_seq_info.validate_syntax(ri);
+		String valid_exp = expr_seq_info.validate_syntax(ri, id_char_index.get(expr_seq_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, expr_seq_info.str, id_line.get(expr_seq_info.id));
 			return -1;
@@ -131,7 +133,7 @@ public class SyntaxChecker {
 			SequenceInfo var_decl_info = sequence_infos[i];
 			visited_ids.put(var_decl_info.id, true);
 			if(var_decl_info.seq_type == SequenceType.VAR_STAT) {
-				String msg = var_decl_info.validate_syntax(ri);
+				String msg = var_decl_info.validate_syntax(ri, id_char_index.get(var_decl_info.id));
 				if(msg.equals("=")) {
 					error_log.push("Only variable declaration/definition is allowed inside struct '" + expr_seq_info.str + "'", var_decl_info.str, id_line.get(var_decl_info.id));
 					break;
@@ -142,7 +144,7 @@ public class SyntaxChecker {
 				}
 
 				// @Incomplete: The right-hand side ie. the expression should be a literal value .... or should be left empty.
-				List<String> split_str = var_decl_info.split_str(ri);
+				List<String> split_str = var_decl_info.split_str(ri, id_char_index.get(var_decl_info.id));
 				String name = split_str.get(0);
 				String exp = "";
 				String type = "";
@@ -215,13 +217,13 @@ public class SyntaxChecker {
 			return -1;
 		}
 
-		String msg = func_seq_info.validate_syntax(ri);
+		String msg = func_seq_info.validate_syntax(ri, id_char_index.get(func_seq_info.id));
 		if(!msg.equals("none")) {
 			error_log.push(msg, func_seq_info.str, id_line.get(func_seq_info.id));
 			return -1;
 		}
 
-		List<String> split_str = func_seq_info.split_str(ri);
+		List<String> split_str = func_seq_info.split_str(ri, id_char_index.get(func_seq_info.id));
 		String func_name = split_str.get(0);
 		String ret_type = split_str.get(split_str.size() - 1);
 
@@ -261,6 +263,10 @@ public class SyntaxChecker {
 			}
 			else if(si.seq_type == SequenceType.WHILE) {
 				i = validate_while(i);
+				recv_after_if = false;
+			}
+			else if(si.seq_type == SequenceType.EXPRESSION) {
+				i = validate_exp(i);
 				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.VAR_STAT) {
@@ -332,7 +338,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		String valid_exp = exp_info.validate_syntax(ri);
+		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
 			return -1;
@@ -382,6 +388,10 @@ public class SyntaxChecker {
 			}
 			else if(si.seq_type == SequenceType.RETURN) {
 				i = validate_return(i);
+			}
+			else if(si.seq_type == SequenceType.EXPRESSION) {
+				i = validate_exp(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.WHILE) {
 				i = validate_while(i);
@@ -442,7 +452,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		String valid_exp = exp_info.validate_syntax(ri);
+		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
 			return -1;
@@ -476,6 +486,10 @@ public class SyntaxChecker {
 			else if(si.seq_type == SequenceType.IF) {
 				i = validate_ifs(i);
 				recv_after_if = true;
+			}
+			else if(si.seq_type == SequenceType.EXPRESSION) {
+				i = validate_exp(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.ELSE) {
 				if(recv_after_if == false) {
@@ -581,7 +595,7 @@ public class SyntaxChecker {
 			return -1;
 		}
 
-		String msg = si.validate_syntax(ri);
+		String msg = si.validate_syntax(ri, id_char_index.get(si.id));
 		if(msg.length() > 4) {
 			error_log.push(msg, si.str, id_line.get(si.id));
 			return -1;	
@@ -759,6 +773,10 @@ public class SyntaxChecker {
 					recv_after_if = false;
 				}
 			}
+			else if(s.seq_type == SequenceType.EXPRESSION) {
+				i = validate_exp(i);
+				recv_after_if = false;
+			}
 			else if(s.seq_type == SequenceType.IF) {
 				i = validate_ifs(i);
 				recv_after_if = true;
@@ -833,7 +851,7 @@ public class SyntaxChecker {
 			}
 			visited_ids.put(exp_info.id, true);
 
-			String valid_exp = exp_info.validate_syntax(ri);
+			String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 			if(!valid_exp.equals("none")) {
 				error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
 				return -1;
@@ -874,6 +892,10 @@ public class SyntaxChecker {
 						i = validate_else(i);
 						recv_after_if = false;
 					}
+				}
+				else if(s.seq_type == SequenceType.EXPRESSION) {
+					i = validate_exp(i);
+					recv_after_if = false;
 				}
 				else if(s.seq_type == SequenceType.IF) {
 					i = validate_ifs(i);
@@ -943,7 +965,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		String valid_exp = exp_info.validate_syntax(ri);
+		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
 			return -1;
@@ -965,4 +987,31 @@ public class SyntaxChecker {
 
 		return index + 2;
 	}
-}
+
+	private int validate_exp(int index) {
+		SequenceInfo exp_info = sequence_infos[index];
+
+		if(index + 1 >= num_sequences) {
+			error_log.push("Missing ';' after expression '" + exp_info + "'.", exp_info.str, id_line.get(exp_info.id));
+
+			return -1;
+		}
+
+		String msg = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
+		if(!msg.equals("none")) {
+			error_log.push(msg, exp_info.str, id_line.get(exp_info.id));
+			return -1;
+		}
+		visited_ids.put(exp_info.id, true);
+
+		SequenceInfo semicolon_info = sequence_infos[index + 1];
+		if(semicolon_info.seq_type != SequenceType.SEMICOLON) {
+			error_log.push("Needed ';' after 'expression' but found '" + semicolon_info.str + "'.", semicolon_info.str, id_line.get(semicolon_info.id));
+
+			return -1;
+		}
+		visited_ids.put(semicolon_info.id, true);
+
+		return index + 1;
+	}
+	}

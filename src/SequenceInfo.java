@@ -21,7 +21,7 @@ public class SequenceInfo {
 		this.id = id;
 	}
 
-	List<String> split_str(List<RangeIndices> ri) {
+	List<String> split_str(List<RangeIndices> ri, int from_index) {
 		List<String> li;
 
 		switch(seq_type) {
@@ -29,7 +29,7 @@ public class SequenceInfo {
 				li = split_func_name_args();
 				break;
 			case VAR_STAT:
-				li = split_var_declare_or_define(ri);
+				li = split_var_declare_or_define(ri, from_index);
 				break;
 			default:
 				li = new ArrayList<>();
@@ -38,9 +38,9 @@ public class SequenceInfo {
 		return li;
 	}
 
-	List<String> split_var_declare_or_define(List<RangeIndices> ri) {
+	List<String> split_var_declare_or_define(List<RangeIndices> ri, int from_index) {
 		List<String> li = new ArrayList<>();
-		String msg = validate_var_decl_def(ri);
+		String msg = validate_var_decl_def(ri, from_index);
 
 		int index_of_equal_colon = str.indexOf(":=");
 		int index_of_equal = str.indexOf("=");
@@ -108,25 +108,25 @@ public class SequenceInfo {
 	}
 
 	// "none": no errors , "ErrorMsg": errors
-	String validate_syntax(List<RangeIndices> ri) {
+	String validate_syntax(List<RangeIndices> ri, int from_index) {
 		// Note: Only declaration/definition, expressions, func_name_args will be checked for
 		switch(seq_type) {
 			case FUNC_NAME_ARGS:
 				return validate_func_declaration_syntax();
 			case VAR_STAT:
-				return validate_var_decl_def(ri);
+				return validate_var_decl_def(ri, from_index);
 			case EXPRESSION:
-				return validate_exp(ri);
+				return validate_exp(ri, from_index);
 		}
 
 		return "none";
 	}
 
-	private String validate_exp(List<RangeIndices> ri) {
-		return Util.is_valid_exp(str, ri);	
+	private String validate_exp(List<RangeIndices> ri, int from_index) {
+		return Util.is_valid_exp(str, ri, from_index);	
 	}
 
-	private String validate_var_decl_def(List<RangeIndices> ri) {
+	private String validate_var_decl_def(List<RangeIndices> ri, int from_index) {
 		String var_name, var_type = "", exp_value = "";
 		boolean is_define_1 = false; // :=
 		boolean is_define_2 = false; // :int=
@@ -170,7 +170,7 @@ public class SequenceInfo {
 		if(!var_type.equals("") && !Util.is_valid_type_name(var_type))
 			return "Identifier '" + var_type + "' is not a valid Type name";
 
-		String exp_msg = Util.is_valid_exp(exp_value, ri);
+		String exp_msg = Util.is_valid_exp(exp_value, ri, from_index);
 		if(!exp_msg.equals("none"))
 			return exp_msg;
 

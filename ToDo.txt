@@ -1,6 +1,7 @@
 --------------------------------------------------------------
 ToDo:
-	1) 
+	1) is_valid_exp needs a from_index along with String s and
+	quotes_range_indices to be correct ....
 --------------------------------------------------------------
 
 --------------------------------------------------------------
@@ -12,9 +13,6 @@ Alg := 1) Split the input into tokens. But only partially which does not
 			 include split with :=, = ... etc
 
 		 2) Assign appropriate enums to every token.
-		 3) Find all struct names and vars inside it and store it in
-		 4) Find all the function signatures and store then in a func_info
-		 struct_info.
 
 Note: Have a List<Scope> for every function. Every ScopeStack should have
 		Global has default.
