@@ -25,13 +25,6 @@ public class Main {
 			data = my_file.get_data(filename);
 			quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
 
-			/*
-			System.out.println("quotes_range_indices: ");
-			for(RangeIndices ri: quotes_range_indices) {
-				System.out.println(ri.from_index + " to " + ri.to_index);
-			}
-			*/
-
 			System.out.println("data: " + data);
 			System.out.println("Size: " + data.length());
 			System.out.println("Lines: " + my_file.line_number);
@@ -50,15 +43,6 @@ public class Main {
 			SequenceInfo[] sq_arr = (sq_info.toArray(new SequenceInfo[0]));
 			HashMap<Integer, Integer> id_number = my_file.get_index_map(sq_info);
 			HashMap<Integer, Integer> id_char_index = my_file.get_char_index_map(sq_info);
-
-			/*
-			System.out.println("id_char_indices: ");
-			Iterator it = id_char_index.keySet().iterator();
-			while(it.hasNext()) {
-				Integer i = (Integer)(it.next());
-				System.out.println("id: " + i + ", index: " + id_char_index.get(i));
-			}
-			*/
 
 			System.out.println("Num Sequences: "+ sq_info.size());
 			System.out.println();

@@ -25,6 +25,12 @@ public class SyntaxChecker {
 	private MyFile file;
 	private ErrorLog error_log;
 	private boolean inside_while = false;
+	private boolean encountered_use = false;
+	private boolean encountered_func = false;
+	private boolean encountered_struct = false;
+	private boolean encountered_enum = false;
+	private boolean encountered_global_var = false;
+	private boolean show_invalid_stats = true;
 
 	SyntaxChecker(SequenceInfo[] sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line, HashMap<Integer, Integer> id_char_index) {
 		this.sequence_infos = sequence_infos;
@@ -44,24 +50,47 @@ public class SyntaxChecker {
 
 		for(int i = 0; i < num_sequences; ++i) {
 			SequenceInfo s = sequence_infos[i];
-			// visited_ids.put(s.id, true);
 			int res = -2;
 
-			switch(s.seq_type) {
-				case STRUCT:
-					res = validate_struct(i);
+			if(s.seq_type == SequenceType.STRUCT) {
+				if(encountered_func) {
+					error_log.push("Cannot define 'struct' after defining 'functions'.", s.str, id_line.get(s.id));
+					show_invalid_stats = false;
 					break;
-				case FUNC:
-					res = validate_func(i);
+				}
+				res = validate_struct(i);
+				encountered_struct = true;
+			}
+			else if(s.seq_type == SequenceType.FUNC) {
+				res = validate_func(i);
+				encountered_func = true;
+			}
+			else if(s.seq_type == SequenceType.VAR_STAT) {
+				if(encountered_func) {
+					error_log.push("Global variable '" + s.str + "' is declared in an invalid position.", s.str, id_line.get(s.id));
+					show_invalid_stats = false;
 					break;
-				case VAR_STAT:
-					res = validate_var_stat(i);
+				}
+				res = validate_var_stat(i);
+				encountered_global_var = true;
+			}
+			else if(s.seq_type == SequenceType.ENUM) {
+				if(encountered_func) {
+					error_log.push("enum '" + s.str + "' has to declared before any functions.", s.str, id_line.get(s.id));
+					show_invalid_stats = false;
 					break;
-				case USE:
-					res = validate_use(i);
+				}
+				res = validate_enum(i);
+				encountered_enum = true;
+			}
+			else if(s.seq_type == SequenceType.USE) {
+				if(encountered_func || encountered_global_var || encountered_enum || encountered_struct) {
+					error_log.push("'use' statement has to be before any of the other statements.", s.str, id_line.get(s.id));
+					show_invalid_stats = false;
 					break;
-				case ENUM:
-					res = validate_enum(i);
+				}
+				res = validate_use(i);
+				encountered_use = true;
 			}
 
 			if(res == -1)
@@ -70,6 +99,9 @@ public class SyntaxChecker {
 				i = res;
 			}
 		}
+
+		if(!show_invalid_stats)
+			return error_log;
 
 		Iterator it = visited_ids.keySet().iterator();
 		while(it.hasNext()) {
