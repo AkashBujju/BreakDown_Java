@@ -360,11 +360,13 @@ class SequenceTypeInfo {
 		int num_equals = Util.get_num_chars_outside_quotes(s, '=', quote_range_indices);
 		int num_colons = Util.get_num_chars_outside_quotes(s, ':', quote_range_indices);
 
-		if(num_equals > 1)
-			return false;
-		else if(num_equals == 0 && num_colons != 1)
-			return false;
+		boolean is_var = true;
 
-		return true;
+		if(num_equals > 1)
+			is_var = false;
+		else if(num_equals == 0 && num_colons != 1)
+			is_var = false;
+
+		return is_var;
 	}
 }

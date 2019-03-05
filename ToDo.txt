@@ -1,19 +1,16 @@
 --------------------------------------------------------------
 ToDo:
-	1) is_valid_exp needs a from_index along with String s and
-	quotes_range_indices to be correct ....
+	1) Semantic Analysis
 --------------------------------------------------------------
 
 --------------------------------------------------------------
-NotDone:
+
+Done:
+	1) Split into tokens
+	2) SyntaxAnalysis and form Info List
 --------------------------------------------------------------
 
 --------------------------------------------------------------
-Alg := 1) Split the input into tokens. But only partially which does not
-			 include split with :=, = ... etc
-
-		 2) Assign appropriate enums to every token.
-
 Note: Have a List<Scope> for every function. Every ScopeStack should have
 		Global has default.
 		???? How should scopes be named ??????

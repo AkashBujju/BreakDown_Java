@@ -1,15 +1,28 @@
 use "demo.veg";
 
-Foo::struct 
-{
+Foo::struct {
 	a := 10;
 }
 
-func add(a: int, b: int) -> int 
-{
-	return a + b;
+Color::enum {
+	RED, BLUE
 }
 
-func sub(a: int, b: int) -> int {
+a := 10;
+
+func foo() -> void {
+	b := 1;
+	while 1 {
+		print("Hello");
+		if a == 10 {
+			break;
+		}
+		else {
+			color := 1;
+			color: string = "red";
+			continue;
+		}
+	}
 }
+
 

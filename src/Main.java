@@ -59,6 +59,12 @@ public class Main {
 			}
 
 			System.out.println();
+			System.out.println("INFOS: ");
+			System.out.println();
+			List<Info> infos = sc.infos;
+			for(Info i: infos)
+				i.display();
+
 			System.out.println("No syntax errors.");
 		}
 		catch (Exception e) {

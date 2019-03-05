@@ -68,12 +68,18 @@ public class Util {
 
 	static int get_num_chars_outside_quotes(String str, char ch, List<RangeIndices> ri) {
 		int count = 0;
-		for(int i = 0; i < str.length(); ++i) {
-			if(is_index_inside_quotes(i, ri))
-				continue;
+		int quotes_count = 0;
 
+		for(int i = 0; i < str.length(); ++i) {
 			char c = str.charAt(i);
-			if(c == ch)
+
+			if(c == '\"') {
+				if(i == 0 || (str.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
+			}
+
+			else if(quotes_count % 2 == 0 && c == ch)
 				count += 1;
 		}
 

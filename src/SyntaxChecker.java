@@ -13,7 +13,12 @@ import java.util.Iterator;
 	primitive_types.add("double");
 	primitive_types.add("bool");
 	primitive_types.add("char");
-	*/
+*/
+
+class ValidIndexAndInfo {
+	int return_value = -1;
+	Info info;
+}
 
 public class SyntaxChecker {
 	private int num_sequences;
@@ -24,6 +29,7 @@ public class SyntaxChecker {
 	private SequenceInfo[] sequence_infos;
 	private MyFile file;
 	private ErrorLog error_log;
+	public List<Info> infos;
 	private boolean inside_while = false;
 	private boolean encountered_use = false;
 	private boolean encountered_func = false;
@@ -42,15 +48,17 @@ public class SyntaxChecker {
 		num_sequences = sequence_infos.length;
 		error_log = new ErrorLog();
 		visited_ids = new HashMap<>();
+		infos = new ArrayList<>();
 	}
 
 	ErrorLog validate_syntax() {
 		for(int i = 0; i < num_sequences; ++i)
 			visited_ids.put(i, false);
-
+		
+		int num_errors = 0;
 		for(int i = 0; i < num_sequences; ++i) {
 			SequenceInfo s = sequence_infos[i];
-			int res = -2;
+			ValidIndexAndInfo res = null;
 
 			if(s.seq_type == SequenceType.STRUCT) {
 				if(encountered_func) {
@@ -93,34 +101,44 @@ public class SyntaxChecker {
 				encountered_use = true;
 			}
 
-			if(res == -1)
-				return error_log;
-			else if(res != -2) { // valid res value
-				i = res;
+			if(res != null) {
+				i = res.return_value;
+				infos.add(res.info);
 			}
+			else {
+				num_errors += 1;
+			}
+
+			if(num_errors > 2)
+				return error_log;
 		}
 
 		if(!show_invalid_stats)
 			return error_log;
 
 		Iterator it = visited_ids.keySet().iterator();
+		int count = 0;
 		while(it.hasNext()) {
 			Integer i = (Integer)(it.next());
 			boolean vtd = visited_ids.get(i);
 			if(!vtd) {
+				count += 1;
 				SequenceInfo si = sequence_infos[i];
-				error_log.push("Invalid statement '" + si.str + "' found.", si.str, id_line.get(si.id));
+				error_log.push("Invalid sequence '" + si.str + "' found.", si.str, id_line.get(si.id));
 			}
+
+			if(count > 10)
+				break;
 		}
 
 		return error_log;
 	}
 
-	private int validate_struct(int index) {
+	private ValidIndexAndInfo validate_struct(int index) {
 		SequenceInfo struct_info = sequence_infos[index];
 		if((index - 1) < 0) {
 			error_log.push("Missing name for struct", "::struct", id_line.get(struct_info.id));
-			return -1;
+			return null;
 		}
 		visited_ids.put(struct_info.id, true);
 
@@ -128,36 +146,31 @@ public class SyntaxChecker {
 		visited_ids.put(expr_seq_info.id, true);
 		if(expr_seq_info.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("Needed a 'name' before struct but found invalid string", expr_seq_info.str, id_line.get(expr_seq_info.id));
-			return -1;
-		}
-
-		String valid_exp = expr_seq_info.validate_syntax(ri, id_char_index.get(expr_seq_info.id));
-		if(!valid_exp.equals("none")) {
-			error_log.push(valid_exp, expr_seq_info.str, id_line.get(expr_seq_info.id));
-			return -1;
+			return null;
 		}
 
 		// Checking if struct name is valid ???
 		if(!Util.is_valid_name(expr_seq_info.str)) {
 			error_log.push("Name of struct '" + expr_seq_info.str + "' is not a valid name.", expr_seq_info.str, id_line.get(expr_seq_info.id));
-			return -1;
+			return null;
 		}
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Needed a '{' after ::struct but found nothing.", expr_seq_info.str, id_line.get(expr_seq_info.id));
-			return -1;
+			return null;
 		}
 
 		SequenceInfo open_bracket_info = sequence_infos[index + 1];
 		visited_ids.put(open_bracket_info.id, true);
 		if(open_bracket_info.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("'{' is missing after '" + expr_seq_info.str + "::struct", expr_seq_info.str + "::struct", id_line.get(open_bracket_info.id));
-			return -1;
+			return null;
 		}
 
 		// getting all the variable declarations inside the struct
 		int i = index + 2;
 		int num_variables = 0;
+		List<VarDeclInfo> var_decl_infos = new ArrayList<>();
 		while(true) {
 			if(i >= num_sequences)
 				break;
@@ -179,7 +192,7 @@ public class SyntaxChecker {
 				List<String> split_str = var_decl_info.split_str(ri, id_char_index.get(var_decl_info.id));
 				String name = split_str.get(0);
 				String exp = "";
-				String type = "";
+				String type = "not_known";
 
 				if(msg.equals(":="))
 					exp = split_str.get(1);
@@ -203,6 +216,14 @@ public class SyntaxChecker {
 					}
 				}
 
+				// Making a new VarDeclInfo and assing it to the list....
+				VarDeclInfo var_declinfo = new VarDeclInfo();
+				var_declinfo.name = name;
+				var_declinfo.type = type;
+				var_declinfo.raw_value = exp;
+				var_declinfo.line_number = id_line.get(var_decl_info.id);
+				var_decl_infos.add(var_declinfo);
+
 				num_variables += 1;
 			}
 			else if(var_decl_info.seq_type == SequenceType.CLOSED_BRACKET)
@@ -220,24 +241,34 @@ public class SyntaxChecker {
 			if(close_bracket_info.seq_type != SequenceType.CLOSED_BRACKET) {
 				error_log.push("Needed a '}' after the definition of struct '" + expr_seq_info.str + "'.", close_bracket_info.str, id_line.get(close_bracket_info.id));
 
-				return -1;
+				return null;
 			}
 			visited_ids.put(close_bracket_info.id, true);
 		}
 		else {
 			error_log.push("Missing '}' after definition of struct '" + expr_seq_info.str + "'.", expr_seq_info.str, id_line.get(expr_seq_info.id));
-			return -1;
+			return null;
 		}
 
-		return index + (2 + num_variables * 2);
+		// Initialising StructInfo
+		StructInfo structinfo = new StructInfo();
+		structinfo.name_line_number = id_line.get(expr_seq_info.id);
+		structinfo.name = expr_seq_info.str;	
+		structinfo.var_decl_infos = var_decl_infos;	
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.info = structinfo;
+		viai.return_value = (index + (2 + num_variables * 2));
+
+		return viai;
 	}
 
-	private int validate_func(int index) {
+	private ValidIndexAndInfo validate_func(int index) {
 		SequenceInfo func_info = sequence_infos[index];
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing function signature after keyword 'func'.", "func", id_line.get(func_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(func_info.id, true);
 
@@ -246,45 +277,57 @@ public class SyntaxChecker {
 
 		if(func_seq_info.seq_type != SequenceType.FUNC_NAME_ARGS) {
 			error_log.push("Invalid function signature", func_seq_info.str, id_line.get(func_seq_info.id));
-			return -1;
+			return null;
 		}
 
 		String msg = func_seq_info.validate_syntax(ri, id_char_index.get(func_seq_info.id));
 		if(!msg.equals("none")) {
 			error_log.push(msg, func_seq_info.str, id_line.get(func_seq_info.id));
-			return -1;
+			return null;
 		}
 
 		List<String> split_str = func_seq_info.split_str(ri, id_char_index.get(func_seq_info.id));
 		String func_name = split_str.get(0);
 		String ret_type = split_str.get(split_str.size() - 1);
 
+		List<String> arg_names = new ArrayList<>();
+		List<String> arg_types = new ArrayList<>();
 		for(int i = 1; i < split_str.size() - 1; i += 2) {
 			String arg_name = split_str.get(i);
 			String arg_type = split_str.get(i + 1);
+			if(!Util.is_valid_name(arg_name)) {
+				error_log.push("Argument name '" + arg_name + "' in function '" + func_name + "' is not valid.", arg_name, id_line.get(func_seq_info.id));
+				return null;
+			}
+
+			arg_names.add(arg_name);
+			arg_types.add(arg_type);
 		}
 
 		// Checking for {
 		if((index + 2) >= num_sequences) {
 			error_log.push("Missing '{' after function '" + func_name + "'.", func_seq_info.str, id_line.get(func_seq_info.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo open_brac = sequence_infos[index + 2];
 		if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("Needed '{' after function '" + func_name + "'. but found '" + open_brac.str + "'.", func_seq_info.str, id_line.get(func_seq_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(open_brac.id, true);
 
 		boolean recv_after_if = false;
-
 		int i = index + 3;
 		SequenceInfo si = null;
+		List<Info> func_infos = new ArrayList<>();
+
 		for(; i < num_sequences; ++i) {
+			ValidIndexAndInfo vi = null;
 			si = sequence_infos[i];
+
 			if(si.seq_type == SequenceType.CLOSED_BRACKET) {
 				boolean vtd = visited_ids.get(si.id);
 				if(vtd)
@@ -294,50 +337,54 @@ public class SyntaxChecker {
 				break;
 			}
 			else if(si.seq_type == SequenceType.WHILE) {
-				i = validate_while(i);
+				vi = validate_while(i);
+				recv_after_if = false;
+			}
+			else if(si.seq_type == SequenceType.VAR_STAT) { // @Note: This has to come before EXPRESSION, but can be modified ....
+				vi = validate_var_stat(i);
 				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.EXPRESSION) {
-				i = validate_exp(i);
-				recv_after_if = false;
-			}
-			else if(si.seq_type == SequenceType.VAR_STAT) {
-				i = validate_var_stat(i);
+				vi = validate_exp(i);
 				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.IF) {
-				i = validate_ifs(i);
+				vi = validate_ifs(i);
 				recv_after_if = true;
 			}
 			else if(si.seq_type == SequenceType.RETURN) {
-				i = validate_return(i);
+				vi = validate_return(i);
 				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.ELSE) {
 				if(recv_after_if == false) {
 					error_log.push("@else if: 'else if' can only be followed after an 'if'.", si.str, id_line.get(si.id));
 
-					return -1;
+					return null;
 				}
 
 				SequenceInfo si_2 = null;
 				if(i + 1 < num_sequences)
 					si_2 = sequence_infos[i + 1];
 				if(si_2 != null && si_2.seq_type == SequenceType.IF)
-					i = validate_else_if(i);
+					vi = validate_else_if(i);
 				else  {
-					i = validate_else(i);
+					vi = validate_else(i);
 					recv_after_if = false;
 				}
 			}
 			else {
 				error_log.push("Invalid statement '" + si.str + "' found", si.str, id_line.get(si.id));
 
-				return -1;
+				return null;
 			}
 
-			if(i == -1)
-				return -1;
+			if(vi == null)
+				return null;
+			else {
+				func_infos.add(vi.info);
+				i = vi.return_value;
+			}
 
 			visited_ids.put(si.id, true);
 		}
@@ -345,20 +392,32 @@ public class SyntaxChecker {
 		if(i >= num_sequences) {
 			error_log.push("Missing '}' for '" + si.str + "' which is at line " + id_line.get(si.id), si.str, id_line.get(si.id));
 
-			return -1;
+			return null;
 		}
 
-		return index + 1; // tmp;
+		FunctionInfo fi = new FunctionInfo();
+		fi.name = func_name;
+		fi.return_type = ret_type;
+		fi.var_names = arg_names;
+		fi.var_types = arg_types;
+		fi.signature_line_number = id_line.get(func_seq_info.id);
+		fi.infos = func_infos;
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = i;
+		viai.info = fi;
+
+		return viai;
 		}
 
-	private int validate_ifs(int index) {
+	private ValidIndexAndInfo validate_ifs(int index) {
 		SequenceInfo if_info = sequence_infos[index];
 		visited_ids.put(if_info.id, true);
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing expression after 'if'", "if", id_line.get(if_info.id));
 
-			return -1;
+			return null;
 		}
 
 		// @Note: An if condition cannot be an expression for another if.
@@ -366,78 +425,81 @@ public class SyntaxChecker {
 		if(exp_info.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("Needed an expression after 'if' but found '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(exp_info.id, true);
 
 		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
-			return -1;
+			return null;
 		}
 
 		// Checking for {
 		if(index + 2 >= num_sequences) {
 			error_log.push("Missing '{' after expression in 'if'", exp_info.str, id_line.get(exp_info.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo open_brac = sequence_infos[index + 2];
 		if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("Needed a '{' after expression in 'if' but found '" + open_brac.str + "'.", open_brac.str, id_line.get(open_brac.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(open_brac.id, true);
 
 		boolean recv_after_if = false;
-
 		SequenceInfo si = null;
 		int i = index + 3;
+		List<Info> if_infos = new ArrayList<>();
+
 		for(; i < num_sequences; ++i) {
+			ValidIndexAndInfo vi = null;
 			si = sequence_infos[i];
+
 			if(si.seq_type == SequenceType.IF) {
-				i = validate_ifs(i);
+				vi = validate_ifs(i);
 				recv_after_if = true;
 			}
 			else if(si.seq_type == SequenceType.ELSE) {
 				if(recv_after_if == false) {
 					error_log.push("'else' or 'else if' can only be followed after an 'if'.", si.str, id_line.get(si.id));
 
-					return -1;
+					return null;
 				}
 
 				SequenceInfo si_2 = null;
 				if(i + 1 < num_sequences)
 					si_2 = sequence_infos[i + 1];
 				if(si_2 != null && si_2.seq_type == SequenceType.IF)
-					i = validate_else_if(i);
+					vi = validate_else_if(i);
 				else  {
-					i = validate_else(i);
+					vi = validate_else(i);
 					recv_after_if = false;
 				}
 			}
 			else if(si.seq_type == SequenceType.RETURN) {
-				i = validate_return(i);
+				vi = validate_return(i);
+			}
+			else if(si.seq_type == SequenceType.VAR_STAT) { // @Note: This has to come before EXPRESSION, but can be modified .....
+				vi = validate_var_stat(i);
+				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.EXPRESSION) {
-				i = validate_exp(i);
+				vi = validate_exp(i);
 				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.WHILE) {
-				i = validate_while(i);
-				recv_after_if = false;
-			}
-			else if(si.seq_type == SequenceType.VAR_STAT) {
-				i = validate_var_stat(i);
+				vi = validate_while(i);
 				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.BREAK && inside_while) {
-				i = validate_break(i);
+				vi = validate_break(i);
 			}
 			else if(si.seq_type == SequenceType.CONTINUE && inside_while) {
-				i = validate_continue(i);
+				vi = validate_continue(i);
 			}
 			else if(si.seq_type == SequenceType.CLOSED_BRACKET) {
 				boolean vtd = visited_ids.get(si.id);
@@ -449,58 +511,71 @@ public class SyntaxChecker {
 			else {
 				error_log.push("Invalid Statement '" + si.str + "' found.", si.str, id_line.get(si.id));
 
-				return -1;
+				return null;
 			}
 
-			if(i == -1)
-				return -1;
+			if(vi == null)
+				return null;
+			else {
+				if_infos.add(vi.info);
+				i = vi.return_value;
+			}
 
 			visited_ids.put(si.id, true);
 		}
 
 		if(i >= num_sequences) {
 			error_log.push("'if' is missing '}'.", si.str, id_line.get(si.id));
-			return -1;
+			return null;
 		}
 
-		return i;
+		IfInfo ifinfo = new IfInfo();
+		ifinfo.exp = exp_info.str;
+		ifinfo.exp_line_number = id_line.get(exp_info.id);
+		ifinfo.infos = if_infos;
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = i;
+		viai.info = ifinfo;
+
+		return viai;
 		}
 
-	private int validate_while(int index) {
+	private ValidIndexAndInfo validate_while(int index) {
 		SequenceInfo while_info = sequence_infos[index];
 		visited_ids.put(while_info.id, true);
 
 		if((index + 1) >= num_sequences) {
 			error_log.push("Missing expression after '" + while_info.str + "'", while_info.str, id_line.get(while_info.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo exp_info = sequence_infos[index + 1];
 		if(exp_info.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("Needed expression after 'while' but found '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(exp_info.id, true);
 
 		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
-			return -1;
+			return null;
 		}
 
 		if((index + 2) >= num_sequences) {
 			error_log.push("Missing '{' after 'while'", exp_info.str, id_line.get(exp_info.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo open_brac_info = sequence_infos[index + 2];
 		if(open_brac_info.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("Needed '{' after 'while' but found '" + open_brac_info.str + "'.", open_brac_info.str, id_line.get(open_brac_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(open_brac_info.id, true);
 
@@ -509,46 +584,51 @@ public class SyntaxChecker {
 
 		int i = index + 3;
 		SequenceInfo si = null;
+		List<Info> while_infos = new ArrayList<>();
+
 		for(; i < num_sequences; ++i) {
+			ValidIndexAndInfo vi = null;
 			si = sequence_infos[i];
+
 			if(si.seq_type == SequenceType.WHILE) {
-				i = validate_while(i);
+				vi = validate_while(i);
 				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.IF) {
-				i = validate_ifs(i);
+				vi = validate_ifs(i);
 				recv_after_if = true;
 			}
+			else if(si.seq_type == SequenceType.VAR_STAT) { // @Note: This has to come before EXPRESSION, but can be modified ....
+				vi = validate_var_stat(i);
+				recv_after_if = false;
+			}
 			else if(si.seq_type == SequenceType.EXPRESSION) {
-				i = validate_exp(i);
+				vi = validate_exp(i);
 				recv_after_if = false;
 			}
 			else if(si.seq_type == SequenceType.ELSE) {
 				if(recv_after_if == false) {
 					error_log.push("@while: 'else' or 'else if' can only be followed after an 'if'.", si.str, id_line.get(si.id));
 
-					return -1;
+					return null;
 				}
 
 				SequenceInfo si_2 = null;
 				if(i + 1 < num_sequences)
 					si_2 = sequence_infos[i + 1];
-				if(si_2 != null && si_2.seq_type == SequenceType.IF)
-					i = validate_else_if(i);
+				if(si_2 != null && si_2.seq_type == SequenceType.IF) {
+					vi = validate_else_if(i);
+				}
 				else {
-					i = validate_else(i);
+					vi = validate_else(i);
 					recv_after_if = false;
 				}
 			}
-			else if(si.seq_type == SequenceType.VAR_STAT) {
-				i = validate_var_stat(i);
-				recv_after_if = false;
-			}
 			else if(si.seq_type == SequenceType.BREAK) {
-				i = validate_break(i);
+				vi = validate_break(i);
 			}
 			else if(si.seq_type == SequenceType.CONTINUE) {
-				i = validate_continue(i);
+				vi = validate_continue(i);
 			}
 			else if(si.seq_type == SequenceType.CLOSED_BRACKET) {
 				boolean vtd = visited_ids.get(si.id);
@@ -560,77 +640,108 @@ public class SyntaxChecker {
 			else {
 				error_log.push("Invalid Statement '" + si.str + "' found.", si.str, id_line.get(si.id));
 
-				return -1;
+				return null;
 			}
 
-			if(i == -1)
-				return -1;
+			if(vi == null)
+				return null;
+			else {
+				while_infos.add(vi.info);
+				i = vi.return_value;
+			}
 
 			visited_ids.put(si.id, true);
 		}
 
 		if(i >= num_sequences) {
 			error_log.push("'if' is missing '}'.", si.str, id_line.get(si.id));
-			return -1;
+			return null;
 		}
 
 		inside_while = false;
 
-		return i;
+		WhileInfo whileinfo = new WhileInfo();
+		whileinfo.exp = exp_info.str;
+		whileinfo.exp_line_number = id_line.get(exp_info.id);
+		whileinfo.infos = while_infos;
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = i;
+		viai.info = whileinfo;
+
+		return viai;
 	}
 
-	private int validate_break(int index) {
+	private ValidIndexAndInfo validate_break(int index) {
 		SequenceInfo si = sequence_infos[index];
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Needed ';' after 'break'", si.str, id_line.get(si.id));
-			return -1;
+			return null;
 		}
 		visited_ids.put(si.id, true);
 
 		SequenceInfo semi_colon_info = sequence_infos[index + 1];
 		if(semi_colon_info.seq_type != SequenceType.SEMICOLON) {
 			error_log.push("Needed ';' after 'break' but found '" + semi_colon_info.str + "'.", semi_colon_info.str, id_line.get(semi_colon_info.id));
-			return -1;
+
+			return null;
 		}
 		visited_ids.put(semi_colon_info.id, true);
 
-		return index + 1;
+		OtherInfo other_info = new OtherInfo();
+		other_info.str = "break";
+		other_info.line_number = id_line.get(si.id);
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = index + 1;
+		viai.info = other_info;
+
+		return viai;
 	}
 
-	private int validate_continue(int index) {
+	private ValidIndexAndInfo validate_continue(int index) {
 		SequenceInfo si = sequence_infos[index];
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Needed ';' after 'continue'", si.str, id_line.get(si.id));
-			return -1;
+			return null;
 		}
 		visited_ids.put(si.id, true);
 
 		SequenceInfo semi_colon_info = sequence_infos[index + 1];
 		if(semi_colon_info.seq_type != SequenceType.SEMICOLON) {
 			error_log.push("Needed ';' after 'continue' but found '" + semi_colon_info.str + "'.", semi_colon_info.str, id_line.get(semi_colon_info.id));
-			return -1;
+
+			return null;
 		}
 		visited_ids.put(semi_colon_info.id, true);
 
-		return index + 1;
+		OtherInfo other_info = new OtherInfo();
+		other_info.str = "continue";
+		other_info.line_number = id_line.get(si.id);
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = index + 1;
+		viai.info = other_info;
+
+		return viai;
 	}
 
-	private int validate_var_stat(int index) {
+	private ValidIndexAndInfo validate_var_stat(int index) {
 		SequenceInfo si = sequence_infos[index];
 		visited_ids.put(si.id, true);
 
 		if((index + 1) >= num_sequences) {
 			error_log.push("Missing ';' after '" + si.str + "'.", si.str, id_line.get(si.id));
 
-			return -1;
+			return null;
 		}
 
 		String msg = si.validate_syntax(ri, id_char_index.get(si.id));
 		if(msg.length() > 4) {
 			error_log.push(msg, si.str, id_line.get(si.id));
-			return -1;	
+			return null;
 		}
 
 		SequenceInfo si_2 = sequence_infos[index + 1];
@@ -638,18 +749,55 @@ public class SyntaxChecker {
 		if(si_2.seq_type != SequenceType.SEMICOLON) {
 			error_log.push("Needed ';' after '" + si.str + "' but found '" + 
 					si_2.str + "'.", si_2.str, id_line.get(si_2.id));
+			return null;
 		}
 
-		return index + 1;
+		List<String> split_str = si.split_str(ri, id_char_index.get(si.id));
+		String name = split_str.get(0);
+		String exp = "";
+		String type = "not_known";
+
+		if(msg.equals(":="))
+			exp = split_str.get(1);
+		else if(msg.equals(":"))
+			type = split_str.get(1);
+		else if(msg.equals(":..=")) {
+			type = split_str.get(1);
+			exp = split_str.get(2);
+		}
+
+		Info info = null;
+		if(msg.equals("=")) {
+			VarAssignInfo var_assign_info = new VarAssignInfo();
+			var_assign_info.var_name = name;
+			var_assign_info.raw_value = exp;
+			var_assign_info.line_number = id_line.get(si.id);
+			info = var_assign_info;
+		}
+		else {
+			VarDeclInfo var_decl_info = new VarDeclInfo();
+			var_decl_info.name = name;
+			var_decl_info.type = type;
+			var_decl_info.raw_value = exp;
+			var_decl_info.line_number = id_line.get(si.id);
+
+			info = var_decl_info;
+		}
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.info = info;
+		viai.return_value = index + 1;
+
+		return viai;
 	}
 
-	private int validate_use(int index) {
+	private ValidIndexAndInfo validate_use(int index) {
 		SequenceInfo use_info = sequence_infos[index];
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing \"filename\" after 'use'.", use_info.str, id_line.get(use_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(use_info.id, true);
 
@@ -657,83 +805,91 @@ public class SyntaxChecker {
 		if(filename_info.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("Needed \"filename\" expression after 'use' but found '" + filename_info.str + "'.", filename_info.str, id_line.get(filename_info.id));
 
-			return -1;
+			return null;
 		}
 
 		String filename = filename_info.str;
 		if(filename.charAt(0) != '\"' || filename.charAt(filename.length() - 1) != '\"') {
 			error_log.push("Enclose 'filename' inside double quotes.", filename_info.str, id_line.get(filename_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(filename_info.id, true);
 
 		if(index + 2 >= num_sequences) {
 			error_log.push("Missing ';' after '" + use_info.str + " " + filename_info.str + "'.", filename_info.str, id_line.get(filename_info.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo semicolon_info = sequence_infos[index + 2];
 		if(semicolon_info.seq_type != SequenceType.SEMICOLON) {
 			error_log.push("Needed ';' after '" + filename_info.str + "' but found '" + semicolon_info.str + "'.", semicolon_info.str, id_line.get(semicolon_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		return index + 2;
+		UseInfo useinfo = new UseInfo();
+		useinfo.filename = filename;
+		useinfo.line_number = id_line.get(filename_info.id);
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = index = 2;
+		viai.info = useinfo;
+
+		return viai;
 	}
 
-	private int validate_enum(int index) {
+	private ValidIndexAndInfo validate_enum(int index) {
 		SequenceInfo enum_seq = sequence_infos[index];
 		visited_ids.put(enum_seq.id, true);
 
 		if(index - 1 < 0) {
 			error_log.push("Enum missing 'name' before '::enum'.", enum_seq.str,id_line.get(enum_seq.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo enum_name_seq = sequence_infos[index - 1];
 		if(enum_name_seq.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("'" + enum_name_seq.str + "' cannot be a name of an 'enum'.", enum_name_seq.str, id_line.get(enum_name_seq.id));
 
-			return -1;
+			return null;
 		}
 
 		if(!Util.is_valid_name(enum_name_seq.str)) {
 			error_log.push("'" + enum_name_seq.str + "' is not a valid name for an 'enum'.", enum_name_seq.str, id_line.get(enum_name_seq.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(enum_name_seq.id, true);
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing '{' after '::enum'", enum_seq.str, id_line.get(enum_seq.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo open_brac = sequence_infos[index + 1];
 		if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("Needed '{' after '::enum' but found '" + open_brac.str + "'.", open_brac.str, id_line.get(open_brac.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(open_brac.id, true);
 
 		if(index + 2 >= num_sequences) {
 			error_log.push("Needed enum constants inside enum '" + enum_name_seq.str + "'.", enum_name_seq.str + "::enum", id_line.get(enum_seq.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo value_seq = sequence_infos[index + 2];
 		if(value_seq.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("Invalid constants found inside enum '" + enum_name_seq.str + "'.", value_seq.str, id_line.get(value_seq.id));
 
-			return -1;
+			return null;
 		}
 
 		String value = value_seq.str;
@@ -742,7 +898,7 @@ public class SyntaxChecker {
 			if(!Util.is_all_caps(s)) {
 				error_log.push("'" + s + "' is not a valid enum constant name(Only A to Z is valid).", s, id_line.get(value_seq.id));
 
-				return -1;
+				return null;
 			}
 		}
 		visited_ids.put(value_seq.id, true);
@@ -750,28 +906,36 @@ public class SyntaxChecker {
 		if(index + 3 >= num_sequences) {
 			error_log.push("Needed '}' after definition of enum '" + enum_name_seq.str + "'.", enum_name_seq.str, id_line.get(value_seq.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo close_brac = sequence_infos[index + 3];
 		if(close_brac.seq_type != SequenceType.CLOSED_BRACKET) {
 			error_log.push("Needed '}' after definition of enum '" + enum_name_seq.str + "' but found '" + close_brac.str + "'.", close_brac.str, id_line.get(close_brac.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(close_brac.id, true);
 
-		return index + 3;
+		EnumInfo enuminfo = new EnumInfo();
+		enuminfo.name = enum_name_seq.str;
+		enuminfo.name_line_number = id_line.get(enum_name_seq.id);
+		enuminfo.values = split_value;
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = index + 3;
+		viai.info = enuminfo;
+
+		return viai;
 	}
 
-	private int validate_else(int index) {
+	private ValidIndexAndInfo validate_else(int index) {
 		SequenceInfo else_seq = sequence_infos[index];
-		int return_val = -1;
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing '{' after 'else'.", else_seq.str, id_line.get(else_seq.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(else_seq.id, true);
 
@@ -779,56 +943,61 @@ public class SyntaxChecker {
 		if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
 			error_log.push("Needed '{' after 'else' but found '" + open_brac.str + "'.", open_brac.str, id_line.get(open_brac.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(open_brac.id, true);
 
 		boolean recv_after_if = false;
 		int i = index + 2;
 		SequenceInfo s = null;
+		List<Info> else_infos = new ArrayList<>();
+
 		for(; i <= num_sequences; ++i) {
+			ValidIndexAndInfo vi = null;
 			s = sequence_infos[i];
+
 			if(s.seq_type == SequenceType.ELSE) {
 				if(recv_after_if == false) {
 					error_log.push("@else if: 'else if' can only be followed after an 'if'.", s.str, id_line.get(s.id));
 
-					return -1;
+					return null;
 				}
 
 				SequenceInfo si_2 = null;
 				if(i + 1 < num_sequences)
 					si_2 = sequence_infos[i + 1];
-				if(si_2 != null && si_2.seq_type == SequenceType.IF)
-					i = validate_else_if(i);
+				if(si_2 != null && si_2.seq_type == SequenceType.IF) {
+					vi = validate_else_if(i);
+				}
 				else {
-					i = validate_else(i);
+					vi = validate_else(i);
 					recv_after_if = false;
 				}
 			}
+			else if(s.seq_type == SequenceType.VAR_STAT) { // @Note: This has to come before EXPRESSION, but can be modified .......
+				vi = validate_var_stat(i);
+				recv_after_if = false;
+			}
 			else if(s.seq_type == SequenceType.EXPRESSION) {
-				i = validate_exp(i);
+				vi = validate_exp(i);
 				recv_after_if = false;
 			}
 			else if(s.seq_type == SequenceType.IF) {
-				i = validate_ifs(i);
+				vi = validate_ifs(i);
 				recv_after_if = true;
 			}
 			else if(s.seq_type == SequenceType.WHILE) {
-				i = validate_while(i);
+				vi = validate_while(i);
 				recv_after_if = false;
 			}
 			else if(s.seq_type == SequenceType.RETURN) {
-				i = validate_return(i);
-			}
-			else if(s.seq_type == SequenceType.VAR_STAT) {
-				i = validate_var_stat(i);
-				recv_after_if = false;
+				vi = validate_return(i);
 			}
 			else if(s.seq_type == SequenceType.BREAK && inside_while) {
-				i = validate_break(i);
+				vi = validate_break(i);
 			}
 			else if(s.seq_type == SequenceType.CONTINUE && inside_while) {
-				i = validate_continue(i);
+				vi = validate_continue(i);
 			}
 			else if(s.seq_type == SequenceType.CLOSED_BRACKET) {
 				boolean vtd = visited_ids.get(s.id);
@@ -839,67 +1008,78 @@ public class SyntaxChecker {
 			}
 			else {
 				error_log.push("Invalid statement '" + s.str + "' found", s.str, id_line.get(s.id));
-				return -1;	
+				return null;
 			}
 
-			if(i == -1)
-				return -1;
+			if(vi == null)
+				return null;
+			else {
+				else_infos.add(vi.info);
+				i = vi.return_value;
+			}
 
 			visited_ids.put(s.id, true);
 		}
 
 		recv_after_if = false;
-		return_val = i;
 
-		return return_val;
+		ElseInfo else_info = new ElseInfo();
+		else_info.infos = else_infos;
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = i;
+		viai.info = else_info;
+
+		return viai;
 	}
 
-	private int validate_else_if(int index) {
+	private ValidIndexAndInfo validate_else_if(int index) {
 		SequenceInfo else_seq = sequence_infos[index];
-		int return_val = -1;
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing '{' after 'else'.", else_seq.str, id_line.get(else_seq.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(else_seq.id, true);
 
 		SequenceInfo si_info = sequence_infos[index + 1];
 		visited_ids.put(si_info.id, true);
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+
 		if(si_info.seq_type == SequenceType.IF) {
 
 			if(index + 2 >= num_sequences) {
 				error_log.push("Missing 'expression' after 'else if'.", "else if", id_line.get(si_info.id));
 
-				return -1;
+				return null;
 			}
 
 			SequenceInfo exp_info = sequence_infos[index + 2];
 			if(exp_info.seq_type != SequenceType.EXPRESSION) {
 				error_log.push("Needed 'expression' after 'else if' but found '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
 
-				return -1;
+				return null;
 			}
 			visited_ids.put(exp_info.id, true);
 
 			String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 			if(!valid_exp.equals("none")) {
 				error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
-				return -1;
+				return null;
 			}
 
 			if(index + 3 >= num_sequences) {
-				error_log.push("Missing '{' after '" + exp_info + "' in 'else if'.", exp_info.str, id_line.get(exp_info.id));
+				error_log.push("Missing '{' after '" + exp_info.str + "' in 'else if'.", exp_info.str, id_line.get(exp_info.id));
 
-				return -1;
+				return null;
 			}
 
 			SequenceInfo open_brac = sequence_infos[index + 3];
 			if(open_brac.seq_type != SequenceType.OPEN_BRACKET) {
 				error_log.push("Needed '{' after 'else if' expression but found '" + open_brac.str + "'.", open_brac.str, id_line.get(open_brac.id));
 
-				return -1;
+				return null;
 			}
 			visited_ids.put(open_brac.id, true);
 
@@ -907,48 +1087,52 @@ public class SyntaxChecker {
 
 			int i = index + 4;
 			SequenceInfo s = null;
+			List<Info> else_if_infos = new ArrayList<>();
+
 			for(; i <= num_sequences; ++i) {
+				ValidIndexAndInfo vi = null;
 				s = sequence_infos[i];
+
 				if(s.seq_type == SequenceType.ELSE) {
 					if(recv_after_if == false) {
 						error_log.push("@else: 'else' or 'else if' can only be followed after an 'if'.", s.str, id_line.get(s.id));
-						return -1;
+						return null;
 					}
 
 					SequenceInfo si_2 = null;
 					if(i + 1 < num_sequences)
 						si_2 = sequence_infos[i + 1];
 					if(si_2 != null && si_2.seq_type == SequenceType.IF)
-						i = validate_else_if(i);
+						vi = validate_else_if(i);
 					else {
-						i = validate_else(i);
+						vi = validate_else(i);
 						recv_after_if = false;
 					}
 				}
+				else if(s.seq_type == SequenceType.VAR_STAT) { // @Note: This has to come before expression. Can be modified ....
+					vi = validate_var_stat(i);
+					recv_after_if = false;
+				}
 				else if(s.seq_type == SequenceType.EXPRESSION) {
-					i = validate_exp(i);
+					vi = validate_exp(i);
 					recv_after_if = false;
 				}
 				else if(s.seq_type == SequenceType.IF) {
-					i = validate_ifs(i);
+					vi = validate_ifs(i);
 					recv_after_if = true;
 				}
 				else if(s.seq_type == SequenceType.RETURN) {
-					i = validate_return(i);
+					vi = validate_return(i);
 				}
 				else if(s.seq_type == SequenceType.WHILE) {
-					i = validate_while(i);
-					recv_after_if = false;
-				}
-				else if(s.seq_type == SequenceType.VAR_STAT) {
-					i = validate_var_stat(i);
+					vi = validate_while(i);
 					recv_after_if = false;
 				}
 				else if(s.seq_type == SequenceType.BREAK && inside_while) {
-					i = validate_break(i);
+					vi = validate_break(i);
 				}
 				else if(s.seq_type == SequenceType.CONTINUE && inside_while) {
-					i = validate_continue(i);
+					vi = validate_continue(i);
 				}
 				else if(s.seq_type == SequenceType.CLOSED_BRACKET) {
 					boolean vtd = visited_ids.get(s.id);
@@ -959,33 +1143,43 @@ public class SyntaxChecker {
 				}
 				else {
 					error_log.push("Invalid statement '" + s.str + "' found", s.str, id_line.get(s.id));
-					return -1;	
+					return null;
 				}
 
-				if(i == -1)
-					return -1;
+				if(vi == null)
+					return null;
+				else {
+					else_if_infos.add(vi.info);
+					i = vi.return_value;
+				}
 
 				visited_ids.put(s.id, true);
 			}
 
-			return_val = i;
+			ElseIfInfo else_if_info = new ElseIfInfo();
+			else_if_info.exp = exp_info.str;
+			else_if_info.exp_line_number = id_line.get(exp_info.id);
+			else_if_info.infos = else_if_infos;
+
+			viai.return_value = i;
+			viai.info = else_if_info;
 		}
 		else {
 			error_log.push("Needed '{' after 'else' but found '" + si_info.str + "'.", si_info.str, id_line.get(si_info.id));
 
-			return -1;
+			return null;
 		}
 
-		return return_val;
+		return viai;
 	}
 
-	private int validate_return(int index) {
+	private ValidIndexAndInfo validate_return(int index) {
 		SequenceInfo ret_seq_info = sequence_infos[index];
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing 'expression' after 'return'.", ret_seq_info.str, id_line.get(ret_seq_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(ret_seq_info.id, true);
 
@@ -993,57 +1187,73 @@ public class SyntaxChecker {
 		if(exp_info.seq_type != SequenceType.EXPRESSION) {
 			error_log.push("Needed 'expression' after 'return' but found '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(exp_info.id, true);
 
 		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
-			return -1;
+			return null;
 		}
 
 		if(index + 2 >= num_sequences) {
 			error_log.push("Missing ';' after expression '" + exp_info.str + "'.", exp_info.str, id_line.get(exp_info.id));
 
-			return -1;
+			return null;
 		}
 
 		SequenceInfo semicolon_info = sequence_infos[index + 2];
 		if(semicolon_info.seq_type != SequenceType.SEMICOLON) {
 			error_log.push("Needed ';' after expression '" + exp_info.str + "' but found '" + semicolon_info.str + "'.", semicolon_info.str, id_line.get(semicolon_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		return index + 2;
+		ReturnInfo ret_info = new ReturnInfo();
+		ret_info.exp = exp_info.str;
+		ret_info.line_number = id_line.get(exp_info.id);
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = index + 2;
+		viai.info = ret_info;
+
+		return viai;
 	}
 
-	private int validate_exp(int index) {
+	private ValidIndexAndInfo validate_exp(int index) {
 		SequenceInfo exp_info = sequence_infos[index];
 
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing ';' after expression '" + exp_info + "'.", exp_info.str, id_line.get(exp_info.id));
 
-			return -1;
+			return null;
 		}
 
 		String msg = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
 		if(!msg.equals("none")) {
 			error_log.push(msg, exp_info.str, id_line.get(exp_info.id));
-			return -1;
+			return null;
 		}
 		visited_ids.put(exp_info.id, true);
 
 		SequenceInfo semicolon_info = sequence_infos[index + 1];
 		if(semicolon_info.seq_type != SequenceType.SEMICOLON) {
-			error_log.push("Needed ';' after 'expression' but found '" + semicolon_info.str + "'.", semicolon_info.str, id_line.get(semicolon_info.id));
+			error_log.push("Needed ';' after 'expression' but found '" + semicolon_info.str + "'.", exp_info.str, id_line.get(semicolon_info.id));
 
-			return -1;
+			return null;
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		return index + 1;
+		ExpInfo expinfo = new ExpInfo();
+		expinfo.exp = exp_info.str;
+		expinfo.line_number = id_line.get(exp_info.id);
+
+		ValidIndexAndInfo viai = new ValidIndexAndInfo();
+		viai.return_value = index + 1;
+		viai.info = expinfo;
+
+		return viai;
 	}
-	}
+}
