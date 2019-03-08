@@ -5,25 +5,18 @@ import java.util.Set;
 import java.util.Iterator;
 
 public class Main {
-	static List<String> keywords = new ArrayList<>(); 
-	static List<String> split_sequences = new ArrayList<>();
-	static List<String> arith_ops = new ArrayList<>();
-	static List<String> logical_ops = new ArrayList<>();
-	static List<String> relational_ops = new ArrayList<>();
-	static List<String> bitwise_ops = new ArrayList<>();
-	static List<RangeIndices> quotes_range_indices = new ArrayList<>();
-
 	public static void main(String[] args) {
 		String filename = "C:\\Users\\Akash\\Documents\\GitHub\\BreakDown_Java\\asset\\demo.veg";
 		StringBuffer data;
 		MyFile my_file;
 
-		init_ops();
+		Util.init_split_sequences();
+		Util.init_ops();
 
 		try {
 			my_file = new MyFile();
 			data = my_file.get_data(filename);
-			quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
+			Util.quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
 
 			System.out.println("data: " + data);
 			System.out.println("Size: " + data.length());
@@ -31,8 +24,8 @@ public class Main {
 			System.out.println("----------------------------------------------");
 			System.out.println();
 
-			List<String> tokens = Util.split_into_tokens(data.toString(), split_sequences, quotes_range_indices);
-			List<SequenceType> st_li = SequenceTypeInfo.get_sequence_types(tokens, quotes_range_indices);
+			List<String> tokens = LexicalAnalyser.split(data.toString(), Util.split_sequences, Util.quotes_range_indices);
+			List<SequenceType> st_li = SequenceTypeInfo.get_sequence_types(tokens, Util.quotes_range_indices);
 
 			List<SequenceInfo> sq_info = new ArrayList<>();
 			for(int i = 0; i < tokens.size(); ++i) {
@@ -51,19 +44,15 @@ public class Main {
 				System.out.println("<" + sq.str + "> -------->  " + SequenceTypeInfo.get_in_str(sq.seq_type));
 			}
 
-			SyntaxChecker sc = new SyntaxChecker(sq_arr, my_file, quotes_range_indices, id_number, id_char_index);
+			SyntaxChecker sc = new SyntaxChecker(sq_arr, my_file, Util.quotes_range_indices, id_number, id_char_index);
 			ErrorLog error_log = sc.validate_syntax();
 			if(error_log.log.size() > 0) {
 				error_log.show();
 				return;
 			}
 
-			System.out.println();
-			System.out.println("INFOS: ");
-			System.out.println();
-			List<Info> infos = sc.infos;
-			for(Info i: infos)
-				i.display();
+			SemanticAnalyser sa = new SemanticAnalyser(sc.infos, Util.quotes_range_indices);
+			sa.start();
 
 			System.out.println("No syntax errors.");
 		}
@@ -73,32 +62,4 @@ public class Main {
 		}
 	}
 
-	static void init_ops() {
-		// @Incomplete ... 
-		// @Incomplete ... 
-
-		keywords.add("func"); keywords.add("::struct");
-		keywords.add("::enum"); keywords.add("if");
-		keywords.add("else"); keywords.add("while");
-		keywords.add("return"); keywords.add("use");
-
-		split_sequences.add(";"); split_sequences.add("{");
-		split_sequences.add("}");
-		for(int i = 0; i < keywords.size(); ++i)
-			split_sequences.add(keywords.get(i));
-
-		arith_ops.add("+"); arith_ops.add("-");
-		arith_ops.add("*"); arith_ops.add("/");
-		arith_ops.add("%");
-
-		logical_ops.add("||"); logical_ops.add("&&"); logical_ops.add("!");
-
-		relational_ops.add("=="); relational_ops.add("!=");
-		relational_ops.add(">="); relational_ops.add("<=");
-		relational_ops.add("<"); relational_ops.add(">");
-
-		bitwise_ops.add("|"); bitwise_ops.add("&");
-		bitwise_ops.add("^"); bitwise_ops.add(">>>");
-		bitwise_ops.add("<<<");
-	}
 }

@@ -1,6 +1,29 @@
 import java.util.List;
 import java.util.ArrayList;
 
+/*
+	static List<String> arith_ops = new ArrayList<>();
+	static List<String> logical_ops = new ArrayList<>();
+	static List<String> relational_ops = new ArrayList<>();
+	static List<String> bitwise_ops = new ArrayList<>();
+*/
+
+/*
+	arith_ops.add("+"); arith_ops.add("-");
+	arith_ops.add("*"); arith_ops.add("/");
+	arith_ops.add("%");
+
+	logical_ops.add("||"); logical_ops.add("&&"); logical_ops.add("!");
+
+	relational_ops.add("=="); relational_ops.add("!=");
+	relational_ops.add(">="); relational_ops.add("<=");
+	relational_ops.add("<"); relational_ops.add(">");
+
+	bitwise_ops.add("|"); bitwise_ops.add("&");
+	bitwise_ops.add("^"); bitwise_ops.add(">>>");
+	bitwise_ops.add("<<<");
+*/
+
 class StringAndIndex {
 	int index = -1;
 	String str = "";
@@ -11,7 +34,179 @@ class RangeIndices {
 	int to_index = -1;
 }
 
+class IndexLen {
+	public int index = -1;
+	public int len = -1;
+}
+
 public class Util {
+	static List<String> operators = new ArrayList<>();
+	static List<String> keywords = new ArrayList<>(); 
+	static List<String> split_sequences = new ArrayList<>();
+	static List<RangeIndices> quotes_range_indices = new ArrayList<>();
+
+	static void init_ops() {
+		operators.clear();
+		operators.add("+"); operators.add("-"); operators.add("*"); operators.add("/"); operators.add("%");
+		operators.add("=="); operators.add("!="); operators.add(">"); operators.add(">="); operators.add("<"); operators.add("<=");
+		operators.add("&&"); operators.add("||"); operators.add("!");
+		operators.add("&"); operators.add("|"); operators.add("^"); operators.add(">>>"); operators.add("<<<");
+		operators.add("("); operators.add(")"); operators.add("["); operators.add("]");
+		operators.add("<<"); operators.add(">>");
+		operators.add(":=");
+	}
+
+	static void init_split_sequences() {
+		keywords.add("func"); keywords.add("::struct");
+		keywords.add("::enum"); keywords.add("if");
+		keywords.add("else"); keywords.add("while");
+		keywords.add("return"); keywords.add("use");
+
+		split_sequences.add(";"); split_sequences.add("{");
+		split_sequences.add("}");
+		for(int i = 0; i < keywords.size(); ++i)
+			split_sequences.add(keywords.get(i));
+	}
+
+	static List<String> split_with_ops(String str) {
+		List<IndexLen> op_pos = get_op_pos_for_exp(str);
+		List<String> in_list = new ArrayList<>();
+
+		Integer s = op_pos.size();
+		if(s == 0) {
+			in_list.add(str);
+			return in_list;
+		}
+
+		// adding the sub string before the first operator.
+		IndexLen start_index_len = op_pos.get(0);
+		String first_str = str.substring(0, start_index_len.index);
+		if(!first_str.equals(""))
+			in_list.add(first_str);
+
+		for(int i = 0; i < s - 1; ++i) {
+			IndexLen index_len_1 = op_pos.get(i);
+			IndexLen index_len_2 = op_pos.get(i + 1);
+
+			int begin_index = index_len_1.index + index_len_1.len;
+			int end_index = index_len_2.index;
+
+			String tmp_op = str.substring(index_len_1.index, index_len_1.index + index_len_1.len);
+			if(!tmp_op.equals(""))
+				in_list.add(tmp_op);
+
+			String var_str = str.substring(begin_index, end_index);
+			if(!var_str.equals(""))
+				in_list.add(var_str);
+		}
+
+		IndexLen last_index_len = op_pos.get(s - 1);
+		String tmp_op = str.substring(last_index_len.index, last_index_len.index + last_index_len.len);
+		if(!tmp_op.equals(""))
+			in_list.add(tmp_op);
+
+		String last_str = str.substring(last_index_len.index + last_index_len.len);
+		if(!last_str.equals(""))
+			in_list.add(last_str);
+
+		return in_list;
+	}
+
+	static List<IndexLen> get_op_pos_for_exp(String str) {
+		List<IndexLen> index_len = new ArrayList<>();
+
+		/* Note: The operator inside function calls, and array element calls should be neglected. */
+
+		// The operator can be more than one character.
+		for(int i = 0; i < str.length(); ++i) {
+			String len_1_str, len_2_str = "", len_3_str = "";
+
+			len_1_str = str.substring(i, i + 1);
+			if((i + 1) < str.length())
+				len_2_str = str.substring(i, i + 2);
+			if((i + 2) < str.length())
+				len_3_str = str.substring(i, i + 3);
+
+			int len_3_index = str.indexOf(len_3_str, i);
+			int len_2_index = str.indexOf(len_2_str, i);
+			int len_1_index = str.indexOf(len_1_str, i);
+
+			IndexLen tmp_index_len = new IndexLen();
+			if(is_operator(len_3_str) && len_3_index != -1) {
+				tmp_index_len.index = i;
+				tmp_index_len.len = 3;
+				index_len.add(tmp_index_len);
+				i += 2;
+			}
+			else if(is_operator(len_2_str) && len_2_index != -1) {
+				tmp_index_len.index = i;
+				tmp_index_len.len = 2;
+				index_len.add(tmp_index_len);
+				i += 1;
+			}
+			else if(is_operator(len_1_str) && len_1_index != -1) {
+				boolean should_include_op = true;
+				if(len_1_str.equals("(") || len_1_str.equals("[")) {
+					if(i > 0) {
+						char prev_char = str.charAt(i - 1);
+						int close_bracket_index = get_matching_close_bracket_index(str, len_1_str, i);
+						if(is_char_alpha_digit_underscore(prev_char)) {
+							i = close_bracket_index; // No Need to Inc because of ++i
+							should_include_op = false;
+						}
+					}
+				}
+				if(should_include_op) {
+					tmp_index_len.index = i;
+					tmp_index_len.len = 1;
+					index_len.add(tmp_index_len);
+				}
+			}
+		}
+
+		return index_len;
+	}
+
+	static int get_matching_close_bracket_index(String s, String c, int from_index) {
+		int open_braces_count = 0;
+		int close_braces_count = 0;
+		int quotes_count = 0;
+		int len = s.length();
+		char closing_char = ' ';
+		char opening_char = c.charAt(0);
+
+		if(opening_char == '(')
+			closing_char = ')';
+		else if(opening_char == '[')
+			closing_char = ']';
+
+		for(int i = from_index; i < len; ++i) {
+			char ch = s.charAt(i);
+			if(ch == '\"') {
+				if(i == 0 || (s.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
+			}
+			if(quotes_count % 2 != 0)
+				continue;
+
+			if(ch == opening_char)
+				open_braces_count += 1;
+			else if(ch == closing_char)
+				close_braces_count += 1;
+
+			if(open_braces_count == close_braces_count)
+				return i;
+		}
+
+		return -1;
+	}
+
+	static boolean is_operator(String op) {
+		boolean is_op = operators.contains(op);
+		return is_op;
+	}
+
 	// @Redundant: Can be made into a single method
 	static String eat_spaces(String str) {
 		String tmp = "";
@@ -78,7 +273,6 @@ public class Util {
 					quotes_count += 1;
 				}
 			}
-
 			else if(quotes_count % 2 == 0 && c == ch)
 				count += 1;
 		}
@@ -313,49 +507,6 @@ public class Util {
 		return false;
 	}
 
-	static List<String> split_into_tokens(String str, List<String> split_sequences, List<RangeIndices> quotes_range_indices) {
-		List<String> split_list = new ArrayList<>();
-		int len = str.length();
-
-		if(len == 0)
-			return split_list;
-
-		int current_index = 0;
-		StringAndIndex si;
-		boolean if_index_inside_quotes = false;
-
-		int i = 0;
-		si = get_first_index_and_str(str, current_index + i, split_sequences);
-		while(si.index != -1 || current_index < len) {
-			boolean index_inside_quotes = Util.is_index_inside_quotes(si.index, quotes_range_indices);
-
-			if(si.index == -1 && !index_inside_quotes) {
-				String substring = str.substring(current_index);
-				if(!substring.equals(""))
-					split_list.add(substring);
-
-				break;
-			}
-
-			if(!index_inside_quotes) {
-				String substring = str.substring(current_index, si.index);
-
-				if(!substring.equals(""))
-					split_list.add(substring);
-				split_list.add(si.str);
-				current_index = si.index + si.str.length();
-				i = 0;
-			}
-			else {
-				i += 1;
-			}
-
-			si = get_first_index_and_str(str, current_index + i, split_sequences);
-		}
-
-		return split_list;
-	}
-
 	static StringAndIndex get_first_index_and_str(String str, int from_index, List<String> li) {
 		StringAndIndex si = new StringAndIndex();
 		final int max_index = 100000;
@@ -427,24 +578,28 @@ public class Util {
 				}
 			}
 		}
-		
+
 		return quotes_count;
 	}
 
-	static String is_valid_exp(String s, List<RangeIndices> ri, int from_index) {
-		int quotes_count = get_num_quotes(s);
-		if(quotes_count % 2 != 0)
+	static String is_valid_exp(String s, int from_index) {
+		if(get_num_quotes(s) % 2 != 0)
 			return "Number of open quotes not matching with the number of closing quotes in the expression.";
 
+		int quotes_count = 0;
 		int open_paren_count = 0;
 		int close_paren_count = 0;
 		int open_square_count = 0;
 		int close_square_count = 0;
 		for(int i = 0; i < s.length(); ++i) {
 			char c = s.charAt(i);
-			if(is_index_inside_quotes(i + from_index, ri)) {
-				continue;
+			if(c == '\"') {
+				if(i == 0 || (s.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
 			}
+			if(quotes_count % 2 != 0)
+				continue;
 
 			if(c == '(')
 				open_paren_count += 1;
@@ -459,13 +614,100 @@ public class Util {
 		if(open_paren_count != close_paren_count)
 			return "Number of '(' not matching number of ')' in the expression.";
 		if(open_square_count != close_square_count)
-			return "Number if '[' not matching number of ']' in the expression.";
+			return "Number of '[' not matching number of ']' in the expression.";
 
 		// @Incomplete: Anything else....
 		// @Incomplete: Anything else....
 		// @Incomplete: Anything else....
 		// @Incomplete: Anything else....
-		
+
 		return "none";
+	}
+
+	static boolean is_char_alpha_underscore(char c) {
+		if(c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+			return true;
+
+		return false;
+	}
+
+	static boolean if_func_call(String s) {
+		if(s.length() < 3)
+			return false;
+
+		char c1 = s.charAt(0);
+		if(!is_char_alpha_underscore(c1))
+			return false;
+
+		int i = 1;
+		int len = s.length();
+		boolean encountered_open_paren = false;
+		for(; i < len; ++i) {
+			char c = s.charAt(i);
+			if(c == '(') {
+				encountered_open_paren = true;
+				break;
+			}
+		}
+
+		char last_char = s.charAt(len - 1);
+		if(last_char == ')')
+			return true;
+
+		return false;
+	}
+
+	// @Note: 's' should not include the outer function name ...
+	static List<String> get_all_func_calls(String s) {
+		List<String> li = new ArrayList<>();
+		int len = s.length();
+		int func_len = 0;
+		for(int i = 0; i < len; ++i) {
+			char c = s.charAt(i);
+			if(is_char_alpha_digit_underscore(c))
+				func_len += 1;
+			else if(c == '(') {
+				int close_paren_index = get_matching_close_bracket_index(s, "(", i);
+				String func = s.substring(i - func_len, close_paren_index + 1);
+				li.add(func);
+				System.out.println("func: <" + func + ">");
+
+				func_len = 0;
+			}
+			else {
+				func_len = 0;
+			}
+		}
+
+		return li;
+	}
+
+	static List<String> get_func_args(String s) {
+		int num_args = 1;
+		int len = s.length();
+		int index_of_first_open_paren = s.indexOf('(');
+		int num_open_paren = 0;
+		int num_close_paren = 0;
+		int last_index = index_of_first_open_paren + 1;
+		List<String> args = new ArrayList<>();
+
+		for(int i = index_of_first_open_paren + 1; i < len; ++i) {
+			char c = s.charAt(i);
+			if(c == '(')
+				num_open_paren += 1;
+			else if(c == ')')
+				num_close_paren += 1;
+			else if(num_open_paren == num_close_paren && c == ',') {
+				num_args += 1;
+				String arg = s.substring(last_index, i);	
+				args.add(arg);
+
+				last_index = i + 1;
+			}
+		}
+
+		args.add(s.substring(last_index, len - 1));
+
+		return args;
 	}
 }

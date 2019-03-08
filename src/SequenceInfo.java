@@ -21,7 +21,7 @@ public class SequenceInfo {
 		this.id = id;
 	}
 
-	List<String> split_str(List<RangeIndices> ri, int from_index) {
+	List<String> split_str(int from_index) {
 		List<String> li;
 
 		switch(seq_type) {
@@ -29,7 +29,7 @@ public class SequenceInfo {
 				li = split_func_name_args();
 				break;
 			case VAR_STAT:
-				li = split_var_declare_or_define(ri, from_index);
+				li = split_var_declare_or_define(from_index);
 				break;
 			default:
 				li = new ArrayList<>();
@@ -38,9 +38,9 @@ public class SequenceInfo {
 		return li;
 	}
 
-	List<String> split_var_declare_or_define(List<RangeIndices> ri, int from_index) {
+	List<String> split_var_declare_or_define(int from_index) {
 		List<String> li = new ArrayList<>();
-		String msg = validate_var_decl_def(ri, from_index);
+		String msg = validate_var_decl_def(from_index);
 
 		int index_of_equal_colon = str.indexOf(":=");
 		int index_of_equal = str.indexOf("=");
@@ -108,25 +108,25 @@ public class SequenceInfo {
 	}
 
 	// "none": no errors , "ErrorMsg": errors
-	String validate_syntax(List<RangeIndices> ri, int from_index) {
+	String validate_syntax(int from_index) {
 		// Note: Only declaration/definition, expressions, func_name_args will be checked for
 		switch(seq_type) {
 			case FUNC_NAME_ARGS:
 				return validate_func_declaration_syntax();
 			case VAR_STAT:
-				return validate_var_decl_def(ri, from_index);
+				return validate_var_decl_def(from_index);
 			case EXPRESSION:
-				return validate_exp(ri, from_index);
+				return validate_exp(from_index);
 		}
 
 		return "none";
 	}
 
-	private String validate_exp(List<RangeIndices> ri, int from_index) {
-		return Util.is_valid_exp(str, ri, from_index);	
+	private String validate_exp(int from_index) {
+		return Util.is_valid_exp(str, from_index);	
 	}
 
-	private String validate_var_decl_def(List<RangeIndices> ri, int from_index) {
+	private String validate_var_decl_def(int from_index) {
 		String var_name, var_type = "", exp_value = "";
 		boolean is_define_1 = false; // :=
 		boolean is_define_2 = false; // :int=
@@ -134,14 +134,16 @@ public class SequenceInfo {
 		boolean is_assign = false; // =
 
 		int index_of_equal_colon = str.indexOf(":=");	
+		int index_of_equal = -1;
+		int index_of_colon = -1;
 		if(index_of_equal_colon != -1) {
 			var_name = str.substring(0, index_of_equal_colon);
 			exp_value = str.substring(index_of_equal_colon + 2);	
 			is_define_1 = true;
 		}
 		else {
-			int index_of_equal = str.indexOf("=");
-			int index_of_colon = str.indexOf(":");
+			index_of_equal = str.indexOf("=");
+			index_of_colon = str.indexOf(":");
 
 			if(index_of_equal < index_of_colon && index_of_equal != -1) {
 				return "In declaring variables ':' has to come before '='.";
@@ -165,12 +167,20 @@ public class SequenceInfo {
 			}
 		}
 
-		if(!Util.is_valid_name(var_name))
-			return "Variable name '" + var_name + "' is not valid.";
 		if(!var_type.equals("") && !Util.is_valid_type_name(var_type))
 			return "Identifier '" + var_type + "' is not a valid Type name";
 
-		String exp_msg = Util.is_valid_exp(exp_value, ri, from_index);
+		if(index_of_equal != -1 && index_of_colon == -1) {
+			String msg = Util.is_valid_exp(var_name, from_index);
+			if(!msg.equals("none"))
+				return msg;
+		}
+		else {
+			if(!Util.is_valid_name(var_name))
+				return "Variable name '" + var_name + "' is not valid.";
+		}
+
+		String exp_msg = Util.is_valid_exp(exp_value, from_index);
 		if(!exp_msg.equals("none"))
 			return exp_msg;
 

@@ -1,0 +1,142 @@
+# A Comment
+
+* Primitive types
+1) int_8 , uint_8
+2) int_16, uint_16
+3) int_32, uint_32
+4) int_64, uint_64
+4) double ( no float )
+5) bool
+6) char
+
+default is int_32.
+
+* Keywords
+1) PrimitiveTypes
+2) func , struct, enum, const , if , else, while, for, true, false, break, return, use, cast, continue, static, void.
+3) make # for dynamic allocation
+4) free # freeing the memory
+
+* Operators
+1) +, -, *, / , % , # Arithmetic
+2) == , != , > , >= , < , <= # Relational
+3) && , || , ! # Logical
+4) & , | , ^ , >>> , <<< # Bit-Wise
+5) << , >> # DeReference, Fetching address from a non-pointer variable.
+6) () , []
+
+* Sure About:
+1) Statements end with semicolon.
+2) Explicit type declaration is not required.
+3) It's a C like langauge ( block structured ).
+4) Pointers are available.
+4) Functions need not be declared.
+5) Structs cannot have functions.
+6) No switch statements.
+7) No exception handling.
+8) Cannot use variables in other files.
+9) At max we can call a function within a function.
+10) Un-Initialised pointers point to null ( nullptr in C++ ).
+11) No variable references.
+12) No complex expressions.
+13) No C-like for statements.
+
+* Not Sure About:
+1) Multiple return types.
+2) No casting.
+3) Object Oriented
+
+--------------------------------------------------------
+
+a := 1; # declaration and definition
+a = 2; # assignment
+
+# include other .veg files
+use <filename> # path has to be relative.
+
+# defining a function
+func main(argc: int, argv: string[]) -> int
+{
+	return 0;
+}
+
+# dynamic allocation
+a := make int(10); # Value of the data-type goes into the parenthesis.
+b := make Animal("name", 10);
+
+# freeing memory
+a := new int[5];
+b := new int[3] { 1, 2, 3 };
+free a; # also sets a to null.
+free b;
+
+# declaring enums
+# No explicit numbering in enums
+Foo::enum
+{
+	one, two, three, four
+}
+
+# de-referencing pointers
+a := new int(10);
+b := << a; # pull the data out.
+
+# declaring a pointer
+a : int*;
+   OR
+a : int* = null;
+
+# point to
+a : int* = null;
+b := 10;
+a = >> b; # a points to address of b.
+
+# assigning a pointer varible to another pointer variable.
+a :int* = null;
+b :int* = a; # no referencing or de-referencing needed.
+
+# declaring a struct
+foo::struct
+{
+	a : int = 10;
+	b : float = 20.0;
+}
+
+# if
+if condition
+{
+
+}
+
+# NotSure if while should only have bool variables or literals.
+# NotSure if while should only have bool variables or literals.
+# NotSure if while should only have bool variables or literals.
+# while
+while condition # 
+{
+	
+}
+
+# Not Sure !!!!!
+# easy looping of arrays
+arr := { 1, 2, 3, 4, 5 };
+for(i := arr)
+{
+
+}
+
+--------------------------------------------------------
+
+Notes on language implementation:
+0) It cannot parse include files that are in C++ ( It supports it's langauge ).
+1) arrays will be stored as vector<T>
+2) free should point the pointer to null and deleting the memory.
+3) The <condition> in "while" should only have bool varibales or literals.
+4) There should be pre-defined functions like sin, cos, pow, floor, ceil, etc....
+5) Default values for primitive types are (0 for int), (0.0 for double), (false for bool).
+6) No increment or decrement operator ( ++ or -- ).
+7) No shorthand equals ( += , -= , *= .. etc ).
+8) If literal 4 should act as a double then append 'd' to it ie. 4d. ( Translated to 4f ).
+9) The default integer type if not given is int_32.
+10) pointer variables should only point to null or addresses. No explicit addresses can be given;
+11) Explicit blocks of code cannot be written, like { a := 10 }, whitout while, if, func ... etc

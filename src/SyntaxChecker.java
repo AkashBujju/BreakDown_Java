@@ -74,11 +74,14 @@ public class SyntaxChecker {
 				encountered_func = true;
 			}
 			else if(s.seq_type == SequenceType.VAR_STAT) {
+				// @ Tmp: In C++ global variables can be declared even after function definitions... So What to do ???????
+				/*
 				if(encountered_func) {
 					error_log.push("Global variable '" + s.str + "' is declared in an invalid position.", s.str, id_line.get(s.id));
 					show_invalid_stats = false;
 					break;
 				}
+				*/
 				res = validate_var_stat(i);
 				encountered_global_var = true;
 			}
@@ -178,7 +181,7 @@ public class SyntaxChecker {
 			SequenceInfo var_decl_info = sequence_infos[i];
 			visited_ids.put(var_decl_info.id, true);
 			if(var_decl_info.seq_type == SequenceType.VAR_STAT) {
-				String msg = var_decl_info.validate_syntax(ri, id_char_index.get(var_decl_info.id));
+				String msg = var_decl_info.validate_syntax(id_char_index.get(var_decl_info.id));
 				if(msg.equals("=")) {
 					error_log.push("Only variable declaration/definition is allowed inside struct '" + expr_seq_info.str + "'", var_decl_info.str, id_line.get(var_decl_info.id));
 					break;
@@ -189,7 +192,7 @@ public class SyntaxChecker {
 				}
 
 				// @Incomplete: The right-hand side ie. the expression should be a literal value .... or should be left empty.
-				List<String> split_str = var_decl_info.split_str(ri, id_char_index.get(var_decl_info.id));
+				List<String> split_str = var_decl_info.split_str(id_char_index.get(var_decl_info.id));
 				String name = split_str.get(0);
 				String exp = "";
 				String type = "not_known";
@@ -217,11 +220,7 @@ public class SyntaxChecker {
 				}
 
 				// Making a new VarDeclInfo and assing it to the list....
-				VarDeclInfo var_declinfo = new VarDeclInfo();
-				var_declinfo.name = name;
-				var_declinfo.type = type;
-				var_declinfo.raw_value = exp;
-				var_declinfo.line_number = id_line.get(var_decl_info.id);
+				VarDeclInfo var_declinfo = new VarDeclInfo(name, type, exp, id_line.get(var_decl_info.id));
 				var_decl_infos.add(var_declinfo);
 
 				num_variables += 1;
@@ -251,10 +250,7 @@ public class SyntaxChecker {
 		}
 
 		// Initialising StructInfo
-		StructInfo structinfo = new StructInfo();
-		structinfo.name_line_number = id_line.get(expr_seq_info.id);
-		structinfo.name = expr_seq_info.str;	
-		structinfo.var_decl_infos = var_decl_infos;	
+		StructInfo structinfo = new StructInfo(expr_seq_info.str, id_line.get(expr_seq_info.id), var_decl_infos);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.info = structinfo;
@@ -280,13 +276,13 @@ public class SyntaxChecker {
 			return null;
 		}
 
-		String msg = func_seq_info.validate_syntax(ri, id_char_index.get(func_seq_info.id));
+		String msg = func_seq_info.validate_syntax(id_char_index.get(func_seq_info.id));
 		if(!msg.equals("none")) {
 			error_log.push(msg, func_seq_info.str, id_line.get(func_seq_info.id));
 			return null;
 		}
 
-		List<String> split_str = func_seq_info.split_str(ri, id_char_index.get(func_seq_info.id));
+		List<String> split_str = func_seq_info.split_str(id_char_index.get(func_seq_info.id));
 		String func_name = split_str.get(0);
 		String ret_type = split_str.get(split_str.size() - 1);
 
@@ -395,13 +391,7 @@ public class SyntaxChecker {
 			return null;
 		}
 
-		FunctionInfo fi = new FunctionInfo();
-		fi.name = func_name;
-		fi.return_type = ret_type;
-		fi.var_names = arg_names;
-		fi.var_types = arg_types;
-		fi.signature_line_number = id_line.get(func_seq_info.id);
-		fi.infos = func_infos;
+		FunctionInfo fi = new FunctionInfo(func_name, ret_type, arg_names, arg_types, func_infos, id_line.get(func_seq_info.id));
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
@@ -429,7 +419,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
+		String valid_exp = exp_info.validate_syntax(id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
 			return null;
@@ -529,17 +519,14 @@ public class SyntaxChecker {
 			return null;
 		}
 
-		IfInfo ifinfo = new IfInfo();
-		ifinfo.exp = exp_info.str;
-		ifinfo.exp_line_number = id_line.get(exp_info.id);
-		ifinfo.infos = if_infos;
+		IfInfo ifinfo = new IfInfo(exp_info.str, id_line.get(exp_info.id), if_infos);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
 		viai.info = ifinfo;
 
 		return viai;
-		}
+	}
 
 	private ValidIndexAndInfo validate_while(int index) {
 		SequenceInfo while_info = sequence_infos[index];
@@ -559,7 +546,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
+		String valid_exp = exp_info.validate_syntax(id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
 			return null;
@@ -660,10 +647,7 @@ public class SyntaxChecker {
 
 		inside_while = false;
 
-		WhileInfo whileinfo = new WhileInfo();
-		whileinfo.exp = exp_info.str;
-		whileinfo.exp_line_number = id_line.get(exp_info.id);
-		whileinfo.infos = while_infos;
+		WhileInfo whileinfo = new WhileInfo(exp_info.str, id_line.get(exp_info.id), while_infos);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
@@ -689,9 +673,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(semi_colon_info.id, true);
 
-		OtherInfo other_info = new OtherInfo();
-		other_info.str = "break";
-		other_info.line_number = id_line.get(si.id);
+		OtherInfo other_info = new OtherInfo("break", id_line.get(si.id));
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 1;
@@ -717,9 +699,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(semi_colon_info.id, true);
 
-		OtherInfo other_info = new OtherInfo();
-		other_info.str = "continue";
-		other_info.line_number = id_line.get(si.id);
+		OtherInfo other_info = new OtherInfo("continue", id_line.get(si.id));
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 1;
@@ -738,7 +718,7 @@ public class SyntaxChecker {
 			return null;
 		}
 
-		String msg = si.validate_syntax(ri, id_char_index.get(si.id));
+		String msg = si.validate_syntax(id_char_index.get(si.id));
 		if(msg.length() > 4) {
 			error_log.push(msg, si.str, id_line.get(si.id));
 			return null;
@@ -752,7 +732,7 @@ public class SyntaxChecker {
 			return null;
 		}
 
-		List<String> split_str = si.split_str(ri, id_char_index.get(si.id));
+		List<String> split_str = si.split_str(id_char_index.get(si.id));
 		String name = split_str.get(0);
 		String exp = "";
 		String type = "not_known";
@@ -768,19 +748,11 @@ public class SyntaxChecker {
 
 		Info info = null;
 		if(msg.equals("=")) {
-			VarAssignInfo var_assign_info = new VarAssignInfo();
-			var_assign_info.var_name = name;
-			var_assign_info.raw_value = exp;
-			var_assign_info.line_number = id_line.get(si.id);
+			VarAssignInfo var_assign_info = new VarAssignInfo(name, exp, id_line.get(si.id));
 			info = var_assign_info;
 		}
 		else {
-			VarDeclInfo var_decl_info = new VarDeclInfo();
-			var_decl_info.name = name;
-			var_decl_info.type = type;
-			var_decl_info.raw_value = exp;
-			var_decl_info.line_number = id_line.get(si.id);
-
+			VarDeclInfo var_decl_info = new VarDeclInfo(name, type, exp, id_line.get(si.id));
 			info = var_decl_info;
 		}
 
@@ -830,9 +802,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		UseInfo useinfo = new UseInfo();
-		useinfo.filename = filename;
-		useinfo.line_number = id_line.get(filename_info.id);
+		UseInfo useinfo = new UseInfo(filename, id_line.get(filename_info.id));
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index = 2;
@@ -917,10 +887,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(close_brac.id, true);
 
-		EnumInfo enuminfo = new EnumInfo();
-		enuminfo.name = enum_name_seq.str;
-		enuminfo.name_line_number = id_line.get(enum_name_seq.id);
-		enuminfo.values = split_value;
+		EnumInfo enuminfo = new EnumInfo(enum_name_seq.str, id_line.get(enum_name_seq.id), split_value);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 3;
@@ -1023,8 +990,7 @@ public class SyntaxChecker {
 
 		recv_after_if = false;
 
-		ElseInfo else_info = new ElseInfo();
-		else_info.infos = else_infos;
+		ElseInfo else_info = new ElseInfo(else_infos);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
@@ -1063,7 +1029,7 @@ public class SyntaxChecker {
 			}
 			visited_ids.put(exp_info.id, true);
 
-			String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
+			String valid_exp = exp_info.validate_syntax(id_char_index.get(exp_info.id));
 			if(!valid_exp.equals("none")) {
 				error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
 				return null;
@@ -1156,10 +1122,7 @@ public class SyntaxChecker {
 				visited_ids.put(s.id, true);
 			}
 
-			ElseIfInfo else_if_info = new ElseIfInfo();
-			else_if_info.exp = exp_info.str;
-			else_if_info.exp_line_number = id_line.get(exp_info.id);
-			else_if_info.infos = else_if_infos;
+			ElseIfInfo else_if_info = new ElseIfInfo(exp_info.str, id_line.get(exp_info.id), else_if_infos);
 
 			viai.return_value = i;
 			viai.info = else_if_info;
@@ -1191,7 +1154,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(exp_info.id, true);
 
-		String valid_exp = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
+		String valid_exp = exp_info.validate_syntax(id_char_index.get(exp_info.id));
 		if(!valid_exp.equals("none")) {
 			error_log.push(valid_exp, exp_info.str, id_line.get(exp_info.id));
 			return null;
@@ -1211,9 +1174,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		ReturnInfo ret_info = new ReturnInfo();
-		ret_info.exp = exp_info.str;
-		ret_info.line_number = id_line.get(exp_info.id);
+		ReturnInfo ret_info = new ReturnInfo(exp_info.str, id_line.get(exp_info.id));
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 2;
@@ -1231,7 +1192,7 @@ public class SyntaxChecker {
 			return null;
 		}
 
-		String msg = exp_info.validate_syntax(ri, id_char_index.get(exp_info.id));
+		String msg = exp_info.validate_syntax(id_char_index.get(exp_info.id));
 		if(!msg.equals("none")) {
 			error_log.push(msg, exp_info.str, id_line.get(exp_info.id));
 			return null;
@@ -1246,9 +1207,7 @@ public class SyntaxChecker {
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		ExpInfo expinfo = new ExpInfo();
-		expinfo.exp = exp_info.str;
-		expinfo.line_number = id_line.get(exp_info.id);
+		ExpInfo expinfo = new ExpInfo(exp_info.str, id_line.get(exp_info.id));
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 1;
