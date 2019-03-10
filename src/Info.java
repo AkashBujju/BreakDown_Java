@@ -84,7 +84,6 @@ class VarDeclInfo extends Info {
 	String type;
 	String raw_value;
 	int line_number = -1;
-	// @Incomplete: What about scope ????
 	
 	VarDeclInfo(String name, String type, String raw_value, int line_number) {
 		this.name = name;
@@ -148,18 +147,26 @@ class EnumInfo extends Info {
 class FunctionInfo extends Info {
 	String name;
 	String return_type;
-	List<String> var_names = new ArrayList<>();
-	List<String> var_types = new ArrayList<>();
+	List<VarDeclInfo> var_args;
 	List<Info> infos = new ArrayList<>();
 	int signature_line_number = -1;
+	String scope_name;
+	List<String> scope_names;
 
-	FunctionInfo(String name, String return_type, List<String> var_names, List<String> var_types, List<Info> infos, int signature_line_number) {
+	FunctionInfo(String name, String return_type, List<VarDeclInfo> var_args, List<Info> infos, int signature_line_number) {
 		this.name = name;
 		this.return_type = return_type;
-		this.var_names = var_names;
 		this.infos = infos;
 		this.signature_line_number = signature_line_number;
+		this.var_args = var_args;
 		info_type = InfoType.FUNCTION;
+
+		scope_name = name + "@" + return_type + "@";
+		for(int i = 0; i < var_args.size(); ++i)
+			scope_name += var_args.get(i).type;
+
+		scope_names = new ArrayList<>();
+		// System.out.println("scope_name: " + scope_name);
 	}
 }
 

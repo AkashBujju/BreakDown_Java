@@ -1,8 +1,8 @@
 --------------------------------------------------------------
 ToDo:
-	1) get_matching_close_bracket_index() does not check if character is inside
-	quotes ...
-	2) Take away quotes_range_indices if possible ... There seems to be
+	0) Copy EvalExp.java into the SemanticAnalyser.java and goto line 116 in
+	SemanticAnalyzer.java
+	1) Take away quotes_range_indices if possible ... There seems to be
 	problems with it !!!!!!!
 	2) From where does the relative path of files start, inside the code.....
 	??????

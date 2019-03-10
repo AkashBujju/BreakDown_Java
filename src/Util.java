@@ -631,6 +631,35 @@ public class Util {
 		return false;
 	}
 
+	static boolean contains_func_call(String s) {
+		if(s.length() < 3)
+			return false;
+
+		int quotes_count = 0;
+		int len = s.length();
+		for(int i = 0; i < len; ++i) {
+			char c = s.charAt(i);
+			if(c == '\"') {
+				if(i == 0 || (s.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
+			}
+
+			if(quotes_count % 2 != 0)
+				continue;
+
+			if(is_char_alpha_digit_underscore(c)) {
+				if((i + 1) < len && s.charAt(i + 1) == '(') {
+					int close_index = get_matching_close_bracket_index(s, ")", i + 1);
+					if(close_index != -1)
+						return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	static boolean if_func_call(String s) {
 		if(s.length() < 3)
 			return false;

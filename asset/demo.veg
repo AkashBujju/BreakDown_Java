@@ -19,8 +19,19 @@ func div(a: int, b: int) -> double {
 	return a / b;
 }
 
-a := add(sin(10 + tan(2 / 10 + ")") - 3.14), div(cos(2), 3 + 2 / 5 * tan(2 + 3 * 4)));
+a := add(sin(10 + tan(2 / 10) - 3.14), div(cos(2), 3 + 2 / 5 * tan(2 + 3 * 4) + foo()));
 
-func foo(a: int*) -> void {
-	b := "hello";
+func main(argc: int, argv: char**) -> int {
+	a := "hello";
+	b := a;
+	while 1 {
+		if a == 3.14 {
+			a := 20;
+			b := a;
+		}
+	}
+
+	b = a;
+
+	return 0;
 }

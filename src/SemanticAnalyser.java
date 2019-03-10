@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Scanner;
+import java.util.HashMap;
 
 public class SemanticAnalyser {
 	List<Info> infos;	
@@ -29,7 +30,57 @@ public class SemanticAnalyser {
 		}
 	}
 
+	private void init_all_func_scopes() {
+		for(Integer i: func_sig_indices)
+			init_func_scope(i);
+	}
+
+	private void init_func_scope(int index) {
+		FunctionInfo func_info = (FunctionInfo)(infos.get(index));
+		List<Info> in_infos = func_info.infos;
+		String scope_name = func_info.scope_name;
+		List<String> scope_names = new ArrayList<>();
+
+		int num_scopes = get_num_scopes(in_infos, 0);
+		for(int i = 0; i <= num_scopes; ++i) {
+			scope_names.add(scope_name + i);
+		}
+
+		FunctionInfo new_func_info = func_info;
+		new_func_info.scope_names = scope_names;
+		infos.set(index, new_func_info);
+	}
+
+	int get_num_scopes(List<Info> i, int count) {
+		for(Info info: i) {
+			if(info.info_type == InfoType.IF) {
+				IfInfo if_info = (IfInfo)(info);
+				List<Info> ii = if_info.infos;
+				count = get_num_scopes(ii, count + 1);
+			}
+			else if(info.info_type == InfoType.ELSE_IF) {
+				ElseIfInfo if_info = (ElseIfInfo)(info);
+				List<Info> ii = if_info.infos;
+				count = get_num_scopes(ii, count + 1);
+			}
+			else if(info.info_type == InfoType.WHILE) {
+				WhileInfo if_info = (WhileInfo)(info);
+				List<Info> ii = if_info.infos;
+				count = get_num_scopes(ii, count + 1);
+			}
+			else if(info.info_type == InfoType.ELSE) {
+				ElseInfo if_info = (ElseInfo)(info);
+				List<Info> ii = if_info.infos;
+				count = get_num_scopes(ii, count + 1);
+			}
+		}
+
+		return count;
+	}
+
 	public void start() throws FileNotFoundException {
+		init_all_func_scopes();
+
 		for(int i = 0; i < infos.size(); ++i) {
 			Info info = infos.get(i);	
 			String msg = "";
@@ -52,7 +103,7 @@ public class SemanticAnalyser {
 	}
 
 	private String eval_function(FunctionInfo func_info) {
-		
+
 		return "";
 	}
 
@@ -103,16 +154,29 @@ public class SemanticAnalyser {
 		int index_of_open_paren = s.indexOf('(');
 		int index_of_close_paren = s.lastIndexOf(')');
 		String inner_args = s.substring(index_of_open_paren + 1, index_of_close_paren);
-		System.out.println("inner_args: " + inner_args);
 		List<String> all_funcs = Util.get_all_func_calls(inner_args);
+		HashMap<String, String> exp_type_map = new HashMap<>();
+
+		for(String func: all_funcs) {
+			exp_type_map.put(func, "not_known");
+			String in_arg = func.substring(func.indexOf('(') + 1, func.lastIndexOf(')'));
+			boolean is_func = Util.contains_func_call(in_arg);
+			if(!is_func) {
+				// Convert the exp into postfix and get it's type.
+				List<String> in_list = Util.split_with_ops(in_arg);
+				List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
+				exp_type_map.put(in_arg, "not_known");
+				System.out.println("postfix: <" + out_list + ">");
+			}
+		}
 
 		/*
-		System.out.println("Args: ");
-		for(String str: args) {
+			System.out.println("Args: ");
+			for(String str: args) {
 			System.out.println(str);
-		}
-		System.out.println();
-		*/
+			}
+			System.out.println();
+			*/
 
 		return "not_known";
 	}
@@ -120,7 +184,7 @@ public class SemanticAnalyser {
 	boolean func_with_num_args_exists(String name, int num_args) {
 		for(Integer i: func_sig_indices) {
 			FunctionInfo func_info = (FunctionInfo)(infos.get(i));	
-			if(func_info.name.equals(name) && num_args == func_info.var_names.size())
+			if(func_info.name.equals(name) && num_args == func_info.var_args.size())
 				return true;
 		}
 

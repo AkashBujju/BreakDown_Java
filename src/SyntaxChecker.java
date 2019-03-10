@@ -282,6 +282,7 @@ public class SyntaxChecker {
 			return null;
 		}
 
+		List<VarDeclInfo> var_args = new ArrayList<>();
 		List<String> split_str = func_seq_info.split_str(id_char_index.get(func_seq_info.id));
 		String func_name = split_str.get(0);
 		String ret_type = split_str.get(split_str.size() - 1);
@@ -296,8 +297,8 @@ public class SyntaxChecker {
 				return null;
 			}
 
-			arg_names.add(arg_name);
-			arg_types.add(arg_type);
+			VarDeclInfo var_info = new VarDeclInfo(arg_name, arg_type, "not_initialised", id_line.get(func_seq_info.id));
+			var_args.add(var_info);
 		}
 
 		// Checking for {
@@ -391,14 +392,14 @@ public class SyntaxChecker {
 			return null;
 		}
 
-		FunctionInfo fi = new FunctionInfo(func_name, ret_type, arg_names, arg_types, func_infos, id_line.get(func_seq_info.id));
+		FunctionInfo fi = new FunctionInfo(func_name, ret_type, var_args, func_infos, id_line.get(func_seq_info.id));
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
 		viai.info = fi;
 
 		return viai;
-		}
+	}
 
 	private ValidIndexAndInfo validate_ifs(int index) {
 		SequenceInfo if_info = sequence_infos[index];
