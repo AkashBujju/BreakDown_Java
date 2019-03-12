@@ -1,12 +1,14 @@
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Stack;
+import java.util.HashMap;
 
 /*
 	static List<String> arith_ops = new ArrayList<>();
 	static List<String> logical_ops = new ArrayList<>();
 	static List<String> relational_ops = new ArrayList<>();
 	static List<String> bitwise_ops = new ArrayList<>();
-*/
+	*/
 
 /*
 	arith_ops.add("+"); arith_ops.add("-");
@@ -22,7 +24,7 @@ import java.util.ArrayList;
 	bitwise_ops.add("|"); bitwise_ops.add("&");
 	bitwise_ops.add("^"); bitwise_ops.add(">>>");
 	bitwise_ops.add("<<<");
-*/
+	*/
 
 class StringAndIndex {
 	int index = -1;
@@ -71,6 +73,9 @@ public class Util {
 	static List<String> split_with_ops(String str) {
 		List<IndexLen> op_pos = get_op_pos_for_exp(str);
 		List<String> in_list = new ArrayList<>();
+
+		if(str.equals(""))
+			return in_list;
 
 		Integer s = op_pos.size();
 		if(s == 0) {
@@ -312,24 +317,24 @@ public class Util {
 		if(is_int)
 			return "int";
 
-		// is_float
-		boolean is_float = true;
+		// is_double
+		boolean is_double = true;
 		int dot_count = 0;
 		for(int i = 0; i < str.length(); ++i) {
 			char c = str.charAt(i);
 			if(c == '.')
 				dot_count += 1;
 			if(dot_count > 1) {
-				is_float = false;
+				is_double = false;
 				break;
 			}
 			else if((c < '0' || c > '9') && c != '.') {
-				is_float = false;
+				is_double = false;
 				break;
 			}
 		}
-		if(is_float)
-			return "float";
+		if(is_double)
+			return "double";
 
 		// is_bool
 		if(str.equals("true") || str.equals("false"))
@@ -563,7 +568,8 @@ public class Util {
 		}
 
 		String s = str.substring(index_of_prev_ch);
-		li.add(s);
+		if(!s.equals(""))
+			li.add(s);
 
 		return li;
 	}
@@ -698,8 +704,9 @@ public class Util {
 			else if(c == '(') {
 				int close_paren_index = get_matching_close_bracket_index(s, "(", i);
 				String func = s.substring(i - func_len, close_paren_index + 1);
-				li.add(func);
-				System.out.println("func: <" + func + ">");
+				// Checking if it's not just (....) and the func has a name.
+				if(func.charAt(0) != '(')
+					li.add(func);
 
 				func_len = 0;
 			}
@@ -729,14 +736,224 @@ public class Util {
 			else if(num_open_paren == num_close_paren && c == ',') {
 				num_args += 1;
 				String arg = s.substring(last_index, i);	
-				args.add(arg);
+				if(!args.equals(""))
+					args.add(arg);
 
 				last_index = i + 1;
 			}
 		}
 
-		args.add(s.substring(last_index, len - 1));
+		String last_arg = s.substring(last_index, len - 1);
+		if(!last_arg.equals(""))
+			args.add(last_arg);
 
 		return args;
+	}
+
+	static String add_types(String type_1, String op) {
+		String res = "not_known";
+		if(op.equals(">>")) {
+			res = type_1.concat("*");
+		}
+		else if(op.equals("<<") && type_1.endsWith("*")) {
+			res = type_1.substring(0, type_1.length() - 1);
+		}
+		else if(op.equals("!") && type_1.equals("bool")) {
+			res = "bool";
+		}
+
+		return res;
+	}
+
+	static String add_types(String type_1, String type_2, String op) {
+		String res = "not_known";
+
+		// @Incomplete Maybe.
+		boolean is_op_arith = op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/");
+		boolean is_op_rela = op.equals(">") || op.equals("<") || op.equals("<=") || op.equals(">=");
+		boolean is_op_bitwise = op.equals("&") || op.equals("|") || op.equals("^") || op.equals(">>>")
+			|| op.equals("<<<");
+		boolean is_op_logical = op.equals("&&") || op.equals("||");
+
+		if((type_1.equals("int") && type_2.equals("double")) || (type_1.equals("double") && type_2.equals("int"))) {
+			if(is_op_arith)
+				res = "double";
+			else if(is_op_rela)
+				res = "bool";
+		}
+		else if(type_1.equals("int") && type_2.equals("int")) {
+			if(is_op_arith || is_op_bitwise || op.equals("%"))
+				res = "int";
+			else if(is_op_rela)
+				res = "bool";
+		}
+		else if(type_1.equals("double") && type_2.equals("double")) {
+			if(is_op_arith)
+				res = "double";
+			else if(is_op_rela)
+				res = "bool";
+		}
+		else if(type_1.equals("bool") && type_2.equals("bool")) {
+			if(is_op_logical || op.equals("==") || op.equals("!="))
+				res = "bool";
+		}
+
+		return res;
+	}
+
+	static boolean validate_operation(String type_1, String op) {
+		boolean is_valid = false;
+
+		if(op.equals("!") && type_1.equals("bool"))
+			is_valid = true;
+		else if(type_1.endsWith("*") && op.equals("<<"))
+			is_valid = true;
+		else if(op.equals(">>"))
+			is_valid = true;
+
+		// @Incomplete.
+
+		return is_valid;
+	}
+
+	static boolean validate_operation(String type_1, String type_2, String op) {
+		boolean is_valid = false;
+
+		if(type_1.equals("bool") && type_2.equals("bool")) {
+			if(op.equals("==") || op.equals("!=") || op.equals("&&") || op.equals("||"))
+				is_valid = true;
+		}
+		else if((type_1.equals("int") && type_2.equals("double")) || (type_1.equals("double") && type_2.equals("int"))) {
+			if(op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/")
+					|| op.equals(">") || op.equals("<") || op.equals(">=") || op.equals("<="))
+				is_valid = true;
+		}
+		else if(type_1.equals("int") && type_2.equals("int")) {
+			if(op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/") ||
+					op.equals("%") || op.equals(">") || op.equals("<") || op.equals(">=") || op.equals("<=")
+					|| op.equals("&") || op.equals("|") || op.equals("^") || op.equals(">>>") || op.equals("<<<"))
+				is_valid = true;
+		}
+		else if(type_1.equals("double") && type_2.equals("double")) {
+			if(op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/") ||
+					op.equals("==") || op.equals("!=") || op.equals(">") || op.equals("<") || op.equals("<=")
+					|| op.equals(">="))
+				is_valid = true;
+		}
+
+		return is_valid;
+	}
+
+	// @TmpName
+	static List<String> get_only_exp(String s, List<String> func_names) {
+		StringBuilder sb = new StringBuilder(s);
+
+		for(String func_name: func_names) {
+			int index = sb.indexOf(func_name);
+			while(index != -1) {
+				int begin = index;
+				int end = index + func_name.length();
+				int close_paren_index = get_matching_close_bracket_index(sb.toString(), "(", end);
+
+				sb.setCharAt(end, '@');
+				sb.setCharAt(close_paren_index, '@');
+
+				sb = sb.delete(begin, end);
+				index = sb.indexOf(func_name);
+			}
+		}
+
+		// System.out.println("sb: <" + sb + ">");
+
+		List<String> li = new ArrayList<>();
+		int sb_len = sb.length();
+		StringBuilder sb_tmp = new StringBuilder("");
+		Stack<Character> stack = new Stack<>();
+
+		for(int i = 0; i < sb_len; ++i) {
+			char c = sb.charAt(i);
+			if(c == '@' || c == ',') {
+				while(stack.size() != 0) {
+					char ch = stack.pop();
+					if(ch != '@' && ch != ',')
+						sb_tmp.append(ch);
+				}
+
+				sb_tmp = sb_tmp.reverse();
+				String str = sb_tmp.toString();
+				if(str.length() != 0 && !is_operator(str)) {
+					// checking if the last char is not an operator. THIS CAN HAPPEN AND IT'S NOT AN ERROR.
+					if(!is_char_alpha_digit_underscore(str.charAt(str.length() - 1)))
+						str = str.substring(0, str.length() - 1);
+					
+					// And the str should'nt begin with operators
+					int j = 0;
+					char ch = str.charAt(j);
+					while(!is_char_alpha_digit_underscore(ch) && ch != '(') {
+						j += 1;
+						ch = str.charAt(j);
+					}
+
+					str = str.substring(j);
+
+					li.add(str);
+				}
+
+				sb_tmp = sb_tmp.delete(0, sb_tmp.length());
+			}
+			else
+				stack.push(c);
+		}
+
+		String last_str = "";
+		while(stack.size() != 0) {
+			last_str += stack.pop();
+		}
+
+		if(last_str.length() != 0)
+			li.add(last_str);
+
+		// Sorting
+		List<String> new_li = new ArrayList<>();
+		int li_len = li.size();
+		while(li.size() != 0) {
+			int max_index = get_max_size_in_index(li, 0);
+			new_li.add(li.get(max_index));
+			li.remove(max_index);
+		}
+
+		// Note: We have to sort the array list in descending to ascending order in terms of size...
+		return new_li;
+	}
+
+	static int get_max_size_in_index(List<String> li, int from_index) {
+		int current_len = -1;
+		int index = 0;
+		for(int i = from_index; i < li.size(); ++i) {
+			int len = li.get(i).length();
+			if(len > current_len) {
+				index = i;
+				current_len = len;
+			}
+		}
+
+		return index;
+	}
+
+	static String replace_in_str(String str, String from, String to) {
+		StringBuilder new_str = new StringBuilder(str);
+
+		while(true) {
+			int index = new_str.indexOf(from, 0);
+			if(index != -1) {
+				int begin = index;
+				int end = index + from.length();
+				new_str = new_str.replace(begin, end, to);
+			}
+			else
+				break;
+		}
+
+		return new_str.toString();
 	}
 }

@@ -4,9 +4,9 @@ import java.util.Stack;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Iterator;
 
 public class EvalExp {
-	/*
 	private List<String> postfix;
 	private Stack<String> st = new Stack<>();
 	private List<String> t_list = new ArrayList<>();
@@ -17,8 +17,11 @@ public class EvalExp {
 		this.postfix = postfix;
 	}
 
-	String deduce_final_type(SymbolTable symbol_table) {
+	String deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {
 		String final_type = "";
+
+		if(postfix.size() == 0)
+			return "void";
 
 		if(postfix.size() == 1) {
 			String var = postfix.get(0);
@@ -27,7 +30,7 @@ public class EvalExp {
 			if(type.equals("not_known")) {
 				// if type is not present, then check if the variable name exists in
 				// the symbol table.
-				String var_type = symbol_table.get_type(postfix.get(0));
+				String var_type = symbol_table.get_type(postfix.get(0), func_scope_name, max_scope);
 				// @Incomplete: add error statements
 				if(!var_type.equals(""))
 					return var_type;
@@ -54,7 +57,7 @@ public class EvalExp {
 
 					// Checking if the variable exists in the symbol table
 					else if(right_type.equals("not_known")) {
-						String var_type = symbol_table.get_type(right_char);
+						String var_type = symbol_table.get_type(right_char, func_scope_name, max_scope);
 						if(!var_type.equals(""))
 							right_type = var_type;
 					}
@@ -91,12 +94,12 @@ public class EvalExp {
 					// Checking if it's a variable name in the symbol_table
 					// @Incomplete: Show error if variable_name is not found.
 					if(left_type.equals("not_known")) {
-						String var_type = symbol_table.get_type(left_char);
+						String var_type = symbol_table.get_type(left_char, func_scope_name, max_scope);
 						if(!var_type.equals(""))
 							left_type = var_type;
 					}
 					if(right_type.equals("not_known")) {
-						String var_type = symbol_table.get_type(right_char);
+						String var_type = symbol_table.get_type(right_char, func_scope_name, max_scope);
 						if(!var_type.equals(""))
 							right_type = var_type;
 					}
@@ -168,17 +171,18 @@ public class EvalExp {
 
 		final_type = literal_type_map.get("@" + _sz + "@");
 
-			System.out.println("Literal_Types: ");
-			Set<String> key_set_3 = literal_type_map.keySet();
-			Iterator<String> it_2 = key_set_3.iterator();
-			while(it_2.hasNext()) {
+		/*
+		System.out.println("Literal_Types: ");
+		Set<String> key_set_3 = literal_type_map.keySet();
+		Iterator<String> it_2 = key_set_3.iterator();
+		while(it_2.hasNext()) {
 			String key = it_2.next();
 			System.out.println(key + ": " + literal_type_map.get(key));
-			}
-			System.out.println();
+		}
+		System.out.println();
+		*/
 
 		return final_type;
 	}
-*/
 
 }

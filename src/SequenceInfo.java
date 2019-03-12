@@ -85,8 +85,10 @@ public class SequenceInfo {
 		String func_name = str.substring(0, index_of_open_paren);
 		li.add(func_name);
 
-		if(index_of_close_paren == index_of_open_paren + 1)
+		if(index_of_close_paren == index_of_open_paren + 1) {
+			li.add(str.substring(str.indexOf("->") + 2));
 			return li;
+		}
 
 		String args_str = str.substring(index_of_open_paren + 1, index_of_close_paren);
 

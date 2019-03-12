@@ -50,7 +50,7 @@ public class SymbolTable {
 		return true;
 	}
 
-	// @Note: get_type tries all scopes untill max_scope.
+	// @Note: get_type tries all scopes until max_scope.
 	String get_type(String name, String func_scope_name, int max_scope) {
 		boolean found_type = false;
 		int current_scope_index = max_scope;

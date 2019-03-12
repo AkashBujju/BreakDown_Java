@@ -19,7 +19,19 @@ func div(a: int, b: int) -> double {
 	return a / b;
 }
 
-a := add(sin(10 + tan(2 / 10) - 3.14), div(cos(2), 3 + 2 / 5 * tan(2 + 3 * 4) + foo()));
+func sub(a: int, b: int) -> int {
+	return a - b;
+}
+
+func foo() -> int {
+	return 0;
+}
+
+a := add(sin(add(1 / 2.0, sub(1 - 2, 4)) + tan(1.2 / 10.0) - 3.14), div(cos(2.0), (3 + 2.0) / 5 * tan(2.0 + 3 * 4) + foo()));
+
+b := add(1, 2);
+
+# b := foo();
 
 func main(argc: int, argv: char**) -> int {
 	a := "hello";
