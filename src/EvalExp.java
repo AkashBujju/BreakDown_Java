@@ -104,7 +104,6 @@ public class EvalExp {
 							right_type = var_type;
 					}
 
-
 					literal_type_map.put(right_char, right_type);
 					literal_type_map.put(left_char, left_type);
 
@@ -166,7 +165,6 @@ public class EvalExp {
 				String res_type = Util.add_types(right_type, left_type, li.get(1));
 				literal_type_map.replace(key, res_type);
 			}
-
 		}
 
 		final_type = literal_type_map.get("@" + _sz + "@");

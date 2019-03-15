@@ -343,6 +343,20 @@ public class Util {
 		return "not_known";
 	}
 
+	static String get_primitive_literal(String primitive_type) {
+		String literal = "not_known";
+		if(primitive_type.equals("int"))
+			literal = "1";
+		else if(primitive_type.equals("double"))
+			literal = "1.0";
+
+		// @Incomplete ....
+		// @Incomplete ....
+		// @Incomplete ....
+
+		return literal;
+	}
+
 	static List<RangeIndices> get_range_indices_of_quotes(String str) {
 		List<RangeIndices> li = new ArrayList<>();
 
@@ -692,7 +706,7 @@ public class Util {
 		return false;
 	}
 
-	// @Note: 's' should not include the outer function name ...
+	// @Note: 's' should not include the outer function's name ...
 	static List<String> get_all_func_calls(String s) {
 		List<String> li = new ArrayList<>();
 		int len = s.length();
@@ -735,7 +749,7 @@ public class Util {
 				num_close_paren += 1;
 			else if(num_open_paren == num_close_paren && c == ',') {
 				num_args += 1;
-				String arg = s.substring(last_index, i);	
+				String arg = s.substring(last_index, i);
 				if(!args.equals(""))
 					args.add(arg);
 
@@ -863,8 +877,6 @@ public class Util {
 			}
 		}
 
-		// System.out.println("sb: <" + sb + ">");
-
 		List<String> li = new ArrayList<>();
 		int sb_len = sb.length();
 		StringBuilder sb_tmp = new StringBuilder("");
@@ -905,13 +917,28 @@ public class Util {
 				stack.push(c);
 		}
 
-		String last_str = "";
+		StringBuffer last_str = new StringBuffer("");
 		while(stack.size() != 0) {
-			last_str += stack.pop();
+			last_str.append(stack.pop());
 		}
 
-		if(last_str.length() != 0)
-			li.add(last_str);
+		if(last_str.length() != 0) {
+			last_str = last_str.reverse();	
+
+			if(!is_char_alpha_digit_underscore(last_str.charAt(last_str.length() - 1)))
+				last_str = new StringBuffer(last_str.substring(0, last_str.length() - 1));
+
+			// And the str should'nt begin with operators
+			int j = 0;
+			char ch = last_str.charAt(j);
+			while(!is_char_alpha_digit_underscore(ch) && ch != '(') {
+				j += 1;
+				ch = last_str.charAt(j);
+			}
+
+			last_str = new StringBuffer(last_str.substring(j));
+			li.add(last_str.toString());
+		}
 
 		// Sorting
 		List<String> new_li = new ArrayList<>();

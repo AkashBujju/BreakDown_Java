@@ -15,7 +15,7 @@ func tan(a: double) -> double {
 	return 0;
 }
 
-func div(a: int, b: int) -> double {
+func div(a: double, b: double) -> double {
 	return a / b;
 }
 
@@ -27,11 +27,16 @@ func foo() -> int {
 	return 0;
 }
 
-a := add(sin(add(1 / 2.0, sub(1 - 2, 4)) + tan(1.2 / 10.0) - 3.14), div(cos(2.0), (3 + 2.0) / 5 * tan(2.0 + 3 * 4) + foo()));
+func mul(a: int, b: int) -> int {
+	return a * b;
+}
 
-b := add(1, 2);
+a := add(add(1 + 2, sub(1 - 2 ,sub(1 * 10, 4))) - 10, mul(add(2 * 3 + 2, 2), sub(add(1,2), 4)));
 
+b := add(1, 2) + 10 >>> 1;
 # b := foo();
+
+c := >> b;
 
 func main(argc: int, argv: char**) -> int {
 	a := "hello";

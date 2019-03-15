@@ -43,6 +43,8 @@ public class Main {
 			for(SequenceInfo sq: sq_info) {
 				System.out.println("<" + sq.str + "> -------->  " + SequenceTypeInfo.get_in_str(sq.seq_type));
 			}
+			System.out.println();
+			System.out.println();
 
 			SyntaxChecker sc = new SyntaxChecker(sq_arr, my_file, Util.quotes_range_indices, id_number, id_char_index);
 			ErrorLog error_log = sc.validate_syntax();
