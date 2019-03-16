@@ -334,6 +334,11 @@ public class Util {
 		else if(primitive_type.equals("double"))
 			literal = "1.0";
 
+		// @Note: If pointer then return the type.
+		else if(primitive_type.charAt(primitive_type.length() - 1) == '*') {
+			literal = primitive_type;
+		}
+
 		// @Incomplete ....
 		// @Incomplete ....
 		// @Incomplete ....

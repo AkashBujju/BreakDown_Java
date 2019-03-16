@@ -25,6 +25,7 @@ public class EvalExp {
 
 	EvalExp(List<String> postfix) {
 		this.postfix = postfix;
+		System.out.println("postfix: " + postfix);
 	}
 
 	MsgType deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {
@@ -169,7 +170,7 @@ public class EvalExp {
 
 				boolean is_operation_valid = Util.validate_operation(right_type, op);
 				if(!is_operation_valid) {
-					return new MsgType("Cannot apply " + "'" + li.get(0) + "'" + " to " + right_literal + "'" + right_type + "'", "not_known");
+					return new MsgType("Cannot apply " + "'" + li.get(0) + "'" + " to <" + right_literal + "><" + right_type + ">", "not_known");
 				}
 
 				String res_type = Util.add_types(right_type, op);
@@ -191,7 +192,7 @@ public class EvalExp {
 
 				boolean is_operation_valid = Util.validate_operation(right_type, left_type, li.get(1));
 				if(!is_operation_valid) {
-					return new MsgType("Cannot apply " + "'" + li.get(1) + "'" + " to " + right_literal + "'" + right_type + "' and " + left_literal + "'" + left_type +"'.", "not_known");
+					return new MsgType("Cannot apply " + "'" + li.get(1) + "'" + " to <" + right_literal + "><" + right_type + "> and <" + left_literal + "><" + left_type +">.", "not_known");
 				}
 
 				String res_type = Util.add_types(right_type, left_type, li.get(1));

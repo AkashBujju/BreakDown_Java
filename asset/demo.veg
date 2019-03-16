@@ -1,65 +1,7 @@
 
-func add(a: int, b: int) -> int { 
-	return a + b;
+func make_int(num: int) -> int* {
+	a := 10;
+	return a;
 }
 
-func sin(a: double) -> double {
-	return 0;
-}
-
-func cos(a: double) -> double {
-	return 0;
-}
-
-func tan(a: double) -> double {
-	return 0;
-}
-
-func div(a: double, b: double) -> double {
-	return a / b;
-}
-
-func sub(a: int, b: int) -> int {
-	return a - b;
-}
-
-func mul(a: int, b: int) -> int {
-	return a * b;
-}
-
-func foo(a: int*, b: int*) -> int {
-	return (<< a) + (<< b);
-}
-
-func foo_2(a: int**, b: double**) -> double {
-	return 0;
-}
-
-# a := add(add(1 + 2.0, sub(1 - 2 ,sub(1 * 10, 4))) - 10, mul(add(2 * 3 + 2, 2), sub(add(1,2), 4)));
-
-a := + 10 + 20;
-b := 10 + 20;
-
-# b := add(1, 2) + 10 >>> 1;
-c := >> b;
-# f := +10;
-f := >> (<< c);
-# d := add(<< c, a) + b + foo(<< b, >> a);
-# var_1 := 1.0;
-# var_2 := >> var_1;
-# e := foo_2(>> c, >> var_2);
-
-func main(argc: int, argv: char**) -> int {
-	a := "hello";
-	b := a;
-	while 1 {
-		if a == 3.14 {
-			a := 20;
-			b := a;
-		}
-	}
-
-	b = a;
-
-	return 0;
-}
+a := make_int(10) + 1;

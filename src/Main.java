@@ -60,15 +60,15 @@ public class Main {
 			error_log = sa.error_log;
 			if(error_log.log.size() != 0) {
 				error_log.show();
+				return;
 			}
 
+			System.out.println();
 			System.out.println("No semantic errors.");
-
 		}
 		catch (Exception e) {
 			System.out.println("Exception caught in class Main: ");
 			System.out.println("What: " + e);
 		}
 	}
-
 }

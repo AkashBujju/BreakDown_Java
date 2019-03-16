@@ -153,12 +153,21 @@ public class SemanticAnalyser {
 
 	private int eval_var_decl(VarDeclInfo var_decl_info) {
 		String raw_value = var_decl_info.raw_value;
+		String name = var_decl_info.name;
+
+		// Checking if the variable name is not a name of any type.
+		if(symbol_table.type_exists(name)) {
+			error_log.push("Name <" + name + "> is not allowed, since it a name of a type.", name, var_decl_info.line_number);
+			return -1;
+		}
+
 		List<String> split_value = Util.split_with_ops(raw_value);
 		List<String> final_exp = new ArrayList<>();
 
 		// System.out.println("split_value: " + split_value);
 
 		int len = split_value.size();
+		int num_func_calls = 0;
 		for(int i = 0; i < len; ++i) {
 			String s = split_value.get(i);
 			if(Util.is_operator(s)) {
@@ -168,6 +177,7 @@ public class SemanticAnalyser {
 				boolean if_func_call = Util.if_func_call(s);
 				String type = "not_known";
 				if(if_func_call) {
+					num_func_calls += 1;
 					type = get_type_of_func_call(s, var_decl_info.line_number);
 					type = Util.get_primitive_literal(type);
 				}
@@ -178,28 +188,30 @@ public class SemanticAnalyser {
 			}
 		}
 
-		// System.out.println("final_exp: " + final_exp);
-
 		// @Note: The problem is an expression like '>> b' gets seperated into two, thereby get_type is called on '>>' and 'b' seperately which is incorrect....
 		// IDEA: Replace the function return value with an appriopriate primitive literal. It may not always be reduced to a primitive type.
 
-		// Applying all the operators(if any) on final_exp.
-		// Converting to postfix.
-		List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
+		// System.out.println("final_exp: " + final_exp);
+		String final_type = "not_known";
 
-		// System.out.println("posfix: " + postfix_exp);
-
-		EvalExp eval_exp = new EvalExp(postfix_exp);
-		MsgType msg_type = eval_exp.deduce_final_type(symbol_table, "", 0);
-		if(msg_type.msg.equals("none"))
-			symbol_table.add(var_decl_info.name, msg_type.type, raw_value);
+		if(num_func_calls == 1 && final_exp.size() == 1) {
+			final_type = final_exp.get(0);
+		}
 		else {
-			error_log.push(msg_type.msg, raw_value, var_decl_info.line_number);
-			return -1;
+			List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
+			EvalExp eval_exp = new EvalExp(postfix_exp);
+			MsgType msg_type = eval_exp.deduce_final_type(symbol_table, "", 0);
+			if(msg_type.msg.equals("none"))
+				symbol_table.add(var_decl_info.name, msg_type.type, raw_value);
+			else {
+				error_log.push(msg_type.msg, raw_value, var_decl_info.line_number);
+				return -1;
+			}
+
+			final_type = msg_type.type;
 		}
 
-		// System.out.println("postfix <" + postfix_exp + ">, type <" + type + ">");
-		System.out.println("name <" + var_decl_info.name + ">, type <" + msg_type.type + ">");
+		System.out.println("name <" + var_decl_info.name + ">, type <" + final_type + ">");
 
 		return  0;
 	}
@@ -232,7 +244,7 @@ public class SemanticAnalyser {
 		String func_name = s.substring(0, s.indexOf('('));
 		boolean func_exists = func_with_num_args_exists(func_name, args.size());
 		if(!func_exists) {
-			System.out.println("Function with name '" + func_name + "' taking '" + args.size() + "' arguments dosen't exist.");
+			error_log.push("Function with name '" + func_name + "' taking '" + args.size() + "' arguments dosen't exist.", s, line_number);
 			return "not_known";
 		}
 

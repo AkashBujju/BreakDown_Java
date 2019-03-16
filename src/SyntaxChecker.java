@@ -4,17 +4,6 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.Iterator;
 
-/*
-	primitive_types = new ArrayList<>();
-	primitive_types.add("int_8");primitive_types.add("uint_8");
-	primitive_types.add("int_16");primitive_types.add("uint_16");
-	primitive_types.add("int_32");primitive_types.add("uint_32");
-	primitive_types.add("int_64");primitive_types.add("uint_64");
-	primitive_types.add("double");
-	primitive_types.add("bool");
-	primitive_types.add("char");
-*/
-
 class ValidIndexAndInfo {
 	int return_value = -1;
 	Info info;
@@ -74,14 +63,6 @@ public class SyntaxChecker {
 				encountered_func = true;
 			}
 			else if(s.seq_type == SequenceType.VAR_STAT) {
-				// @ Tmp: In C++ global variables can be declared even after function definitions... So What to do ???????
-				/*
-				if(encountered_func) {
-					error_log.push("Global variable '" + s.str + "' is declared in an invalid position.", s.str, id_line.get(s.id));
-					show_invalid_stats = false;
-					break;
-				}
-				*/
 				res = validate_var_stat(i);
 				encountered_global_var = true;
 			}
@@ -103,17 +84,18 @@ public class SyntaxChecker {
 				res = validate_use(i);
 				encountered_use = true;
 			}
+			else
+				num_errors += 1;
 
 			if(res != null) {
 				i = res.return_value;
 				infos.add(res.info);
 			}
-			else {
+			else
 				num_errors += 1;
-			}
 
 			if(num_errors > 2)
-				return error_log;
+				break;
 		}
 
 		if(!show_invalid_stats)
@@ -261,12 +243,12 @@ public class SyntaxChecker {
 
 	private ValidIndexAndInfo validate_func(int index) {
 		SequenceInfo func_info = sequence_infos[index];
+
 		if(index + 1 >= num_sequences) {
 			error_log.push("Missing function signature after keyword 'func'.", "func", id_line.get(func_info.id));
 
 			return null;
 		}
-		visited_ids.put(func_info.id, true);
 
 		SequenceInfo func_seq_info = sequence_infos[index + 1];
 		visited_ids.put(func_seq_info.id, true);
@@ -275,6 +257,12 @@ public class SyntaxChecker {
 			error_log.push("Invalid function signature", func_seq_info.str, id_line.get(func_seq_info.id));
 			return null;
 		}
+		if(func_info.seq_type != SequenceType.FUNC) {
+			error_log.push("Needed keyword 'func' before signature.", "func " + func_seq_info.str, id_line.get(func_info.id));
+
+			return null;
+		}
+		visited_ids.put(func_info.id, true);
 
 		String msg = func_seq_info.validate_syntax(id_char_index.get(func_seq_info.id));
 		if(!msg.equals("none")) {
