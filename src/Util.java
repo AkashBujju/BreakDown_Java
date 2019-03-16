@@ -3,29 +3,6 @@ import java.util.ArrayList;
 import java.util.Stack;
 import java.util.HashMap;
 
-/*
-	static List<String> arith_ops = new ArrayList<>();
-	static List<String> logical_ops = new ArrayList<>();
-	static List<String> relational_ops = new ArrayList<>();
-	static List<String> bitwise_ops = new ArrayList<>();
-	*/
-
-/*
-	arith_ops.add("+"); arith_ops.add("-");
-	arith_ops.add("*"); arith_ops.add("/");
-	arith_ops.add("%");
-
-	logical_ops.add("||"); logical_ops.add("&&"); logical_ops.add("!");
-
-	relational_ops.add("=="); relational_ops.add("!=");
-	relational_ops.add(">="); relational_ops.add("<=");
-	relational_ops.add("<"); relational_ops.add(">");
-
-	bitwise_ops.add("|"); bitwise_ops.add("&");
-	bitwise_ops.add("^"); bitwise_ops.add(">>>");
-	bitwise_ops.add("<<<");
-	*/
-
 class StringAndIndex {
 	int index = -1;
 	String str = "";
@@ -210,6 +187,13 @@ public class Util {
 	static boolean is_operator(String op) {
 		boolean is_op = operators.contains(op);
 		return is_op;
+	}
+
+	static boolean is_only_unary_operator(String op) {
+		if(op.equals(">>") || op.equals("<<") || op.equals("!"))
+			return true;
+
+		return false;
 	}
 
 	// @Redundant: Can be made into a single method
@@ -766,14 +750,16 @@ public class Util {
 
 	static String add_types(String type_1, String op) {
 		String res = "not_known";
-		if(op.equals(">>")) {
+
+		if(op.equals(">>"))
 			res = type_1.concat("*");
-		}
-		else if(op.equals("<<") && type_1.endsWith("*")) {
+		else if(op.equals("<<") && type_1.endsWith("*"))
 			res = type_1.substring(0, type_1.length() - 1);
-		}
-		else if(op.equals("!") && type_1.equals("bool")) {
+		else if(op.equals("!") && type_1.equals("bool"))
 			res = "bool";
+		else if(op.equals("+") || op.equals("-")) {
+			if(type_1.equals("int") || type_1.equals("double"))
+				res = type_1;
 		}
 
 		return res;
@@ -818,13 +804,19 @@ public class Util {
 	static boolean validate_operation(String type_1, String op) {
 		boolean is_valid = false;
 
-		if(op.equals("!") && type_1.equals("bool"))
+		if(op.equals("+") || op.equals("-")) {
+			if(type_1.equals("int") || type_1.equals("double"))
+				is_valid = true;
+		}
+		else if(op.equals("!") && type_1.equals("bool"))
 			is_valid = true;
 		else if(type_1.endsWith("*") && op.equals("<<"))
 			is_valid = true;
 		else if(op.equals(">>"))
 			is_valid = true;
 
+		// @Incomplete.
+		// @Incomplete.
 		// @Incomplete.
 
 		return is_valid;
@@ -858,7 +850,6 @@ public class Util {
 		return is_valid;
 	}
 
-	// @TmpName
 	static List<String> get_only_exp(String s, List<String> func_names) {
 		StringBuilder sb = new StringBuilder(s);
 
@@ -898,17 +889,27 @@ public class Util {
 					if(!is_char_alpha_digit_underscore(str.charAt(str.length() - 1)))
 						str = str.substring(0, str.length() - 1);
 					
-					// And the str should'nt begin with operators
+					// And the str should'nt begin with operators unless it's a unary operator.
 					int j = 0;
 					char ch = str.charAt(j);
+					String the_operator = "";
 					while(!is_char_alpha_digit_underscore(ch) && ch != '(') {
-						j += 1;
 						ch = str.charAt(j);
+						j += 1;
+						the_operator += ch;
+						ch = str.charAt(i + 1);
 					}
 
-					str = str.substring(j);
-
-					li.add(str);
+					if (the_operator.equals("") || the_operator.equals("+") || the_operator.equals("-")) {
+						str = str.substring(j);
+						li.add(str);
+					}
+					else if(!is_only_unary_operator(the_operator)) { // It's not a valid operation.
+						li.add("error@" + str);
+					}
+					else {
+						li.add(str);
+					}
 				}
 
 				sb_tmp = sb_tmp.delete(0, sb_tmp.length());
@@ -931,14 +932,30 @@ public class Util {
 			// And the str should'nt begin with operators
 			int j = 0;
 			char ch = last_str.charAt(j);
+			String the_operator = "";
 			while(!is_char_alpha_digit_underscore(ch) && ch != '(') {
+				ch = last_str.charAt(j);
+				the_operator += ch;
 				j += 1;
+
 				ch = last_str.charAt(j);
 			}
 
-			last_str = new StringBuffer(last_str.substring(j));
-			li.add(last_str.toString());
+			// @Note: The 'the_operator is a unary operator like >>, <<, !, +, - then keep, the operator, else discard it.
+			if(the_operator.equals("")  || the_operator.equals("+") || the_operator.equals("-")) {
+				last_str = new StringBuffer(last_str.substring(j));
+				li.add(last_str.toString());
+			}
+			else if(!is_only_unary_operator(the_operator)) { // It's not a valid operation.
+				last_str.insert(0, "error@");
+				li.add(last_str.toString());
+			}
+			else {
+				li.add(last_str.toString());
+			}
 		}
+
+		// System.out.println("li: " + li);
 
 		// Sorting
 		List<String> new_li = new ArrayList<>();

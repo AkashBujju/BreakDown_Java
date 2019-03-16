@@ -17,18 +17,18 @@ class FuncNameArgs {
 public class SemanticAnalyser {
 	List<Info> infos;	
 	SymbolTable symbol_table;
-	List<String> errors;
 	List<Integer> func_sig_indices;
 	List<RangeIndices> quotes_range_indices;
 	List<FuncNameArgs> func_name_args;
+	ErrorLog error_log;
 
 	SemanticAnalyser(List<Info> infos, List<RangeIndices> quotes_range_indices) {
 		this.infos = infos;
 		this.quotes_range_indices = quotes_range_indices;
-		errors = new ArrayList<>();
 		func_sig_indices = new ArrayList<>();
 		symbol_table = new SymbolTable();
 		func_name_args = new ArrayList<>();
+		error_log = new ErrorLog();
 
 		int count = 0;
 		for(Info i: infos) {
@@ -111,22 +111,21 @@ public class SemanticAnalyser {
 
 		for(int i = 0; i < infos.size(); ++i) {
 			Info info = infos.get(i);	
-			String msg = "";
+			int error_res = 0;
+			int count_errors = 0;
+
 			if(info.info_type == InfoType.USE)
-				msg = eval_use((UseInfo)(info));
+				error_res = eval_use((UseInfo)(info));
 			else if(info.info_type == InfoType.VAR_DECL)
-				msg = eval_var_decl((VarDeclInfo)(info));
+				error_res = eval_var_decl((VarDeclInfo)(info));
 			else if(info.info_type == InfoType.FUNCTION)
-				msg = eval_function((FunctionInfo)(info));
+				error_res = eval_function((FunctionInfo)(info));
 
-			if(!msg.equals("")) {
-				errors.add(msg);
+			if(error_res == -1)
+				count_errors += 1;
+			if(count_errors > 2) {
+				return;
 			}
-		}
-
-		for(String s: errors) {
-			System.out.println(s);
-			System.out.println();
 		}
 	}
 
@@ -134,31 +133,30 @@ public class SemanticAnalyser {
 	// @NotKnown: From where does the filepath start from ??????
 	// @NotKnown: From where does the filepath start from ??????
 	// @NotKnown: From where does the filepath start from ??????
-	private String eval_use(UseInfo use_info) throws FileNotFoundException {
+	private int eval_use(UseInfo use_info) throws FileNotFoundException {
 		String filename = use_info.filename;
 		try {
 			Scanner s = new Scanner(new BufferedReader(new FileReader(filename)));
 		}
 		catch(FileNotFoundException e) {
-			return ErrorLog.get_msg("Could not find file: " + filename + ".", "use \"" + filename+ "\';", use_info.line_number);
+			error_log.push("Could not find file: " + filename + ".", "use \"" + filename+ "\';", use_info.line_number);
+			return -1;
 		}
 
-		return "";
+		return 0;
 	}
 
-	private String eval_function(FunctionInfo func_info) {
+	private int eval_function(FunctionInfo func_info) {
 
-		return "";
+		return 0;
 	}
 
-	private String eval_var_decl(VarDeclInfo var_decl_info) {
-		// @Incomplete: Check if the variable exists in the symbol table ???	
-
+	private int eval_var_decl(VarDeclInfo var_decl_info) {
 		String raw_value = var_decl_info.raw_value;
 		List<String> split_value = Util.split_with_ops(raw_value);
 		List<String> final_exp = new ArrayList<>();
 
-		// System.out.println("\nsplit_value: ");
+		// System.out.println("split_value: " + split_value);
 
 		int len = split_value.size();
 		for(int i = 0; i < len; ++i) {
@@ -170,7 +168,7 @@ public class SemanticAnalyser {
 				boolean if_func_call = Util.if_func_call(s);
 				String type = "not_known";
 				if(if_func_call) {
-					type = get_type_of_func_call(s);	
+					type = get_type_of_func_call(s, var_decl_info.line_number);
 					type = Util.get_primitive_literal(type);
 				}
 				else
@@ -180,52 +178,49 @@ public class SemanticAnalyser {
 			}
 		}
 
+		// System.out.println("final_exp: " + final_exp);
+
 		// @Note: The problem is an expression like '>> b' gets seperated into two, thereby get_type is called on '>>' and 'b' seperately which is incorrect....
 		// IDEA: Replace the function return value with an appriopriate primitive literal. It may not always be reduced to a primitive type.
 
 		// Applying all the operators(if any) on final_exp.
 		// Converting to postfix.
 		List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
+
+		// System.out.println("posfix: " + postfix_exp);
+
 		EvalExp eval_exp = new EvalExp(postfix_exp);
-		String type = eval_exp.deduce_final_type(symbol_table, "", 0);
-		symbol_table.add(var_decl_info.name, type, raw_value);
+		MsgType msg_type = eval_exp.deduce_final_type(symbol_table, "", 0);
+		if(msg_type.msg.equals("none"))
+			symbol_table.add(var_decl_info.name, msg_type.type, raw_value);
+		else {
+			error_log.push(msg_type.msg, raw_value, var_decl_info.line_number);
+			return -1;
+		}
 
-		System.out.println("postfix <" + postfix_exp + ">, type <" + type + ">");
-		// @NotDone
-		// @NotDone
-		// @NotDone
-		// @NotDone
-		// @NotDone
+		// System.out.println("postfix <" + postfix_exp + ">, type <" + type + ">");
+		System.out.println("name <" + var_decl_info.name + ">, type <" + msg_type.type + ">");
 
-		return  ""; // @tmp
+		return  0;
 	}
 
-	/*
-	String get_type(String s) {
-		boolean if_func_call = Util.if_func_call(s);
-		String type = "not_known";
-
-		if(if_func_call == true)
-			return get_type_of_func_call(s);
-		else
-			type = get_type_of_exp(s);
-
-		return s;
-	}
-	*/
-
-	String get_type_of_exp(String s) {
+	String get_type_of_exp(String s, int line_number) {
 		List<String> in_list = Util.split_with_ops(s);
+		// System.out.println("s: " + s + ", in_list: " + in_list);
 		List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
 
 		EvalExp eval_exp = new EvalExp(out_list);
-		String type = eval_exp.deduce_final_type(symbol_table, "", 0);
-		// System.out.println("s: " + s + ", type: " + type);
+		MsgType msg_type = eval_exp.deduce_final_type(symbol_table, "", 0);
+		if(msg_type.msg.equals("none"))
+			return msg_type.type;
+		else {
+			error_log.push(msg_type.msg, s, line_number);
+		}
 
-		return type;
+		return msg_type.type;
 	}
 
-	String get_type_of_func_call(String s) {
+	String get_type_of_func_call(String s, int line_number) {
 		/*
 		 * Alg: 
 		 * 1) Find the inner arguments of the function
@@ -249,22 +244,30 @@ public class SemanticAnalyser {
 			String new_arg = arg;
 
 			for(String exp: exps) {
-				String type = get_type_of_exp(exp);
+				int invalid_exp_index = exp.indexOf("error@");
+				if(invalid_exp_index != -1) { // Invalid use of unary operator
+					error_log.push("Invalid identifier '" + exp.substring(invalid_exp_index + 6) + "' found.",s, line_number);
+					return "not_known";
+				}
+
+				String type = get_type_of_exp(exp, line_number);
 				new_arg = Util.replace_in_str(new_arg, exp, type);
 				inner_arg = Util.replace_in_str(inner_arg, exp, type);
 			}
 
-			new_args.add(new_arg);
+			// System.out.println("exps: " + exps);
 
-			// System.out.println("new_arg <" + new_arg + ">");
+			new_args.add(new_arg);
 		}
 
+
 		// System.out.println("new_args: " + new_args);
+
 		if(!Util.contains_func_call(inner_arg)) {
 			StringBuffer final_s = new StringBuffer(inner_arg);
 			final_s.insert(0, func_name + "(");
 			final_s.append(")");
-			String type = get_type_of_one_func_call(final_s.toString());
+			String type = get_type_of_one_func_call(final_s.toString(), line_number);
 			// System.out.println("type <" + type + ">");
 
 			return type;
@@ -272,11 +275,8 @@ public class SemanticAnalyser {
 
 		List<String> evald_args = new ArrayList<>();
 		for(String new_arg: new_args) {
-			HashMap<String, String> hm = new HashMap<>();
-			evald_args.add(iter_eval_until_no_funcs(new_arg, hm));
+			evald_args.add(iter_eval_until_no_funcs(new_arg, line_number));
 		}
-
-		// System.out.println("evald_args <" + evald_args + ">");
 
 		StringBuffer final_func_call = new StringBuffer(func_name + "(");
 		int evald_args_len = evald_args.size();
@@ -289,18 +289,16 @@ public class SemanticAnalyser {
 		}
 
 		final_func_call.append(")");
-		// System.out.println("final_func_call <" + final_func_call + ">");
-
-		return get_type_of_one_func_call(final_func_call.toString());
+		return get_type_of_one_func_call(final_func_call.toString(), line_number);
 	}
 
 
 	// Returns the inner argument of func, with all the function call evaluated.
-	String iter_eval_until_no_funcs(String func, HashMap<String, String> hm) {
+	String iter_eval_until_no_funcs(String func, int line_number) {
 		String final_str =  func;
 		String inner_arg = func.substring(func.indexOf('(') + 1, func.lastIndexOf(')'));
-
 		List<String> all_funcs = Util.get_all_func_calls(inner_arg);
+		HashMap<String, String> hm = new HashMap<>();
 
 		for(String f: all_funcs)
 			hm.put(f, "not_known");
@@ -315,7 +313,7 @@ public class SemanticAnalyser {
 
 			String type = "not_known";
 			if(value.equals("not_known")) {
-				type = get_type_of_one_func_call(f);
+				type = get_type_of_one_func_call(f, line_number);
 				hm.put(f, type);
 
 				for(int j = i - 1; j >= 0; j--) {
@@ -333,33 +331,34 @@ public class SemanticAnalyser {
 			}
 		}
 
-		// System.out.println("inner_arg <" + inner_arg + ">");
 		StringBuffer final_func_call = new StringBuffer(func.substring(0, func.indexOf('(')));
 		final_func_call.append("(" + inner_arg + ")");
-		// System.out.println("final_func_call <" + final_func_call + ">");
 
-		return get_type_of_one_func_call(final_func_call.toString());
+		return get_type_of_one_func_call(final_func_call.toString(), line_number);
 
 		/*
-		System.out.println("HM: ");
-		Set<String> keyset = hm.keySet();
-		Iterator<String> it = keyset.iterator();
-		while(it.hasNext()) {
+			System.out.println("HM: ");
+			Set<String> keyset = hm.keySet();
+			Iterator<String> it = keyset.iterator();
+			while(it.hasNext()) {
 			String key = it.next();
 			System.out.println(key + " : " + hm.get(key));
-		}
-		*/
+			}
+			*/
 	}
 
 	// @Note: Here the types of arguments should have already been deduced.
-	String get_type_of_one_func_call(String s) {
+	String get_type_of_one_func_call(String s, int line_number) {
 		String in_arg = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
 		String name = s.substring(0, s.indexOf('('));
 		List<String> arg_types = Util.get_func_args(s);
 
 		FuncNameArgs func_name_arg = get_func_name_with_args(name, arg_types);
-		if(func_name_arg == null)
+		if(func_name_arg == null) {
+			String msg = "Function with name '" + name + "' and argument types " + arg_types + " does not exist";
+			error_log.push(msg, s, line_number);
 			return "not_known";
+		}
 
 		return func_name_arg.return_type;
 	}

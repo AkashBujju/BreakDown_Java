@@ -53,10 +53,17 @@ public class Main {
 				return;
 			}
 
+			System.out.println("No syntax errors.");
+
 			SemanticAnalyser sa = new SemanticAnalyser(sc.infos, Util.quotes_range_indices);
 			sa.start();
+			error_log = sa.error_log;
+			if(error_log.log.size() != 0) {
+				error_log.show();
+			}
 
-			System.out.println("No syntax errors.");
+			System.out.println("No semantic errors.");
+
 		}
 		catch (Exception e) {
 			System.out.println("Exception caught in class Main: ");

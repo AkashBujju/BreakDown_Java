@@ -6,6 +6,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
 
+class MsgType {
+	String msg;
+	String type;
+
+	MsgType(String msg, String type) {
+		this.msg = msg;
+		this.type = type;
+	}
+}
+
 public class EvalExp {
 	private List<String> postfix;
 	private Stack<String> st = new Stack<>();
@@ -17,42 +27,41 @@ public class EvalExp {
 		this.postfix = postfix;
 	}
 
-	String deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {
+	MsgType deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {
 		String final_type = "";
 
 		if(postfix.size() == 0)
-			return "void";
+			return new MsgType("none", "void");
 
 		if(postfix.size() == 1) {
 			String var = postfix.get(0);
 			String type = Util.get_primitive_type(var);
 
 			if(type.equals("not_known")) {
-				// if type is not present, then check if the variable name exists in
-				// the symbol table.
 				String var_type = symbol_table.get_type(postfix.get(0), func_scope_name, max_scope);
-				// @Incomplete: add error statements
-				if(!var_type.equals(""))
-					return var_type;
+				if(!var_type.equals("not_known"))
+					return new MsgType("none", var_type);
+				else { // Variable not found ...
+					return new MsgType("Identifier '" + var + "' not found.", "not_known");
+				}
 			}
 
-			return type;
+			return new MsgType("none", type);
 		}
 
 		for(String s: postfix) {
 			boolean op = Util.is_operator(s);
 			if(op) {
-				String t, f;
+				String t = "";
 				List<String> exp_ops_list = new ArrayList<>();
 
-				if(s.equals(">>") || s.equals("<<") || s.equals("!")) {
+				if(s.equals(">>") || s.equals("<<") || s.equals("!")) { // unary operation on >> , << or !
 					String right_char = st.pop();
 					String right_type = Util.get_primitive_type(right_char);
 
 					// >> is a unary operator
 					if((s.equals(">>") || s.equals("<<")) && st.size() == 1) {
-						System.out.println("Cannot apply " + s + " as a binary operator.");
-						right_type = "not_known";
+						return new MsgType("Cannot apply '" + s + "' as a binary operator.", "not_known");
 					}
 
 					// Checking if the variable exists in the symbol table
@@ -65,17 +74,14 @@ public class EvalExp {
 					// @Note: If >> is used, it should only be for one variable, as pointers
 					// cannot point to literals like 1,2,3.14 or "Strings" ot multiple variables
 					else if(s.equals(">>") && right_char.charAt(0) == '@') {
-						System.out.println("Cannot apply >> to literal types or expressions. ie: " + right_char);
-						right_type = "not_known";
+						return new MsgType("Cannot apply '>>' to literals  or expressions. ie: " + right_char, "not_known");
 					}
 
 					// if >> or << is being applied to literals.
 					else if((s.equals(">>")) || s.equals("<<")) {
-						System.out.println("Cannot apply " + s + " to literals ie. " + right_char);
-						right_type = "not_known";
+						return new MsgType("Cannot apply '" + s + "' to literals ie. " + right_char, "not_known");
 					}
 
-					f = s + right_char;
 					literal_type_map.put(right_char, right_type);
 					t = "@" + (t_list.size() + 1) + "@";
 					literal_type_map.put(t, "not_known");
@@ -83,39 +89,57 @@ public class EvalExp {
 					exp_ops_list.add(s);
 					exp_ops_list.add(right_char);
 				}
-				else {
+				else { // binary operation
+					// @Note: +, - can be used both as a unary and binary operator.
+					if(st.size() == 0)
+						return new MsgType("Incomplete expression found.", "not_known");
+
 					String left_char = st.pop();
-					String right_char = st.pop();
-					f = right_char + s + left_char;
 
-					String left_type = Util.get_primitive_type(left_char);
-					String right_type = Util.get_primitive_type(right_char);
+					if((s.equals("+") || s.equals("-")) && st.size() == 0) { // unary operation with + or - .
+						String left_type = Util.get_primitive_type(left_char);
+						if(left_type.equals("not_known")) {
+							String var_type = symbol_table.get_type(left_char, func_scope_name, max_scope);
+							if(!var_type.equals(""))
+								left_type = var_type;
+						}
 
-					// Checking if it's a variable name in the symbol_table
-					// @Incomplete: Show error if variable_name is not found.
-					if(left_type.equals("not_known")) {
-						String var_type = symbol_table.get_type(left_char, func_scope_name, max_scope);
-						if(!var_type.equals(""))
-							left_type = var_type;
+						if(left_type.equals("int") || left_type.equals("double")) {
+							literal_type_map.put(left_char, left_type);
+							t = "@" + (t_list.size() + 1) + "@";
+							literal_type_map.put(t, left_type);
+						}
+
+						exp_ops_list.add(s);
+						exp_ops_list.add(left_char);
 					}
-					if(right_type.equals("not_known")) {
-						String var_type = symbol_table.get_type(right_char, func_scope_name, max_scope);
-						if(!var_type.equals(""))
-							right_type = var_type;
+					else {
+						String right_char = st.pop();
+
+						String left_type = Util.get_primitive_type(left_char);
+						String right_type = Util.get_primitive_type(right_char);
+
+						if(left_type.equals("not_known")) {
+							String var_type = symbol_table.get_type(left_char, func_scope_name, max_scope);
+							if(!var_type.equals(""))
+								left_type = var_type;
+						}
+						if(right_type.equals("not_known")) {
+							String var_type = symbol_table.get_type(right_char, func_scope_name, max_scope);
+							if(!var_type.equals(""))
+								right_type = var_type;
+						}
+
+						literal_type_map.put(right_char, right_type);
+						literal_type_map.put(left_char, left_type);
+
+						t = "@" + (t_list.size() + 1) + "@";
+						literal_type_map.put(t, "not_known");
+
+						exp_ops_list.add(right_char);
+						exp_ops_list.add(s);
+						exp_ops_list.add(left_char);
 					}
-
-					literal_type_map.put(right_char, right_type);
-					literal_type_map.put(left_char, left_type);
-
-					// @Note: The String t can be something unique, because t0, t1 ... can even be a variable name.
-					// @Note: The String t can be something unique, because t0, t1 ... can even be a variable name.
-
-					t = "@" + (t_list.size() + 1) + "@";
-					literal_type_map.put(t, "not_known");
-
-					exp_ops_list.add(right_char);
-					exp_ops_list.add(s);
-					exp_ops_list.add(left_char);
 				}
 
 				t_exp_map.put(t, exp_ops_list);
@@ -138,11 +162,14 @@ public class EvalExp {
 				String right_literal = li.get(1);
 				String op = li.get(0);
 				String right_type = literal_type_map.get(right_literal);
+
+				if(right_type.equals("not_known")) {
+					return new MsgType("Identifier '" + right_literal + "' not found.", "not_known");
+				}
+
 				boolean is_operation_valid = Util.validate_operation(right_type, op);
 				if(!is_operation_valid) {
-					System.out.println("Cannot apply " + "'" + li.get(0) + "'" + " to " + right_literal + "<"
-							+ right_type + ">");
-					return "not_known";
+					return new MsgType("Cannot apply " + "'" + li.get(0) + "'" + " to " + right_literal + "'" + right_type + "'", "not_known");
 				}
 
 				String res_type = Util.add_types(right_type, op);
@@ -155,11 +182,16 @@ public class EvalExp {
 				String right_type = literal_type_map.get(right_literal);
 				String left_type = literal_type_map.get(left_literal);
 
+				if(right_type.equals("not_known")) {
+					return new MsgType("Identifier '" + right_literal + "' not found", "not_known");
+				}
+				else if(left_type.equals("not_known")) {
+					return new MsgType("Identifier '" + left_literal + "' not found", "not_known");
+				}
+
 				boolean is_operation_valid = Util.validate_operation(right_type, left_type, li.get(1));
 				if(!is_operation_valid) {
-					System.out.println("Cannot apply " + "'" + li.get(1) + "'" + " to " + right_literal + "<"
-							+ right_type + "> and " + left_literal + "<" + left_type +">.");
-					return "not_known";
+					return new MsgType("Cannot apply " + "'" + li.get(1) + "'" + " to " + right_literal + "'" + right_type + "' and " + left_literal + "'" + left_type +"'.", "not_known");
 				}
 
 				String res_type = Util.add_types(right_type, left_type, li.get(1));
@@ -180,7 +212,6 @@ public class EvalExp {
 		System.out.println();
 		*/
 
-		return final_type;
+		return new MsgType("none", final_type);
 	}
-
 }

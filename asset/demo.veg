@@ -23,20 +23,31 @@ func sub(a: int, b: int) -> int {
 	return a - b;
 }
 
-func foo() -> int {
-	return 0;
-}
-
 func mul(a: int, b: int) -> int {
 	return a * b;
 }
 
-a := add(add(1 + 2, sub(1 - 2 ,sub(1 * 10, 4))) - 10, mul(add(2 * 3 + 2, 2), sub(add(1,2), 4)));
+func foo(a: int*, b: int*) -> int {
+	return (<< a) + (<< b);
+}
 
-b := add(1, 2) + 10 >>> 1;
-# b := foo();
+func foo_2(a: int**, b: double**) -> double {
+	return 0;
+}
 
+# a := add(add(1 + 2.0, sub(1 - 2 ,sub(1 * 10, 4))) - 10, mul(add(2 * 3 + 2, 2), sub(add(1,2), 4)));
+
+a := + 10 + 20;
+b := 10 + 20;
+
+# b := add(1, 2) + 10 >>> 1;
 c := >> b;
+# f := +10;
+f := >> (<< c);
+# d := add(<< c, a) + b + foo(<< b, >> a);
+# var_1 := 1.0;
+# var_2 := >> var_1;
+# e := foo_2(>> c, >> var_2);
 
 func main(argc: int, argv: char**) -> int {
 	a := "hello";
