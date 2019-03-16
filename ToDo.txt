@@ -1,6 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-	0) Do error_log for SemanticAnalyser.
+	0) Pointer arithmetic is broken.
 	1) Take away quotes_range_indices if possible ... There seems to be
 	problems with it !!!!!!!
 	2) From where does the relative path of files start, inside the code.....

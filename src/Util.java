@@ -802,6 +802,12 @@ public class Util {
 			if(is_op_logical || op.equals("==") || op.equals("!="))
 				res = "bool";
 		}
+		else { // pointer arithmetic.
+			if(is_type_pointer(type_1) && type_2.equals("int"))
+				res = type_1;
+			else if(is_type_pointer(type_2) && type_1.equals("int"))
+				res = type_2;
+		}
 
 		return res;
 	}
@@ -851,8 +857,34 @@ public class Util {
 					|| op.equals(">="))
 				is_valid = true;
 		}
+		else { // Pointer arithmetic
+			if(is_type_pointer(type_1) && is_type_pointer(type_2))
+				return false;
+
+			if(is_type_pointer(type_1)) {
+				String typename = type_1.substring(0, type_1.indexOf("*"));
+				if((typename.equals("int") || typename.equals("double")) && type_2.equals("int"))
+					is_valid = true;
+			}
+			else if(is_type_pointer(type_2)) {
+				String typename = type_2.substring(0, type_2.indexOf("*"));
+				if((typename.equals("int") || typename.equals("double")) && type_1.equals("int"))
+					is_valid = true;
+			}
+		}
 
 		return is_valid;
+	}
+
+	static boolean is_type_pointer(String type) {
+		int len = type.length();
+		for(int i = len - 1; i >= 0; --i) {
+			char c = type.charAt(i);
+			if(c == '*')
+				return true;
+		}
+
+		return false;
 	}
 
 	static List<String> get_only_exp(String s, List<String> func_names) {

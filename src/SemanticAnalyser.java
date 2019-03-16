@@ -155,7 +155,7 @@ public class SemanticAnalyser {
 		String raw_value = var_decl_info.raw_value;
 		String name = var_decl_info.name;
 
-		// Checking if the variable name is not a name of any type.
+		// Checking if the variable name is not the name of any type.
 		if(symbol_table.type_exists(name)) {
 			error_log.push("Name <" + name + "> is not allowed, since it a name of a type.", name, var_decl_info.line_number);
 			return -1;
@@ -201,9 +201,7 @@ public class SemanticAnalyser {
 			List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
 			EvalExp eval_exp = new EvalExp(postfix_exp);
 			MsgType msg_type = eval_exp.deduce_final_type(symbol_table, "", 0);
-			if(msg_type.msg.equals("none"))
-				symbol_table.add(var_decl_info.name, msg_type.type, raw_value);
-			else {
+			if(!msg_type.msg.equals("none")) {
 				error_log.push(msg_type.msg, raw_value, var_decl_info.line_number);
 				return -1;
 			}
@@ -211,14 +209,15 @@ public class SemanticAnalyser {
 			final_type = msg_type.type;
 		}
 
+		symbol_table.add(var_decl_info.name, final_type, raw_value);
 		System.out.println("name <" + var_decl_info.name + ">, type <" + final_type + ">");
+		System.out.println();
 
 		return  0;
 	}
 
 	String get_type_of_exp(String s, int line_number) {
 		List<String> in_list = Util.split_with_ops(s);
-		// System.out.println("s: " + s + ", in_list: " + in_list);
 		List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
 
 		EvalExp eval_exp = new EvalExp(out_list);
@@ -267,20 +266,14 @@ public class SemanticAnalyser {
 				inner_arg = Util.replace_in_str(inner_arg, exp, type);
 			}
 
-			// System.out.println("exps: " + exps);
-
 			new_args.add(new_arg);
 		}
-
-
-		// System.out.println("new_args: " + new_args);
 
 		if(!Util.contains_func_call(inner_arg)) {
 			StringBuffer final_s = new StringBuffer(inner_arg);
 			final_s.insert(0, func_name + "(");
 			final_s.append(")");
 			String type = get_type_of_one_func_call(final_s.toString(), line_number);
-			// System.out.println("type <" + type + ">");
 
 			return type;
 		}

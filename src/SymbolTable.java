@@ -50,7 +50,7 @@ public class SymbolTable {
 		StringBuffer sb = new StringBuffer(typename);
 		int len = typename.length();
 
-		for(int i = len - 1; i >= 0; ++i) {
+		for(int i = len - 1; i >= 0; --i) {
 			char c = sb.charAt(i);
 			if(Util.is_char_alpha_digit_underscore(c))
 				break;
