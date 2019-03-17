@@ -191,7 +191,10 @@ public class SemanticAnalyser {
 		// @Note: The problem is an expression like '>> b' gets seperated into two, thereby get_type is called on '>>' and 'b' seperately which is incorrect....
 		// IDEA: Replace the function return value with an appriopriate primitive literal. It may not always be reduced to a primitive type.
 
-		// System.out.println("final_exp: " + final_exp);
+		/*
+		System.out.println("final_exp: " + final_exp);
+		System.out.println("-------------------");
+		*/
 		String final_type = "not_known";
 
 		if(num_func_calls == 1 && final_exp.size() == 1) {
@@ -218,6 +221,7 @@ public class SemanticAnalyser {
 
 	String get_type_of_exp(String s, int line_number) {
 		List<String> in_list = Util.split_with_ops(s);
+		System.out.println("in_list: " + in_list);
 		List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
 
 		EvalExp eval_exp = new EvalExp(out_list);

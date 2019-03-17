@@ -60,6 +60,11 @@ public class InfixToPostFix {
 		List<String> result = new ArrayList<>();
 		Stack<String> stack = new Stack<>();
 
+		/*
+		System.out.println("exp: " + exp);
+		System.out.println("-------------------");
+		*/
+
 		for(String s: exp) {
 			if(is_str_digit_or_var_or_func_call(s)) {
 				result.add(s);
@@ -77,14 +82,18 @@ public class InfixToPostFix {
 					stack.pop();
 			}
 			else {
-				while (!stack.isEmpty() && Precedence(s) <= Precedence(stack.peek()))
-					result.add(stack.pop());
+				while (!stack.isEmpty() && Precedence(s) < Precedence(stack.peek())) {
+					String str = stack.pop();
+					result.add(str);
+				}
 				stack.push(s);
 			}
 		}
 
-		while(!stack.empty())
-			result.add(stack.pop());
+		while(!stack.empty()) {
+			String str = stack.pop();
+			result.add(str);
+		}
 
 		return result;
 	}

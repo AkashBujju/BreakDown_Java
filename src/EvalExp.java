@@ -83,15 +83,19 @@ public class EvalExp {
 						return new MsgType("Cannot apply '>> and <<' to literals ie. " + right_char, "not_known");
 					}
 
-					// We cannot apply >> to expressions
+					// Cannot apply >> to expressions
 					if(right_char.charAt(0) == '@' && s.equals(">>")) {
 						return new MsgType("Operator '>>' can only be applied to lvalues and not: <" + right_char + ">.", "not_known");
 					}
 
-					literal_type_map.put(right_char, right_type);
-					t = "@" + (t_list.size() + 1) + "@";
+					boolean type_already_in_map = literal_type_map.containsKey(right_char);
+					if(!type_already_in_map) {
+						literal_type_map.put(right_char, right_type);
+					}
 
+					t = "@" + (t_list.size() + 1) + "@";
 					String res_type = "not_known";
+
 					if(right_char.charAt(0) != '@') {
 						boolean is_valid_op = Util.validate_operation(right_type, s);
 						res_type = Util.add_types(right_type, s);
@@ -176,6 +180,18 @@ public class EvalExp {
 			}
 		}
 
+		/*
+		// Displaying literal_type_map
+		System.out.println("literal_type_map: ");
+		Set<String> key_set_3 = literal_type_map.keySet();
+		Iterator<String> it_2 = key_set_3.iterator();
+		while(it_2.hasNext()) {
+			String key = it_2.next();
+			System.out.println(key + ": " + literal_type_map.get(key));
+		}
+		System.out.println();
+		*/
+
 		// Deducing types of all t s.
 		Set<String> key_set_2 = t_exp_map.keySet();
 		int _sz = key_set_2.size();
@@ -249,5 +265,5 @@ public class EvalExp {
 			*/
 
 		return new MsgType("none", final_type);
-	}
-}
+			}
+		}

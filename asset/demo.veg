@@ -3,9 +3,6 @@ func make_int(num: int) -> int* {
 	return a;
 }
 
-# a := make_int(10) + 1;
-b := 10;
-# c := >> (b + 1);
-d := << (>> b + 1);
-e := >> b;
-f := >> (<< e);
+a := 10;
+b := >> a;
+c := << (>> b);

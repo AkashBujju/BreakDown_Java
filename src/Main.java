@@ -67,8 +67,11 @@ public class Main {
 			System.out.println("No semantic errors.");
 		}
 		catch (Exception e) {
-			System.out.println("Exception caught in class Main: ");
+			System.out.println();
+			System.out.println("--------------------------------");
+			System.out.println("Internal Compiler Error !!!!!!!!");
 			System.out.println("What: " + e);
+			System.out.println("--------------------------------");
 		}
 	}
 }
