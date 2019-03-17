@@ -25,7 +25,7 @@ public class EvalExp {
 
 	EvalExp(List<String> postfix) {
 		this.postfix = postfix;
-		System.out.println("postfix: " + postfix);
+		// System.out.println("postfix: " + postfix);
 	}
 
 	MsgType deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {

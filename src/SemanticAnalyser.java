@@ -195,14 +195,17 @@ public class SemanticAnalyser {
 		System.out.println("final_exp: " + final_exp);
 		System.out.println("-------------------");
 		*/
+
 		String final_type = "not_known";
+		EvalExp eval_exp = null;
 
 		if(num_func_calls == 1 && final_exp.size() == 1) {
-			final_type = final_exp.get(0);
+			eval_exp = new EvalExp(final_exp);
+			final_type = eval_exp.deduce_final_type(symbol_table, "", 0).type;
 		}
 		else {
 			List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
-			EvalExp eval_exp = new EvalExp(postfix_exp);
+			eval_exp = new EvalExp(postfix_exp);
 			MsgType msg_type = eval_exp.deduce_final_type(symbol_table, "", 0);
 			if(!msg_type.msg.equals("none")) {
 				error_log.push(msg_type.msg, raw_value, var_decl_info.line_number);
@@ -221,7 +224,6 @@ public class SemanticAnalyser {
 
 	String get_type_of_exp(String s, int line_number) {
 		List<String> in_list = Util.split_with_ops(s);
-		System.out.println("in_list: " + in_list);
 		List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
 
 		EvalExp eval_exp = new EvalExp(out_list);

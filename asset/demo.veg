@@ -3,6 +3,27 @@ func make_int(num: int) -> int* {
 	return a;
 }
 
+func add(a: int, b: int) -> int {
+	return a + b;
+}
+
+func add(a: double, b:double) -> double {
+	return a + b;
+}
+
+func add(a: int*, b: int*) -> int {
+	return (<< a) + (<< b);
+}
+
+func add(a: double*, b: double*) -> double {
+	return (<< a) + (<< b);
+}
+
 a := 10;
-b := >> a;
-c := << (>> b);
+b := 20;
+ptr_1 := >> a;
+ptr_2 := >> b;
+
+res_1 := add(ptr_1, ptr_2);
+res_2 := add(a, b);
+res_3 := add(>> a, >> b);

@@ -82,6 +82,7 @@ public class InfixToPostFix {
 					stack.pop();
 			}
 			else {
+				// @Note: Changed <= to <
 				while (!stack.isEmpty() && Precedence(s) < Precedence(stack.peek())) {
 					String str = stack.pop();
 					result.add(str);
