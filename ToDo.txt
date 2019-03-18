@@ -1,7 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-	0) Check InfixToPostfix ( while loop condition !stack.isEmpty() &&
-	Precedence(s) < Precedence(stack.peek()) )
+	0) CHECK Util.get_only_exps(). SOMETHING IS WRONG !!!!!!!!!!!!!!!!
 
 	1) Take away quotes_range_indices if possible ... There seems to be
 	problems with it !!!!!!!

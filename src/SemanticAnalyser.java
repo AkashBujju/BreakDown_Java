@@ -165,8 +165,6 @@ public class SemanticAnalyser {
 		List<String> split_value = Util.split_with_ops(raw_value);
 		List<String> final_exp = new ArrayList<>();
 
-		// System.out.println("split_value: " + split_value);
-
 		int len = split_value.size();
 		int num_func_calls = 0;
 		for(int i = 0; i < len; ++i) {
@@ -195,15 +193,17 @@ public class SemanticAnalyser {
 			}
 		}
 
+		/*
 		System.out.println("final_exp: " + final_exp + ", var_name: " + name);
 		System.out.println("-------------------");
+		*/
 
 		String final_type = "not_known";
 		EvalExp eval_exp = null;
 
 		if(num_func_calls == 1 && final_exp.size() == 1) {
 			eval_exp = new EvalExp(final_exp);
-			final_type = eval_exp.deduce_final_type(symbol_table, "", 0).type;
+			final_type = eval_exp.deduce_final_type_from_types(symbol_table, "", 0).type;
 		}
 		else {
 			List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
@@ -218,7 +218,7 @@ public class SemanticAnalyser {
 		}
 
 		symbol_table.add(var_decl_info.name, final_type, raw_value);
-		System.out.println("FINAL TYPE <" + final_type + ">" + ", name <" + var_decl_info.name + ">");
+		System.out.println("FINAL TYPE <" + final_type + ">" + ", name <" + var_decl_info.name + ">, raw_value: " + raw_value);
 		System.out.println();
 
 		return  0;
@@ -240,91 +240,82 @@ public class SemanticAnalyser {
 	}
 
 	String get_type_of_func_call(String s, int line_number) {
-		/*
-		 * Alg: 
-		 * 1) Find the inner arguments of the function
-		 * 2) Eval all exps for every inner argument
-		 * 3) Replace the instances of the exp in the inner_arg with it's type
-		 */
-
-		// @Note: This is just one function call, and String 's' is not like add(1, 2) + sub(1, 1), but like add(sub(1, 1), 2).
-
 		List<String> all_args = Util.get_func_args(s);
-		String arg = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
+		String args = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
 		String func_name = s.substring(0, s.indexOf('('));
-		/*
-			System.out.println("func_name <" + func_name + ">");
-			System.out.println("arg: " + arg);
-			*/
 		boolean func_exists = func_with_num_args_exists(func_name, all_args.size());
 		if(!func_exists) {
 			error_log.push("Function with name '" + func_name + "' taking '" + all_args.size() + "' arguments dosen't exist.", s, line_number);
 			return "not_known";
 		}
 
-		// @Incomplete: There can be more than one argument... FIX THAT
-		// @Incomplete: There can be more than one argument... FIX THAT
-		// @Incomplete: There can be more than one argument... FIX THAT
-		// @Incomplete: There can be more than one argument... FIX THAT
-		// @Incomplete: There can be more than one argument... FIX THAT
-		List<String> exps = Util.get_only_exp(arg, get_all_func_names());
-		List<String> funcs = Util.get_all_func_calls(arg);
-		String new_arg = arg;
+		List<String> new_args = new ArrayList<>();
+		for(String arg: all_args) {
+			List<String> exps = Util.get_only_exp(arg, get_all_func_names());
+			List<String> funcs = Util.get_all_func_calls(arg);
+			String new_arg = arg;
 
-		System.out.println("exps: " + exps);
+			System.out.println("exps: " + exps);
 
-		for(String exp: exps) {
-			int invalid_exp_index = exp.indexOf("error@");
-			if(invalid_exp_index != -1) { // Invalid use of unary operator
-				error_log.push("Invalid identifier '" + exp.substring(invalid_exp_index + 6) + "' found.",s, line_number);
-				return "not_known";
+			for(String exp: exps) {
+				int invalid_exp_index = exp.indexOf("error@");
+				if(invalid_exp_index != -1) { // Invalid use of unary operator
+					error_log.push("Invalid identifier '" + exp.substring(invalid_exp_index + 6) + "' found.",s, line_number);
+					return "not_known";
+				}
+
+				System.out.println("BEFORE get_type_of_exp, exp: " + exp);
+				String type = get_type_of_exp(exp, line_number);
+				System.out.println("AFTER get_type_of_exp");
+				new_arg = Util.replace_in_str(new_arg, exp, type);
 			}
 
-			String type = get_type_of_exp(exp, line_number);
-			new_arg = Util.replace_in_str(new_arg, exp, type);
+			System.out.println("new_arg: " + new_arg);
+			new_args.add(new_arg);
 		}
 
-		System.out.println("new_arg: " + new_arg);
+		int new_args_len = new_args.size();
+		for(int i = 0; i < new_args_len; ++i) {
+			String new_arg = new_args.get(i);
 
-		if(!Util.contains_func_call(new_arg)) {
-			StringBuffer final_s = new StringBuffer(new_arg);
-			final_s.insert(0, func_name + "(");
-			final_s.append(")");
-			String type = get_type_of_one_func_call(final_s.toString(), line_number);
+			if(!Util.contains_func_call(new_arg)) {
+				StringBuffer final_s = new StringBuffer(new_arg);
+				final_s.insert(0, func_name + "(");
+				final_s.append(")");
+				String type = get_type_of_one_func_call(final_s.toString(), line_number);
 
-			return type;
+				new_args.set(i, type);
+			}
 		}
 
 		// @Note: new_arg needs to be enclosed by function name and parenthesis.
 		// @Note: new_arg needs to be enclosed by function name and parenthesis.
-
-
 		StringBuffer tmp_func_call = new StringBuffer(func_name + "(");
-		tmp_func_call.append(new_arg);
+		for(int i = 0; i < new_args_len; ++i) {
+			String new_arg = new_args.get(i);
+			tmp_func_call.append(new_arg);
+
+			if(i != new_args_len - 1)
+				tmp_func_call.append(",");
+		}
 		tmp_func_call.append(")");
-		String evald_func_args = iter_eval_until_no_funcs(tmp_func_call.toString(), line_number);
 
+		String final_func_type = iter_eval_type_util_end(tmp_func_call.toString(), line_number);
+		// System.out.println("final_func_type: " + final_func_type);
 
-		StringBuffer final_func_call = new StringBuffer(func_name + "(");
-		final_func_call.append(evald_func_args);
-		final_func_call.append(")");
-
-		return get_type_of_one_func_call(final_func_call.toString(), line_number);
+		return final_func_type;
 	}
 
-	// Returns the inner argument of func, with all the function call evaluated.
-	String iter_eval_until_no_funcs(String func, int line_number) {
+	// Returns the inner argument of func, with all the function calls evaluated.
+	String iter_eval_type_util_end(String func, int line_number) {
 		String final_str =  func;
 		String inner_arg = func.substring(func.indexOf('(') + 1, func.lastIndexOf(')'));
 		List<String> all_funcs = Util.get_all_func_calls(inner_arg);
 		HashMap<String, String> hm = new HashMap<>();
 
-		System.out.println();
-		/*
-			System.out.println("inner_arg: " + inner_arg);
-			System.out.println("all_funcs: " + all_funcs);
-			System.out.println();
-			*/
+		//	System.out.println();
+		//	System.out.println("all_funcs: " + all_funcs);
+		//	System.out.println();
 
 		for(String f: all_funcs)
 			hm.put(f, "not_known");
@@ -343,7 +334,6 @@ public class SemanticAnalyser {
 					continue;
 				type = get_type_of_one_func_call(f, line_number);
 				type = func_iden + type;
-				// System.out.println("f <" + f + ">, type <" + type + ">");
 				hm.put(f, type);
 
 				for(int j = 0; j < all_funcs.size(); ++j) {
@@ -360,22 +350,11 @@ public class SemanticAnalyser {
 			}
 		}
 
-		System.out.println("final_inner_arg: " +inner_arg);
-
 		StringBuffer final_func_call = new StringBuffer(func.substring(0, func.indexOf('(')));
 		final_func_call.append("(" + inner_arg + ")");
+		// System.out.println("final_func_call: " + final_func_call);
 
 		return get_type_of_one_func_call(final_func_call.toString(), line_number);
-
-		/*
-			System.out.println("HM: ");
-			Set<String> keyset = hm.keySet();
-			Iterator<String> it = keyset.iterator();
-			while(it.hasNext()) {
-			String key = it.next();
-			System.out.println(key + " : " + hm.get(key));
-			}
-			*/
 	}
 
 	// @Note: Here the types of arguments should have already been deduced.
@@ -389,9 +368,15 @@ public class SemanticAnalyser {
 			String arg = arg_types.get(i);
 			List<String> exps = Util.split_with_ops_the_types(arg);
 			List<String> postfix = InfixToPostFix.infixToPostFix(exps);
-			// System.out.println("postfix: " + postfix);
 			EvalExp eval_exp = new EvalExp(postfix);
 			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, "", 0);
+
+			if(!msg_type.msg.equals("none")) {
+				error_log.push(msg_type.msg, s, line_number);
+				return "not_known";
+			}
+
+			arg_types.set(i, msg_type.type);
 		}
 
 		FuncNameArgs func_name_arg = get_func_name_with_args(name, arg_types);

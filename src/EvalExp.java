@@ -25,7 +25,7 @@ public class EvalExp {
 
 	EvalExp(List<String> postfix) {
 		this.postfix = postfix;
-		System.out.println("postfix: " + postfix);
+		// System.out.println("postfix: " + postfix);
 	}
 
 	MsgType deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {
@@ -386,7 +386,6 @@ public class EvalExp {
 				// Deducing final types of t's
 				Set<String> key_set_1 = t_exp_map.keySet();
 				int _sz = key_set_1.size();
-				System.out.println("_sz: " + _sz);
 				for(int i = 0; i < _sz; ++i) {
 					String key = "@" + (i+1) + "@";
 					List<String> li = t_exp_map.get(key);
@@ -442,7 +441,7 @@ public class EvalExp {
 				}
 
 				final_type = literal_type_map.get("@" + _sz + "@");
-				System.out.println("final_type: " + final_type);
+				// System.out.println("final_type: " + final_type);
 
 				return new MsgType("none", final_type);
 			}
