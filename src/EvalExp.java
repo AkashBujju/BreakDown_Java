@@ -277,7 +277,15 @@ public class EvalExp {
 			MsgType deduce_final_type_from_types(SymbolTable symbol_table, String func_scope_name, int max_scope) {
 				String final_type = "not_known";
 				if(postfix.size() == 1) {
-					return new MsgType("none", postfix.get(0));
+					String type = postfix.get(0);
+
+					boolean is_var = type.indexOf("_var@") == -1 ? false : true;
+					boolean is_func = type.indexOf("_func@") == -1 ? false : true;
+					if(is_var)
+						type = type.substring(5); // length of _var@ is 4.
+					else if(is_func)
+						type = type.substring(6); // length of _var@ is 5.
+					return new MsgType("none", type);
 				}
 
 				for(String s: postfix) {
@@ -290,19 +298,18 @@ public class EvalExp {
 						if(s.equals(">>") || s.equals("<<") || s.equals("!")) { // unary operation on >> , << or !
 							String right_type = st.pop();
 							boolean is_var = right_type.indexOf("_var@") == -1 ? false : true;
+							boolean is_func = right_type.indexOf("_func@") == -1 ? false : true;
+
 							if(is_var)
 								right_type = right_type.substring(5); // length of _var@ is 4.
-
-							// System.out.println("right_type: " + right_type + ", is_var: " + is_var);
+							else if(is_func)
+								right_type = right_type.substring(6); // length of _var@ is 5.
 
 							if(right_type.equals("not_known"))
 								return new MsgType("Type 'not_known' found.", "not_known");
 
-							else if(s.equals(">>") && (right_type.charAt(0) == '@' || !is_var))
-								return new MsgType("Cannot apply '>>' to literals  or expressions. ie: type <" + right_type + ">.", "not_known");
-
-							else if(s.equals("<<") && !is_var)
-								return new MsgType("Cannot apply '<<' to literals. It can only can be applied to pointers.", "not_known");
+							else if(s.equals(">>") && (right_type.charAt(0) == '@' || !is_var || is_func))
+								return new MsgType("Cannot apply '>>' to literals  or expressions or functions. ie: type <" + right_type + ">.", "not_known");
 
 							t = "@" + (t_list.size() + 1) + "@";
 							literal_type_map.put(t, "not_known");
@@ -317,10 +324,13 @@ public class EvalExp {
 
 							String left_type = st.pop();
 							boolean is_left_var = left_type.indexOf("_var@") == -1 ? false : true;
+							boolean is_left_func = left_type.indexOf("_func@") == -1 ? false : true;
+							if(is_left_var)
+								left_type = left_type.substring(5); // length of _var@ is 4.
+							else if(is_left_func)
+								left_type = left_type.substring(6); // length of _func@ is 5.
 
 							if((s.equals("+") || s.equals("-")) && st.size() == 0) { // unary operation with + or - .
-								if(is_left_var)
-									left_type = left_type.substring(5); // length of _var@ is 4.
 								if(left_type.equals("not_known"))
 									return new MsgType("Type 'not_known' found.", "not_known");
 
@@ -337,12 +347,15 @@ public class EvalExp {
 							else { // binary operation
 								String right_type = st.pop();
 								boolean is_right_var = right_type.indexOf("_var@") == -1 ? false : true;
+								boolean is_right_func = right_type.indexOf("_func@") == -1 ? false : true;
 
 								if(is_right_var)
 									right_type = right_type.substring(5); // length of _var@ is 4.
+								else if(is_right_func)
+									right_type = right_type.substring(6); // length of _func@ is 4.
+
 								if(left_type.equals("not_known"))
 									return new MsgType("Type 'not_known' found.", "not_known");
-
 
 								t = "@" + (t_list.size() + 1) + "@";
 								literal_type_map.put(t, "not_known");
@@ -382,11 +395,6 @@ public class EvalExp {
 						String operator = li.get(0);
 						String right_type = li.get(1);
 
-						// Taking away the _var@ from right_type. It will always be there when li.size() == 2 and operator is >> or << , otherwise we would
-						// have gotten an error in the previous step.
-						if(operator.equals(">>") || operator.equals("<<"))
-							right_type = right_type.substring(5); // length of _var@ is 4
-
 						if(right_type.charAt(0) == '@')  { // get the type from literal_type_map.
 							String res = literal_type_map.get(right_type);
 							if(res == null)
@@ -423,6 +431,7 @@ public class EvalExp {
 								return new MsgType("Type of '" + right_type + "' not found.", "not_known");
 							right_type = res;
 						}
+
 						boolean valid_operation = Util.validate_operation(left_type, right_type, operator);
 						if(!valid_operation)
 							return new MsgType("Operator '" + operator + "' cannot be applied on Type '" + left_type + "' and Type '" + right_type + "'.", "not_known");
