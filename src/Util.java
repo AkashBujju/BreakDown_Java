@@ -47,6 +47,59 @@ public class Util {
 			split_sequences.add(keywords.get(i));
 	}
 
+	static List<String> split_with_ops_the_types(String s) {
+		List<String> exps = split_with_ops(s);
+
+		for(int i = 0; i < exps.size(); ++i) {
+			String str = exps.get(i);
+			int star_count = 0;
+			if(str.equals("*")) {
+				int j = i + 1;
+				while(j < exps.size() && exps.get(j).equals("*")) {
+					star_count += 1;
+					j += 1;
+				}
+
+				if(j >= exps.size()) {
+					exps.remove(i);
+					String new_str = "";
+					if((i - 1) >= 0)
+						new_str = exps.get(i - 1);
+					exps.set(i - 1, new_str + "*");
+				}
+				else if(star_count != 0) {
+					j -= 2;
+					String new_str = "";
+					int x = i;
+					if(x <= j && (i - 1) >= 0)
+						new_str = exps.get(i - 1);
+					for(x = i; x <= j; ++x) {
+						new_str += "*";
+						exps.remove((int)x);
+					}
+					if(!new_str.equals("")) {
+						exps.set(x - star_count, new_str);
+						i += star_count;
+					}
+				}
+				else {
+					if((i + 1) >= exps.size())
+						continue;
+
+					if(Util.is_operator(exps.get(i + 1))) {
+						if((i - 1) >= 0) {
+							exps.remove(i);
+							String new_str = exps.get(i - 1) + "*";
+							exps.set(i - 1, new_str);
+						}
+					}
+				}
+			}
+		}
+
+		return exps;
+	}
+
 	static List<String> split_with_ops(String str) {
 		List<IndexLen> op_pos = get_op_pos_for_exp(str);
 		List<String> in_list = new ArrayList<>();
@@ -304,6 +357,7 @@ public class Util {
 		// is_double
 		boolean is_double = true;
 		int dot_count = 0;
+		int after_dot_count = 0;
 		for(int i = 0; i < str.length(); ++i) {
 			char c = str.charAt(i);
 			if(c == '.')
@@ -316,7 +370,11 @@ public class Util {
 				is_double = false;
 				break;
 			}
+			else if(dot_count == 1 && c >= '0' && c <= '9')
+				after_dot_count += 1;
 		}
+		if(after_dot_count == 0)
+			is_double = false;
 		if(is_double)
 			return "double";
 
@@ -925,16 +983,21 @@ public class Util {
 					// checking if the last char is not an operator. THIS CAN HAPPEN AND IT'S NOT AN ERROR.
 					if(!is_char_alpha_digit_underscore(str.charAt(str.length() - 1)))
 						str = str.substring(0, str.length() - 1);
-					
+
 					// And the str should'nt begin with operators unless it's a unary operator.
 					int j = 0;
 					char ch = str.charAt(j);
+					int str_len = str.length();
 					String the_operator = "";
 					while(!is_char_alpha_digit_underscore(ch) && ch != '(') {
 						ch = str.charAt(j);
-						j += 1;
 						the_operator += ch;
-						ch = str.charAt(i + 1);
+						j += 1;
+						if(j >= str_len)
+							break;
+						ch = str.charAt(j);
+						if(ch == '(')
+							j += 1;
 					}
 
 					if (the_operator.equals("") || the_operator.equals("+") || the_operator.equals("-")) {
@@ -968,14 +1031,19 @@ public class Util {
 
 			// And the str should'nt begin with operators
 			int j = 0;
+			int last_str_len = last_str.length();
 			char ch = last_str.charAt(j);
 			String the_operator = "";
 			while(!is_char_alpha_digit_underscore(ch) && ch != '(') {
 				ch = last_str.charAt(j);
 				the_operator += ch;
 				j += 1;
+				if(j >= last_str_len)
+					break;
 
 				ch = last_str.charAt(j);
+				if(ch == '(')
+					j += 1;
 			}
 
 			// @Note: The 'the_operator is a unary operator like >>, <<, !, +, - then keep, the operator, else discard it.
@@ -991,8 +1059,6 @@ public class Util {
 				li.add(last_str.toString());
 			}
 		}
-
-		// System.out.println("li: " + li);
 
 		// Sorting
 		List<String> new_li = new ArrayList<>();

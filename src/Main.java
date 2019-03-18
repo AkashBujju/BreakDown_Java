@@ -53,7 +53,10 @@ public class Main {
 				return;
 			}
 
+			System.out.println("-----------------");
 			System.out.println("No syntax errors.");
+			System.out.println("-----------------");
+			System.out.println();
 
 			SemanticAnalyser sa = new SemanticAnalyser(sc.infos, Util.quotes_range_indices);
 			sa.start();

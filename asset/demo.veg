@@ -19,11 +19,38 @@ func add(a: double*, b: double*) -> double {
 	return (<< a) + (<< b);
 }
 
-a := 10;
-b := 20;
-ptr_1 := >> a;
-ptr_2 := >> b;
+func sin(angle: double) -> double {
+	return angle;
+}
 
-res_1 := add(ptr_1, ptr_2);
-res_2 := add(a, b);
-res_3 := add(>> a, >> b);
+func cos(angle: double) -> double {
+	return angle;
+}
+
+a := 10.0;
+b := 20;
+# pi := 3.14;
+ptr_1 := >> a;
+is_slow := true;
+is_fast := !is_slow & (true);
+# ptr_2 := >> 10;
+# ptr_3 := >> (ptr_1 + a);
+# res_1 := add(ptr_1, ptr_2);
+# res_2 := add(a, b);
+# res_3 := add(>> a, >> b);
+# res_4 := add(10.0, 20.0);
+# tmp_2 := ptr_1 << ptr_2;
+# tmp := 1 * (<< (<< pi)) + 10;
+
+# final := >> cos(<< make_int(10));
+# final := >> make_int(10) + 10;
+# final_2 := >> add(1, 2) + make_int(10);
+
+# final := cos(add(>> a, >> b) + cos(make_int(2) * sin(add(10.0, 20.0) + (>> pi)) + 1 * make_int(10)) + add(ptr_1, ptr_2)); # + cos(add(2.0, 3.0) + 1.0);
+
+
+
+
+
+
+
