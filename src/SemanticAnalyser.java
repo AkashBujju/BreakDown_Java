@@ -280,23 +280,10 @@ public class SemanticAnalyser {
 			new_args.add(new_arg);
 		}
 
-		int new_args_len = new_args.size();
-		for(int i = 0; i < new_args_len; ++i) {
-			String new_arg = new_args.get(i);
-
-			if(!Util.contains_func_call(new_arg)) {
-				StringBuffer final_s = new StringBuffer(new_arg);
-				final_s.insert(0, func_name + "(");
-				final_s.append(")");
-				String type = get_type_of_one_func_call(final_s.toString(), line_number);
-
-				new_args.set(i, type);
-			}
-		}
-
 		// @Note: new_arg needs to be enclosed by function name and parenthesis.
 		// @Note: new_arg needs to be enclosed by function name and parenthesis.
 		StringBuffer tmp_func_call = new StringBuffer(func_name + "(");
+		int new_args_len = new_args.size();
 		for(int i = 0; i < new_args_len; ++i) {
 			String new_arg = new_args.get(i);
 			tmp_func_call.append(new_arg);

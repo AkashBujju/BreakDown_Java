@@ -37,11 +37,11 @@ ptr_1 := >> a;
 ptr_2 := >> b;
 # ptr_3 := >> (ptr_1 + a);
 # res_1 := cos(<< ptr_1) + cos(10.0);
-# res_2 := add(a, b);
+res_2 := add(a, b);
 # res_3 := add(>> a, >> b);
 # res_4 := add(10.0, 20.0);
 # tmp_2 := ptr_1 << ptr_2;
-# tmp := 1 * (<< (>> pi)) + 10;
+tmp := 1 * (<< (>> >> pi)) + 10;
 # tmp := << 1;
 
 # final := >> cos(<< make_int(10));
