@@ -926,6 +926,8 @@ public class Util {
 				is_valid = true;
 		}
 		else { // Pointer arithmetic
+			if(!op.equals("+") || op.equals("-"))
+				return false;
 			if(is_type_pointer(type_1) && is_type_pointer(type_2))
 				return false;
 
@@ -1011,43 +1013,6 @@ public class Util {
 				sb_tmp = sb_tmp.reverse();
 				all_exps.add(sb_tmp.toString());
 				sb_tmp = new StringBuffer("");
-
-				/*
-				String str = sb_tmp.toString();
-				if(str.length() != 0 && !is_operator(str)) {
-					// checking if the last char is not an operator. THIS CAN HAPPEN AND IT'S NOT AN ERROR.
-					if(!is_char_alpha_digit_underscore(str.charAt(str.length() - 1)))
-						str = str.substring(0, str.length() - 1);
-
-					// And the str should'nt begin with operators unless it's a unary operator.
-					int j = 0;
-					char ch = str.charAt(j);
-					int str_len = str.length();
-					String the_operator = "";
-					while(!is_char_alpha_digit_underscore(ch) && ch != '(') {
-						ch = str.charAt(j);
-						the_operator += ch;
-						j += 1;
-						if(j >= str_len)
-							break;
-						ch = str.charAt(j);
-						if(ch == '(')
-							j += 1;
-					}
-
-					if (the_operator.equals("") || the_operator.equals("+") || the_operator.equals("-")) {
-						str = str.substring(j);
-						li.add(str);
-					}
-					else if(!is_only_unary_operator(the_operator)) { // It's not a valid operation.
-						li.add("error@" + str);
-					}
-					else {
-						li.add(str);
-					}
-				}
-				*/
-
 			}
 			else
 				stack.push(c);
@@ -1062,41 +1027,6 @@ public class Util {
 			last_str = last_str.reverse();	
 
 			all_exps.add(last_str.toString());
-
-			/*
-			if(!is_char_alpha_digit_underscore(last_str.charAt(last_str.length() - 1)))
-				last_str = new StringBuffer(last_str.substring(0, last_str.length() - 1));
-
-			// And the str should'nt begin with operators
-			int j = 0;
-			int last_str_len = last_str.length();
-			char ch = last_str.charAt(j);
-			String the_operator = "";
-			while(!is_char_alpha_digit_underscore(ch) && ch != '(') {
-				ch = last_str.charAt(j);
-				the_operator += ch;
-				j += 1;
-				if(j >= last_str_len)
-					break;
-
-				ch = last_str.charAt(j);
-				if(ch == '(')
-					j += 1;
-			}
-
-			// @Note: The 'the_operator is a unary operator like >>, <<, !, +, - then keep, the operator, else discard it.
-			if(the_operator.equals("")  || the_operator.equals("+") || the_operator.equals("-")) {
-				last_str = new StringBuffer(last_str.substring(j));
-				li.add(last_str.toString());
-			}
-			else if(!is_only_unary_operator(the_operator)) { // It's not a valid operation.
-				last_str.insert(0, "error@");
-				li.add(last_str.toString());
-			}
-			else {
-				li.add(last_str.toString());
-			}
-			*/
 		}
 		
 		for(int i = 0; i < all_exps.size(); ++i) {
