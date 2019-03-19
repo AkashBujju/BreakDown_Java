@@ -182,7 +182,8 @@ public class SemanticAnalyser {
 				}
 				else {
 					String var_type = symbol_table.get_type(s, "", 0);
-					type = get_type_of_exp(s, var_decl_info.line_number);
+					type = get_type_of_exp(s, var_decl_info.line_number, false);
+
 					// We need to know if 's' is name of a variable, so that we can append '_var@' to it.
 					if(!var_type.equals("not_known")) {
 						type = "_var@" + type;
@@ -224,17 +225,21 @@ public class SemanticAnalyser {
 		return  0;
 	}
 
-	String get_type_of_exp(String s, int line_number) {
+	String get_type_of_exp(String s, int line_number, boolean contains_only_types) {
 		List<String> in_list = Util.split_with_ops(s);
 		List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
 
 		EvalExp eval_exp = new EvalExp(out_list);
-		MsgType msg_type = eval_exp.deduce_final_type(symbol_table, "", 0);
+		MsgType msg_type = null;
+		if(contains_only_types)
+			msg_type = eval_exp.deduce_final_type_from_types(symbol_table, "", 0);
+		else
+			msg_type = eval_exp.deduce_final_type(symbol_table, "", 0);
+
 		if(msg_type.msg.equals("none"))
 			return msg_type.type;
-		else {
+		else
 			error_log.push(msg_type.msg, s, line_number);
-		}
 
 		return msg_type.type;
 	}
@@ -251,29 +256,32 @@ public class SemanticAnalyser {
 
 		List<String> new_args = new ArrayList<>();
 		for(String arg: all_args) {
-			List<String> exps = Util.get_only_exp(arg, get_all_func_names());
+			Names_NA_Indices names_na_indices = Util.get_only_names_and_literals(arg, get_all_func_names());
 			List<String> funcs = Util.get_all_func_calls(arg);
 			String new_arg = arg;
 
-			System.out.println("exps: " + exps);
+			System.out.println("exps: " + names_na_indices.names);
+			List<String> exps = names_na_indices.names;
+			List<RangeIndices> ignore_indices = names_na_indices.range_indices;
 
 			for(String exp: exps) {
-				int invalid_exp_index = exp.indexOf("error@");
-				if(invalid_exp_index != -1) { // Invalid use of unary operator
-					error_log.push("Invalid identifier '" + exp.substring(invalid_exp_index + 6) + "' found.",s, line_number);
-					return "not_known";
+				String type = get_type_of_exp(exp, line_number, false);
+				String in_table_type = symbol_table.get_type(exp, "", 0);
+
+				if(!in_table_type.equals("not_known")) { // either the variable name does not exist, or it is a literal.
+					type = "@" + type;
 				}
 
-				System.out.println("BEFORE get_type_of_exp, exp: " + exp);
-				String type = get_type_of_exp(exp, line_number);
-				System.out.println("AFTER get_type_of_exp");
-				new_arg = Util.replace_in_str(new_arg, exp, type);
+				Str_NA_Indices str_na_indices = Util.replace_in_str(new_arg, exp, type, ignore_indices);
+				new_arg = str_na_indices.str;
+				ignore_indices = str_na_indices.range_indices;
 			}
 
 			System.out.println("new_arg: " + new_arg);
 			new_args.add(new_arg);
 		}
 
+		/*
 		int new_args_len = new_args.size();
 		for(int i = 0; i < new_args_len; ++i) {
 			String new_arg = new_args.get(i);
@@ -300,10 +308,15 @@ public class SemanticAnalyser {
 		}
 		tmp_func_call.append(")");
 
+		System.out.println("tmp_func_call: " + tmp_func_call);
+
 		String final_func_type = iter_eval_type_util_end(tmp_func_call.toString(), line_number);
 		// System.out.println("final_func_type: " + final_func_type);
 
 		return final_func_type;
+		*/
+
+		return null;
 	}
 
 	// Returns the inner argument of func, with all the function calls evaluated.
@@ -338,10 +351,14 @@ public class SemanticAnalyser {
 
 				for(int j = 0; j < all_funcs.size(); ++j) {
 					String j_ele = all_funcs.get(j);
-					j_ele = Util.replace_in_str(j_ele, f, type);
+
+					Str_NA_Indices str_na_indices = Util.replace_in_str(j_ele, f, type, new ArrayList<RangeIndices>());
+					j_ele = str_na_indices.str;
+
 					all_funcs.set(j, j_ele);
 
-					inner_arg = Util.replace_in_str(inner_arg, f, type);
+					str_na_indices = Util.replace_in_str(inner_arg, f, type, new ArrayList<RangeIndices>());
+					inner_arg = str_na_indices.str;
 					if(!Util.contains_func_call(inner_arg)) {
 						i = -1;
 						break;
@@ -426,8 +443,11 @@ public class SemanticAnalyser {
 
 	List<String> get_all_func_names() {
 		List<String> li = new ArrayList<>();
-		for(FuncNameArgs func_name_arg: func_name_args)
-			li.add(func_name_arg.name);
+		for(FuncNameArgs func_name_arg: func_name_args) {
+			String name = func_name_arg.name;
+			if(!li.contains(name))
+				li.add(name);
+		}
 
 		return li;
 	}

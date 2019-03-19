@@ -18,6 +18,16 @@ class IndexLen {
 	public int len = -1;
 }
 
+class Names_NA_Indices {
+	List<String> names;
+	List<RangeIndices> range_indices;
+}
+
+class Str_NA_Indices {
+	String str;
+	List<RangeIndices> range_indices;
+}
+
 public class Util {
 	static List<String> operators = new ArrayList<>();
 	static List<String> keywords = new ArrayList<>(); 
@@ -945,8 +955,32 @@ public class Util {
 		return false;
 	}
 
-	static List<String> get_only_exp(String s, List<String> func_names) {
+	static Names_NA_Indices get_only_names_and_literals(String s, List<String> func_names) {
 		StringBuilder sb = new StringBuilder(s);
+		Names_NA_Indices names_na_indices = new Names_NA_Indices();
+
+		System.out.println("s: " + s);
+		
+		// Finding not allowed_indices.
+		//
+		List<RangeIndices> range_indices = new ArrayList<>();
+
+		for(String func_name: func_names) {
+			int index = sb.indexOf(func_name, 0);
+			while(index != -1) {
+				int begin = index;
+				int end = index + func_name.length() - 1;
+
+				RangeIndices ra = new RangeIndices();
+				ra.from_index = begin;
+				ra.to_index = end;
+				range_indices.add(ra);
+
+				index = sb.indexOf(func_name, end + 1);
+
+				// System.out.println("(" + begin + ", " + end + ")");
+			}
+		}
 
 		for(String func_name: func_names) {
 			int index = sb.indexOf(func_name);
@@ -963,9 +997,9 @@ public class Util {
 			}
 		}
 
-		List<String> li = new ArrayList<>();
 		int sb_len = sb.length();
-		StringBuilder sb_tmp = new StringBuilder("");
+		StringBuffer sb_tmp = new StringBuffer("");
+		List<String> all_exps = new ArrayList<>();
 		Stack<Character> stack = new Stack<>();
 
 		for(int i = 0; i < sb_len; ++i) {
@@ -978,6 +1012,10 @@ public class Util {
 				}
 
 				sb_tmp = sb_tmp.reverse();
+				all_exps.add(sb_tmp.toString());
+				sb_tmp = new StringBuffer("");
+
+				/*
 				String str = sb_tmp.toString();
 				if(str.length() != 0 && !is_operator(str)) {
 					// checking if the last char is not an operator. THIS CAN HAPPEN AND IT'S NOT AN ERROR.
@@ -1011,8 +1049,8 @@ public class Util {
 						li.add(str);
 					}
 				}
+				*/
 
-				sb_tmp = sb_tmp.delete(0, sb_tmp.length());
 			}
 			else
 				stack.push(c);
@@ -1026,6 +1064,9 @@ public class Util {
 		if(last_str.length() != 0) {
 			last_str = last_str.reverse();	
 
+			all_exps.add(last_str.toString());
+
+			/*
 			if(!is_char_alpha_digit_underscore(last_str.charAt(last_str.length() - 1)))
 				last_str = new StringBuffer(last_str.substring(0, last_str.length() - 1));
 
@@ -1058,19 +1099,61 @@ public class Util {
 			else {
 				li.add(last_str.toString());
 			}
+			*/
+		}
+		
+		for(int i = 0; i < all_exps.size(); ++i) {
+			String tmp_s = all_exps.get(i);
+			if(tmp_s.equals(" ") || tmp_s.equals("")) {
+				all_exps.remove((int)i);
+				i -= 1; // Needed because we removed an element.
+			}
 		}
 
-		// Sorting
-		List<String> new_li = new ArrayList<>();
-		int li_len = li.size();
-		while(li.size() != 0) {
-			int max_index = get_max_size_in_index(li, 0);
-			new_li.add(li.get(max_index));
-			li.remove(max_index);
+		List<String> final_all_exps = new ArrayList<>();
+		for(int i = 0; i < all_exps.size(); ++i) {
+			String tmp_s = all_exps.get(i);
+			List<String> split_s = Util.split_with_ops(tmp_s);
+			// System.out.println("split_s: " + split_s);
+			for(int j = 0; j < split_s.size(); ++j) {
+				String js = split_s.get(j);
+				if(Util.is_operator(js)) {
+					split_s.remove((int)(j));
+					j -= 1;
+				}
+				else {
+					final_all_exps.add(js);
+				}
+			}
+
+			String final_s = "";
+			for(int j = 0; j < split_s.size(); ++j)
+				final_s += split_s.get(j);
+			all_exps.set((int)i, final_s);
 		}
+
+		/*
+		System.out.print("final_all_exps: ");
+		for(int i = 0; i < final_all_exps.size(); ++i) {
+			System.out.print("< " + final_all_exps.get(i) + " > ");
+		}
+		System.out.println();
+		*/
 
 		// Note: We have to sort the array list in descending to ascending order in terms of size...
-		return new_li;
+		// Sorting
+		List<String> new_li = new ArrayList<>();
+		int li_len = final_all_exps.size();
+		while(final_all_exps.size() != 0) {
+			int max_index = get_max_size_in_index(final_all_exps, 0);
+			new_li.add(final_all_exps.get(max_index));
+			final_all_exps.remove(max_index);
+		}
+
+		names_na_indices.names = new_li;
+		names_na_indices.range_indices = range_indices;
+
+		return names_na_indices;
 	}
 
 	static int get_max_size_in_index(List<String> li, int from_index) {
@@ -1087,20 +1170,59 @@ public class Util {
 		return index;
 	}
 
-	static String replace_in_str(String str, String from, String to) {
-		StringBuilder new_str = new StringBuilder(str);
+	static Str_NA_Indices replace_in_str(String str, String from, String to, List<RangeIndices> ignore_indices) {
+		StringBuffer new_str = new StringBuffer(str);
+		int index = 0;
 
-		while(true) {
-			int index = new_str.indexOf(from, 0);
+		while(index != -1 && index < new_str.length()) {
+			index = new_str.indexOf(from, index);
+
+			// Checking if index is in between ignore_indices
+			boolean in_between = false;
+			for(RangeIndices ri: ignore_indices) {
+				if(index >= ri.from_index && index <= ri.to_index) {
+					in_between = true;
+					break;
+				}
+			}
+
+			if(in_between) {
+				index = index + from.length();
+				continue;
+			}
+
 			if(index != -1) {
 				int begin = index;
 				int end = index + from.length();
 				new_str = new_str.replace(begin, end, to);
+				int by = to.length() - from.length();
+
+				// Increasing the RangeIndices.
+				for(int i = 0; i < ignore_indices.size(); ++i) {
+					RangeIndices ri = ignore_indices.get(i);
+					if(ri.from_index > begin) {
+						RangeIndices new_ri = new RangeIndices();
+						new_ri.from_index = ri.from_index + by;
+						new_ri.to_index = ri.to_index + by;
+
+						ignore_indices.set(i, new_ri);
+					}
+				}
+
+				// Adding 'to' to ignore_indices
+				RangeIndices new_ri = new RangeIndices();
+				new_ri.from_index = begin;
+				new_ri.to_index = begin + to.length() - 1;
+				ignore_indices.add(new_ri);
+
+				index = new_str.indexOf(from, end);
 			}
-			else
-				break;
 		}
 
-		return new_str.toString();
+		Str_NA_Indices str_na_indices = new Str_NA_Indices();
+		str_na_indices.str = new_str.toString();
+		str_na_indices.range_indices = ignore_indices;
+
+		return str_na_indices;
 	}
 }

@@ -15,10 +15,3 @@ Done:
 	1) Split into tokens
 	2) SyntaxAnalysis and form Info List
 --------------------------------------------------------------
-
---------------------------------------------------------------
-Note: Have a List<Scope> for every function. Every ScopeStack should have
-		Global has default.
-		???? How should scopes be named ??????
-
---------------------------------------------------------------
