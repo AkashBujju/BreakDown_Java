@@ -959,10 +959,7 @@ public class Util {
 		StringBuilder sb = new StringBuilder(s);
 		Names_NA_Indices names_na_indices = new Names_NA_Indices();
 
-		System.out.println("s: " + s);
-		
 		// Finding not allowed_indices.
-		//
 		List<RangeIndices> range_indices = new ArrayList<>();
 
 		for(String func_name: func_names) {

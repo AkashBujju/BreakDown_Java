@@ -22,6 +22,7 @@ public class SemanticAnalyser {
 	List<FuncNameArgs> func_name_args;
 	ErrorLog error_log;
 	String func_iden = "_func@";
+	String var_iden = "_var@";
 
 	SemanticAnalyser(List<Info> infos, List<RangeIndices> quotes_range_indices) {
 		this.infos = infos;
@@ -186,7 +187,7 @@ public class SemanticAnalyser {
 
 					// We need to know if 's' is name of a variable, so that we can append '_var@' to it.
 					if(!var_type.equals("not_known")) {
-						type = "_var@" + type;
+						type = var_iden + type;
 					}
 				}	
 
@@ -203,12 +204,12 @@ public class SemanticAnalyser {
 		EvalExp eval_exp = null;
 
 		if(num_func_calls == 1 && final_exp.size() == 1) {
-			eval_exp = new EvalExp(final_exp);
+			eval_exp = new EvalExp(final_exp, func_iden, var_iden);
 			final_type = eval_exp.deduce_final_type_from_types(symbol_table, "", 0).type;
 		}
 		else {
 			List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
-			eval_exp = new EvalExp(postfix_exp);
+			eval_exp = new EvalExp(postfix_exp, func_iden, var_iden);
 			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, "", 0);
 			if(!msg_type.msg.equals("none")) {
 				error_log.push(msg_type.msg, raw_value, var_decl_info.line_number);
@@ -229,7 +230,7 @@ public class SemanticAnalyser {
 		List<String> in_list = Util.split_with_ops(s);
 		List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
 
-		EvalExp eval_exp = new EvalExp(out_list);
+		EvalExp eval_exp = new EvalExp(out_list, func_iden, var_iden);
 		MsgType msg_type = null;
 		if(contains_only_types)
 			msg_type = eval_exp.deduce_final_type_from_types(symbol_table, "", 0);
@@ -260,7 +261,6 @@ public class SemanticAnalyser {
 			List<String> funcs = Util.get_all_func_calls(arg);
 			String new_arg = arg;
 
-			System.out.println("exps: " + names_na_indices.names);
 			List<String> exps = names_na_indices.names;
 			List<RangeIndices> ignore_indices = names_na_indices.range_indices;
 
@@ -269,7 +269,7 @@ public class SemanticAnalyser {
 				String in_table_type = symbol_table.get_type(exp, "", 0);
 
 				if(!in_table_type.equals("not_known")) { // either the variable name does not exist, or it is a literal.
-					type = "@" + type;
+					type = var_iden + type;
 				}
 
 				Str_NA_Indices str_na_indices = Util.replace_in_str(new_arg, exp, type, ignore_indices);
@@ -277,11 +277,9 @@ public class SemanticAnalyser {
 				ignore_indices = str_na_indices.range_indices;
 			}
 
-			System.out.println("new_arg: " + new_arg);
 			new_args.add(new_arg);
 		}
 
-		/*
 		int new_args_len = new_args.size();
 		for(int i = 0; i < new_args_len; ++i) {
 			String new_arg = new_args.get(i);
@@ -308,15 +306,9 @@ public class SemanticAnalyser {
 		}
 		tmp_func_call.append(")");
 
-		System.out.println("tmp_func_call: " + tmp_func_call);
-
 		String final_func_type = iter_eval_type_util_end(tmp_func_call.toString(), line_number);
-		// System.out.println("final_func_type: " + final_func_type);
 
 		return final_func_type;
-		*/
-
-		return null;
 	}
 
 	// Returns the inner argument of func, with all the function calls evaluated.
@@ -325,10 +317,6 @@ public class SemanticAnalyser {
 		String inner_arg = func.substring(func.indexOf('(') + 1, func.lastIndexOf(')'));
 		List<String> all_funcs = Util.get_all_func_calls(inner_arg);
 		HashMap<String, String> hm = new HashMap<>();
-
-		//	System.out.println();
-		//	System.out.println("all_funcs: " + all_funcs);
-		//	System.out.println();
 
 		for(String f: all_funcs)
 			hm.put(f, "not_known");
@@ -369,7 +357,6 @@ public class SemanticAnalyser {
 
 		StringBuffer final_func_call = new StringBuffer(func.substring(0, func.indexOf('(')));
 		final_func_call.append("(" + inner_arg + ")");
-		// System.out.println("final_func_call: " + final_func_call);
 
 		return get_type_of_one_func_call(final_func_call.toString(), line_number);
 	}
@@ -385,7 +372,7 @@ public class SemanticAnalyser {
 			String arg = arg_types.get(i);
 			List<String> exps = Util.split_with_ops_the_types(arg);
 			List<String> postfix = InfixToPostFix.infixToPostFix(exps);
-			EvalExp eval_exp = new EvalExp(postfix);
+			EvalExp eval_exp = new EvalExp(postfix, func_iden, var_iden);
 			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, "", 0);
 
 			if(!msg_type.msg.equals("none")) {

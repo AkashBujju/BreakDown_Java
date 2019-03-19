@@ -52,10 +52,7 @@ ptr_2 := >> b;
 
 tmp := add(1 + cos(2.0), 2 + sin(2.0));
 
-# THIS DOES NOT WORK, because of (>> pi) + 1 + << make_int(10). IT's exp is incorrect.
-final := add( add(>> a, >> b) + cos(sin(3.14 + add(1, 2))) * sin(add(10.0, 20.0)) , (>> pi) + 1 + << make_int(10) + add(ptr_1, ptr_2) );
-
-final := add( add(>> a, >> b) + cos(sin(3.14 + add(1, 2)) + 1.0) * sin(add(10.0, 20.0)) , (<< (>> pi)) + 1 + add(10, 20) );
+final := add( add(>> a, >> b) + cos(sin(3.14 + add(1, 2)) + 1.0) * sin(add(10.0, 20.0)) , (<< (>> pi)) + 1 + add(ptr_1, ptr_2) );
 
 
 

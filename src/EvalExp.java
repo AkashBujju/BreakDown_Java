@@ -22,10 +22,12 @@ public class EvalExp {
 	private List<String> t_list = new ArrayList<>();
 	private Map<String, String> literal_type_map = new HashMap<>();
 	private Map<String, List<String>> t_exp_map = new HashMap<>();
+	String func_iden, var_iden;
 
-	EvalExp(List<String> postfix) {
+	EvalExp(List<String> postfix, String func_iden, String var_iden) {
 		this.postfix = postfix;
-		// System.out.println("postfix: " + postfix);
+		this.func_iden = func_iden;
+		this.var_iden = var_iden;
 	}
 
 	MsgType deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {
@@ -279,8 +281,8 @@ public class EvalExp {
 				if(postfix.size() == 1) {
 					String type = postfix.get(0);
 
-					boolean is_var = type.indexOf("_var@") == -1 ? false : true;
-					boolean is_func = type.indexOf("_func@") == -1 ? false : true;
+					boolean is_var = type.indexOf(var_iden) == -1 ? false : true;
+					boolean is_func = type.indexOf(func_iden) == -1 ? false : true;
 					if(is_var)
 						type = type.substring(5); // length of _var@ is 4.
 					else if(is_func)
@@ -297,8 +299,8 @@ public class EvalExp {
 
 						if(s.equals(">>") || s.equals("<<") || s.equals("!")) { // unary operation on >> , << or !
 							String right_type = st.pop();
-							boolean is_var = right_type.indexOf("_var@") == -1 ? false : true;
-							boolean is_func = right_type.indexOf("_func@") == -1 ? false : true;
+							boolean is_var = right_type.indexOf(var_iden) == -1 ? false : true;
+							boolean is_func = right_type.indexOf(func_iden) == -1 ? false : true;
 
 							if(is_var)
 								right_type = right_type.substring(5); // length of _var@ is 4.
@@ -323,8 +325,8 @@ public class EvalExp {
 								return new MsgType("Incomplete expression found.", "not_known");
 
 							String left_type = st.pop();
-							boolean is_left_var = left_type.indexOf("_var@") == -1 ? false : true;
-							boolean is_left_func = left_type.indexOf("_func@") == -1 ? false : true;
+							boolean is_left_var = left_type.indexOf(var_iden) == -1 ? false : true;
+							boolean is_left_func = left_type.indexOf(func_iden) == -1 ? false : true;
 							if(is_left_var)
 								left_type = left_type.substring(5); // length of _var@ is 4.
 							else if(is_left_func)
@@ -346,8 +348,8 @@ public class EvalExp {
 							}
 							else { // binary operation
 								String right_type = st.pop();
-								boolean is_right_var = right_type.indexOf("_var@") == -1 ? false : true;
-								boolean is_right_func = right_type.indexOf("_func@") == -1 ? false : true;
+								boolean is_right_var = right_type.indexOf(var_iden) == -1 ? false : true;
+								boolean is_right_func = right_type.indexOf(func_iden) == -1 ? false : true;
 
 								if(is_right_var)
 									right_type = right_type.substring(5); // length of _var@ is 4.
