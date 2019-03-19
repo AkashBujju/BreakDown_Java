@@ -59,51 +59,32 @@ public class Util {
 
 	static List<String> split_with_ops_the_types(String s) {
 		List<String> exps = split_with_ops(s);
-
 		for(int i = 0; i < exps.size(); ++i) {
 			String str = exps.get(i);
-			int star_count = 0;
+			int ops_count = 0;
 			if(str.equals("*")) {
 				int j = i + 1;
-				while(j < exps.size() && exps.get(j).equals("*")) {
-					star_count += 1;
+				while(j < exps.size() && Util.is_operator(exps.get(j))) {
+					ops_count += 1;
 					j += 1;
 				}
 
-				if(j >= exps.size()) {
-					exps.remove(i);
-					String new_str = "";
-					if((i - 1) >= 0)
-						new_str = exps.get(i - 1);
-					exps.set(i - 1, new_str + "*");
-				}
-				else if(star_count != 0) {
-					j -= 2;
-					String new_str = "";
-					int x = i;
-					if(x <= j && (i - 1) >= 0)
-						new_str = exps.get(i - 1);
-					for(x = i; x <= j; ++x) {
-						new_str += "*";
-						exps.remove((int)x);
-					}
-					if(!new_str.equals("")) {
-						exps.set(x - star_count, new_str);
-						i += star_count;
-					}
-				}
-				else {
-					if((i + 1) >= exps.size())
-						continue;
+				if((i - 1) < 0)
+					continue;
 
-					if(Util.is_operator(exps.get(i + 1))) {
-						if((i - 1) >= 0) {
-							exps.remove(i);
-							String new_str = exps.get(i - 1) + "*";
-							exps.set(i - 1, new_str);
-						}
-					}
+				int x = 0;
+				String new_str = exps.get(i - 1);
+				int end_index = j;
+				if(j < exps.size())
+					end_index = j - 1;
+
+				for(x = i; x < end_index; ++x) {
+					new_str += "*";
+					exps.remove((int)(i));
 				}
+
+				exps.set(i - 1, new_str);
+				i += ops_count;
 			}
 		}
 

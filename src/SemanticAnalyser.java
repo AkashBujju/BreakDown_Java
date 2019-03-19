@@ -295,8 +295,6 @@ public class SemanticAnalyser {
 		}
 		tmp_func_call.append(")");
 
-		System.out.println("tmp_func_call: " + tmp_func_call);
-
 		String final_func_type = iter_eval_type_util_end(tmp_func_call.toString(), line_number);
 
 		return final_func_type;
@@ -349,8 +347,6 @@ public class SemanticAnalyser {
 		StringBuffer final_func_call = new StringBuffer(func.substring(0, func.indexOf('(')));
 		final_func_call.append("(" + inner_arg + ")");
 
-		System.out.println("final_func_call: " + final_func_call);
-
 		return get_type_of_one_func_call(final_func_call.toString(), line_number);
 	}
 
@@ -367,8 +363,6 @@ public class SemanticAnalyser {
 			List<String> postfix = InfixToPostFix.infixToPostFix(exps);
 			EvalExp eval_exp = new EvalExp(postfix, func_iden, var_iden);
 			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, "", 0);
-
-			System.out.println("arg: " + arg + ", exps: " + exps);
 
 			if(!msg_type.msg.equals("none")) {
 				error_log.push(msg_type.msg, s, line_number);

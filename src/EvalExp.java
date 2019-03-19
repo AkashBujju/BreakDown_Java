@@ -29,7 +29,7 @@ public class EvalExp {
 		this.func_iden = func_iden;
 		this.var_iden = var_iden;
 
-		System.out.println("postfix: " + postfix);
+		// System.out.println("postfix: " + postfix);
 	}
 
 	MsgType deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {
@@ -286,8 +286,6 @@ public class EvalExp {
 		//	System.out.println();
 		//
 
-		System.out.println("final_type: " + final_type);
-
 		return new MsgType("none", final_type);
 	}
 
@@ -470,8 +468,6 @@ public class EvalExp {
 		}
 
 		final_type = literal_type_map.get("@" + _sz + "@");
-		System.out.println("final_type: " + final_type);
-
 		return new MsgType("none", final_type);
 	}
 }
