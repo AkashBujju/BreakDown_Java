@@ -1,65 +1,19 @@
 
-func make_int(num: int) -> int* {
-	return a;
+# b := 10;
+b := 3.14;
+a := 10;
+
+func main() -> void {
+	a := 20;
 }
 
-func add(a: int, b: int) -> int {
-	return a + b;
+func add(a: int , b: int) -> int {
+	c := 10;
+	ptr := >> a;
 }
 
-func add(a: double, b:double) -> double {
-	return a + b;
+func foo() -> void {
+	d := a;
+	a := d;
+	_a :int; # Note: This have to have the value 0 by default.
 }
-
-func add(a: int*, b: int*) -> int {
-	return (<< a) + (<< b);
-}
-
-func add(a: double*, b: double*) -> double {
-	return (<< a) + (<< b);
-}
-
-func sin(angle: double) -> double {
-	return angle;
-}
-
-func cos(angle: double) -> double {
-	return angle;
-}
-
-a := 10.0;
-b := 20.0;
-# c := a;
-pi := 3.14;
-ptr_1 := >> a;
-# is_slow := true;
-# is_fast := !is_slow && (true);
-ptr_2 := >> b;
-# ptr_3 := >> (ptr_1 + a);
-res_1 := cos(<< ptr_1) + cos(10.0);
-res_2 := add(a, b);
-res_3 := add(>> a, >> b);
-res_4 := add(10.0, 20.0);
-# tmp_2 := ptr_1 << ptr_2;
-tmp := 1 * (<< >> pi) + 10;
-# tmp := << 1;
-
-# test_1 := ptr_1 * 2;
-
-final_1 := cos(<< make_int(10) + 10.0);
-final_2 := make_int(10) + 10;
-final_3 := add(1, 2) + << make_int(10);
-final_4 := cos(add(>> a, >> b) + cos(2 * sin(add(10, 20) + (pi)) + 1 + 10) + add(ptr_1, ptr_2));
-final_5 := add( add(>> a, >> b) + cos(sin(3.14 + add(1, 2)) + 1.0) * sin(add(10.0, 20.0)) , (<< (>> pi)) + 1 + add(ptr_1, ptr_2) );
-
-test := 1.2;
-
-tmp := add(1 + cos(2.0), 2 + sin(2.0));
-
-
-
-
-
-
-
-

@@ -169,6 +169,11 @@ public class SequenceInfo {
 			}
 		}
 
+		if(!is_declare) {
+			if(exp_value.equals(""))
+				return "Expression of value <" + exp_value + "> is invalid.";
+		}
+
 		if(!var_type.equals("") && !Util.is_valid_type_name(var_type))
 			return "Identifier '" + var_type + "' is not a valid Type name";
 

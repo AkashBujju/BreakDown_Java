@@ -1,6 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-	0) CHECK Util.get_only_exps(). SOMETHING IS WRONG !!!!!!!!!!!!!!!!
+	0) SemanticAnalyser.java. Goto line 162.
 
 	1) Take away quotes_range_indices if possible ... There seems to be
 	problems with it !!!!!!!

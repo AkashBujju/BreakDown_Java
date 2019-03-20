@@ -39,15 +39,15 @@ public class EvalExp {
 			return new MsgType("none", "void");
 
 		if(postfix.size() == 1) {
-			String var = postfix.get(0);
-			String type = Util.get_primitive_type(var);
+			String var_name = postfix.get(0);
+			String type = Util.get_primitive_type(var_name);
 
 			if(type.equals("not_known")) {
-				String var_type = symbol_table.get_type(postfix.get(0), func_scope_name, max_scope);
+				String var_type = symbol_table.get_type(var_name, func_scope_name, max_scope);
 				if(!var_type.equals("not_known"))
 					return new MsgType("none", var_type);
 				else { // Variable not found ...
-					return new MsgType("Identifier '" + var + "' not found.", "not_known");
+					return new MsgType("Identifier '" + var_name + "' not found.", "not_known");
 				}
 			}
 
@@ -109,10 +109,6 @@ public class EvalExp {
 						exp_ops_list.add(right_char);
 					}
 
-					/*
-						System.out.println("right_char <" + right_char + ", op <" + s + ">");
-						System.out.println("t <" + t + ">, type <" + res_type + ">");
-						*/
 					literal_type_map.put(t, res_type);
 				}
 				else { // binary operation
@@ -237,7 +233,6 @@ public class EvalExp {
 				}
 
 				String res_type = Util.add_types(right_type, op);
-				// System.out.println("replacing key <" + key + "> with type <" + res_type + ">");
 				literal_type_map.put(key, res_type);
 			}
 			else { // binary operation
@@ -246,30 +241,18 @@ public class EvalExp {
 
 				String right_type = literal_type_map.get(right_literal);
 				String left_type = literal_type_map.get(left_literal);
-
-				if(right_type.equals("not_known")) {
-					// Checking if the type has already been deduced.
-					if(symbol_table.type_exists(right_literal))
-						right_type = right_literal;
-					else
-						return new MsgType("Identifier '" + right_literal + "' not found", "not_known");
-				}
-				else if(left_type.equals("not_known")) {
-					// Checking if the type has already been deduced.
-					if(symbol_table.type_exists(left_literal))
-						left_type = left_literal;
-					else
-						return new MsgType("Identifier '" + left_literal + "' not found", "not_known");
-				}
+				
+				if(right_literal.equals("not_known"))
+					return new MsgType("Identifier '" + right_literal + "' not found", "not_known");
+				else if(left_literal.equals("not_known"))
+					return new MsgType("Identifier '" + left_literal + "' not found", "not_known");
 
 				boolean is_operation_valid = Util.validate_operation(right_type, left_type, li.get(1));
 				if(!is_operation_valid) {
-					// System.out.println("left_type <" + left_type +", right_type <" + right_type + ">");
 					return new MsgType("Cannot apply " + "'" + li.get(1) + "'" + " to <" + right_literal + "> of type <" + right_type + "> and <" + left_literal + "> of type <" + left_type +">.", "not_known");
 				}
 
 				String res_type = Util.add_types(right_type, left_type, li.get(1));
-				// System.out.println("replacing key <" + key + "> with type <" + res_type + ">");
 				literal_type_map.put(key, res_type);
 			}
 		}
