@@ -9,7 +9,7 @@ class ValidIndexAndInfo {
 	Info info;
 }
 
-public class SyntaxChecker {
+public class SyntaxAnalyser {
 	private int num_sequences;
 	private HashMap<Integer, Boolean> visited_ids;
 	private HashMap<Integer, Integer> id_line;
@@ -27,7 +27,7 @@ public class SyntaxChecker {
 	private boolean encountered_global_var = false;
 	private boolean show_invalid_stats = true;
 
-	SyntaxChecker(SequenceInfo[] sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line, HashMap<Integer, Integer> id_char_index) {
+	SyntaxAnalyser(SequenceInfo[] sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line, HashMap<Integer, Integer> id_char_index) {
 		this.sequence_infos = sequence_infos;
 		this.id_line = id_line;
 		this.file = file;

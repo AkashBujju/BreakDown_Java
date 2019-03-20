@@ -46,7 +46,7 @@ public class Main {
 			System.out.println();
 			System.out.println();
 
-			SyntaxChecker sc = new SyntaxChecker(sq_arr, my_file, Util.quotes_range_indices, id_number, id_char_index);
+			SyntaxAnalyser sc = new SyntaxAnalyser(sq_arr, my_file, Util.quotes_range_indices, id_number, id_char_index);
 			ErrorLog error_log = sc.validate_syntax();
 			if(error_log.log.size() > 0) {
 				error_log.show();
