@@ -222,7 +222,7 @@ public class SemanticAnalyser {
 		}
 
 		symbol_table.add(var_decl_info.name, final_type, raw_value);
-		System.out.println("FINAL TYPE <" + final_type + ">" + ", name <" + var_decl_info.name + ">, raw_value: " + raw_value);
+		System.out.println("FINAL TYPE <" + final_type + ">");
 		System.out.println();
 
 		return  0;

@@ -907,7 +907,7 @@ public class Util {
 				is_valid = true;
 		}
 		else { // Pointer arithmetic
-			if(!op.equals("+") || op.equals("-"))
+			if(!(op.equals("+") || op.equals("-")))
 				return false;
 			if(is_type_pointer(type_1) && is_type_pointer(type_2))
 				return false;
