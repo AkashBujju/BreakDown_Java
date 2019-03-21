@@ -69,7 +69,7 @@ public class SemanticAnalyser {
 			if(info.info_type == InfoType.USE)
 				error_res = eval_use((UseInfo)(info));
 			else if(info.info_type == InfoType.VAR_DECL) // global variable
-				error_res = eval_var_decl((VarDeclInfo)(info), "global", 0);
+				error_res = eval_var_decl((VarDeclInfo)(info), "global");
 			else if(info.info_type == InfoType.FUNCTION)
 				error_res = eval_function((FunctionInfo)(info));
 
@@ -97,25 +97,25 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_info(Info info, String func_scope_name, int current_scope) {
+	private int eval_info(Info info, String scope_name) {
 		InfoType info_type = info.info_type;
 		int res = -1;
 		if(info_type == InfoType.VAR_DECL)
-			res = eval_var_decl((VarDeclInfo)(info), func_scope_name, current_scope);
+			res = eval_var_decl((VarDeclInfo)(info), scope_name);
 		else if(info_type == InfoType.IF)
-			res = eval_if_info((IfInfo)(info), func_scope_name, current_scope);
+			res = eval_if_info((IfInfo)(info), scope_name);
 		else if(info_type == InfoType.WHILE)
-			res = eval_while_info((WhileInfo)(info), func_scope_name, current_scope);
+			res = eval_while_info((WhileInfo)(info), scope_name);
 
 		return res;
 	}
 
-	private int eval_if_info(Info info, String func_scope_name, int current_scope) {
+	private int eval_if_info(Info info, String scope_name) {
 		IfInfo if_info = (IfInfo)(info);
 		String exp = if_info.exp;
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
-		String exp_type = get_type_of_exp(exp, func_scope_name, current_scope, if_info.exp_line_number);
+		String exp_type = get_type_of_exp(exp, scope_name, if_info.exp_line_number);
 		if(!exp_type.equals("bool")) {
 			error_log.push("The test condition '" + exp + "' in 'if' has to be of type 'bool', but found '" + exp_type + "'.", exp, if_info.exp_line_number);
 			return -1;
@@ -125,7 +125,7 @@ public class SemanticAnalyser {
 		int len = infos.size();
 		for(int i = 0; i < len; ++i) {
 			Info current_info = infos.get(i);
-			int res = eval_info(current_info, func_scope_name, current_scope + 1);
+			int res = eval_info(current_info, scope_name);
 
 			if(res == -1)
 				return -1;
@@ -134,12 +134,12 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_while_info(Info info, String func_scope_name, int current_scope) {
+	private int eval_while_info(Info info, String scope_name) {
 		WhileInfo while_info = (WhileInfo)(info);
 		String exp = while_info.exp;
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
-		String exp_type = get_type_of_exp(exp, func_scope_name, current_scope, while_info.exp_line_number);
+		String exp_type = get_type_of_exp(exp, scope_name, while_info.exp_line_number);
 		if(!exp_type.equals("bool")) {
 			error_log.push("The test condition '" + exp + "' in 'while' has to be of type 'bool', but found '" + exp_type + "'.", exp, while_info.exp_line_number);
 			return -1;
@@ -149,7 +149,7 @@ public class SemanticAnalyser {
 		int len = infos.size();
 		for(int i = 0; i < len; ++i) {
 			Info current_info = infos.get(i);
-			int res = eval_info(current_info, func_scope_name, current_scope + 1);
+			int res = eval_info(current_info, scope_name);
 
 			if(res == -1)
 				return -1;
@@ -159,7 +159,7 @@ public class SemanticAnalyser {
 	}
 
 	// @Note: Don't use this function for exp's with split size == 1. It has to be big.
-	private String get_type_of_exp(String exp, String func_scope_name, int current_scope, int line_number) {
+	private String get_type_of_exp(String exp, String scope_name, int line_number) {
 		List<String> split_value = Util.split_with_ops(exp);
 		List<String> final_exp = new ArrayList<>();
 
@@ -175,13 +175,13 @@ public class SemanticAnalyser {
 				String type = "not_known";
 				if(if_func_call) {
 					num_func_calls += 1;
-					type = get_type_of_func_call(s, line_number, func_scope_name, current_scope);
+					type = get_type_of_func_call(s, line_number, scope_name);
 					// We need to know if 's' is name of a function, so that we can append '_func@' to it.
 					type = func_iden + type;
 				}
 				else {
-					String var_type = symbol_table.get_type(s, func_scope_name, current_scope);
-					type = get_type_of_exp(s, line_number, false, func_scope_name, current_scope);
+					String var_type = symbol_table.get_type(s, scope_name);
+					type = get_type_of_exp(s, line_number, false, scope_name);
 
 					// We need to know if 's' is name of a variable, so that we can append '_var@' to it.
 					if(!var_type.equals("not_known")) {
@@ -198,12 +198,12 @@ public class SemanticAnalyser {
 
 		if(num_func_calls == 1 && final_exp.size() == 1) {
 			eval_exp = new EvalExp(final_exp, func_iden, var_iden);
-			final_type = eval_exp.deduce_final_type_from_types(symbol_table, func_scope_name, current_scope).type;
+			final_type = eval_exp.deduce_final_type_from_types(symbol_table, scope_name).type;
 		}
 		else {
 			List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
 			eval_exp = new EvalExp(postfix_exp, func_iden, var_iden);
-			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, func_scope_name, current_scope);
+			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, scope_name);
 			if(!msg_type.msg.equals("none")) {
 				error_log.push(msg_type.msg, exp, line_number);
 				return "not_known";
@@ -217,15 +217,15 @@ public class SemanticAnalyser {
 
 	private int eval_function(FunctionInfo func_info) {
 		List<Info> infos = func_info.infos;
-		String func_scope_name = func_info.scope_name;
 		int current_scope = 0;
+		String scope_name = "_" + (func_info.id);
 
 		// @Note: The 'current_scope' must be accordingly increased and decreased when entering / leaving a scope.
 		// @Note: The 'current_scope' must be accordingly increased and decreased when entering / leaving a scope.
 		int infos_len = infos.size();
 		for(int i = 0; i < infos_len; ++i) {
 			Info info = infos.get(i);
-			int res = eval_info(info, func_scope_name, current_scope);
+			int res = eval_info(info, scope_name);
 
 			if(res == -1)
 				return -1;
@@ -234,43 +234,43 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_var_decl(VarDeclInfo var_decl_info, String func_scope_name, int current_scope) {
+	private int eval_var_decl(VarDeclInfo var_decl_info, String scope_name) {
 		String raw_value = var_decl_info.raw_value;
 		String name = var_decl_info.name;
 
 		// Checking if the variable name is not the name of any type.
-		if(symbol_table.name_exists_in_scope(name, func_scope_name, current_scope)) {
-			String type = symbol_table.get_type(name, func_scope_name, current_scope);
-			error_log.push("Variable with name <" + name + "> already exists within current scope <" + (func_scope_name + current_scope) + ">", name, var_decl_info.line_number);
+		if(symbol_table.name_exists_in_scope(name, scope_name)) {
+			String type = symbol_table.get_type(name, scope_name);
+			error_log.push("Variable with name <" + name + "> already exists within current scope <" + scope_name + ">", name, var_decl_info.line_number);
 			return -1;
 		}
 
-		System.out.println("varname: " + name + ", raw_value: " + raw_value + ", scope_name: " + (func_scope_name + current_scope));
-		String final_type = get_type_of_exp(raw_value, func_scope_name, current_scope, var_decl_info.line_number);
+		System.out.println("varname: " + name + ", raw_value: " + raw_value + ", scope_name: " + scope_name);
+		String final_type = get_type_of_exp(raw_value, scope_name, var_decl_info.line_number);
 
-		if(func_scope_name.equals("global"))
+		if(scope_name.equals("global"))
 			symbol_table.add_global(var_decl_info.name, final_type);
 		else
-			symbol_table.add(var_decl_info.name, final_type, func_scope_name, current_scope);
+			symbol_table.add(var_decl_info.name, final_type, scope_name);
 
 		// Checking of the variable was added correctly.
-		String in_table_type = symbol_table.get_type(name, func_scope_name, current_scope);
+		String in_table_type = symbol_table.get_type(name, scope_name);
 		System.out.println("IN_TABLE_TYPE <" + in_table_type + ">");
 		System.out.println();
 
 		return  0;
 	}
 
-	String get_type_of_exp(String s, int line_number, boolean contains_only_types, String func_scope_name, int current_scope) {
+	String get_type_of_exp(String s, int line_number, boolean contains_only_types, String scope_name) {
 		List<String> in_list = Util.split_with_ops(s);
 		List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
 
 		EvalExp eval_exp = new EvalExp(out_list, func_iden, var_iden);
 		MsgType msg_type = null;
 		if(contains_only_types)
-			msg_type = eval_exp.deduce_final_type_from_types(symbol_table, func_scope_name, current_scope);
+			msg_type = eval_exp.deduce_final_type_from_types(symbol_table, scope_name);
 		else
-			msg_type = eval_exp.deduce_final_type(symbol_table, func_scope_name, current_scope);
+			msg_type = eval_exp.deduce_final_type(symbol_table, scope_name);
 
 		if(msg_type.msg.equals("none"))
 			return msg_type.type;
@@ -280,7 +280,7 @@ public class SemanticAnalyser {
 		return msg_type.type;
 	}
 
-	String get_type_of_func_call(String s, int line_number, String func_scope_name, int current_scope) {
+	String get_type_of_func_call(String s, int line_number, String scope_name) {
 		List<String> all_args = Util.get_func_args(s);
 		String args = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
 		String func_name = s.substring(0, s.indexOf('('));
@@ -300,8 +300,8 @@ public class SemanticAnalyser {
 			List<RangeIndices> ignore_indices = names_na_indices.range_indices;
 
 			for(String exp: exps) {
-				String type = get_type_of_exp(exp, line_number, false, func_scope_name, current_scope);
-				String in_table_type = symbol_table.get_type(exp, func_scope_name, current_scope);
+				String type = get_type_of_exp(exp, line_number, false, scope_name);
+				String in_table_type = symbol_table.get_type(exp, scope_name);
 
 				if(!in_table_type.equals("not_known")) { 
 					type = var_iden + type;
@@ -329,14 +329,14 @@ public class SemanticAnalyser {
 		}
 		tmp_func_call.append(")");
 
-		String final_func_type = iter_eval_type_util_end(tmp_func_call.toString(), line_number, func_scope_name, current_scope);
+		String final_func_type = iter_eval_type_util_end(tmp_func_call.toString(), line_number, scope_name);
 
 		return final_func_type;
 	}
 
 	// Returns the return_type of func, with all the function calls evaluated and expressions evaluated.
 	// Returns the return_type of func, with all the function calls evaluated and expressions evaluated.
-	String iter_eval_type_util_end(String func, int line_number, String func_scope_name, int current_scope) {
+	String iter_eval_type_util_end(String func, int line_number, String scope_name) {
 		String final_str =  func;
 		String inner_arg = func.substring(func.indexOf('(') + 1, func.lastIndexOf(')'));
 		List<String> all_funcs = Util.get_all_func_calls(inner_arg);
@@ -357,7 +357,7 @@ public class SemanticAnalyser {
 			if(value.equals("not_known")) {
 				if(!Util.if_func_call(f))
 					continue;
-				type = get_type_of_one_func_call(f, line_number, func_scope_name, current_scope);
+				type = get_type_of_one_func_call(f, line_number, scope_name);
 				type = func_iden + type;
 				hm.put(f, type);
 
@@ -382,11 +382,11 @@ public class SemanticAnalyser {
 		StringBuffer final_func_call = new StringBuffer(func.substring(0, func.indexOf('(')));
 		final_func_call.append("(" + inner_arg + ")");
 
-		return get_type_of_one_func_call(final_func_call.toString(), line_number, func_scope_name, current_scope);
+		return get_type_of_one_func_call(final_func_call.toString(), line_number, scope_name);
 	}
 
 	// @Note: Here the types of arguments should have already been deduced.
-	String get_type_of_one_func_call(String s, int line_number, String func_scope_name, int current_scope) {
+	String get_type_of_one_func_call(String s, int line_number, String scope_name) {
 		String in_arg = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
 		String name = s.substring(0, s.indexOf('('));
 		List<String> arg_types = Util.get_func_args(s);
@@ -397,7 +397,7 @@ public class SemanticAnalyser {
 			List<String> exps = Util.split_with_ops_the_types(arg);
 			List<String> postfix = InfixToPostFix.infixToPostFix(exps);
 			EvalExp eval_exp = new EvalExp(postfix, func_iden, var_iden);
-			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, func_scope_name, current_scope);
+			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, scope_name);
 
 			if(!msg_type.msg.equals("none")) {
 				error_log.push(msg_type.msg, s, line_number);

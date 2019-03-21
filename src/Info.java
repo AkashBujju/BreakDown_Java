@@ -162,8 +162,6 @@ class FunctionInfo extends Info {
 	List<VarDeclInfo> var_args;
 	List<Info> infos = new ArrayList<>();
 	int signature_line_number = -1;
-	String scope_name;
-	List<String> scope_names;
 
 	FunctionInfo(String name, String return_type, List<VarDeclInfo> var_args, List<Info> infos, int signature_line_number, int id) {
 		this.name = name;
@@ -173,13 +171,6 @@ class FunctionInfo extends Info {
 		this.var_args = var_args;
 		this.id = id;
 		info_type = InfoType.FUNCTION;
-
-		scope_name = name + "@" + return_type + "@";
-		for(int i = 0; i < var_args.size(); ++i)
-			scope_name += var_args.get(i).type;
-
-		scope_names = new ArrayList<>();
-		// System.out.println("scope_name: " + scope_name);
 	}
 }
 

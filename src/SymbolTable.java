@@ -33,38 +33,19 @@ public class SymbolTable {
 	}
 
 	boolean name_exists_in_scope(String name, String scope_name) {
-		if(func_scope_name.equals("global")) {
+		if(scope_name.equals("global")) {
 			String type = global_name_scope_map.get(name);
 			if(type == null)
 				return false;
 			return true;
 		}
 
-		String search_name = name + func_scope_name + current_scope;
-		SymbolVar sv = scopeNameAndVarName_var_map.get(search_name);
+		SymbolVar sv = scopeNameAndVarName_var_map.get(scope_name);
 		if(sv == null)
 			return false;
 
 		return true;
 	}
-
-	/*
-	boolean name_exists_in_scope(String name, String func_scope_name, int current_scope) {
-		if(func_scope_name.equals("global")) {
-			String type = global_name_scope_map.get(name);
-			if(type == null)
-				return false;
-			return true;
-		}
-
-		String search_name = name + func_scope_name + current_scope;
-		SymbolVar sv = scopeNameAndVarName_var_map.get(search_name);
-		if(sv == null)
-			return false;
-
-		return true;
-	}
-	*/
 
 	boolean add_global(String name, String type) {
 		boolean contains = global_name_scope_map.containsKey(name);
@@ -81,41 +62,32 @@ public class SymbolTable {
 			return false;
 
 		SymbolVar sv = new SymbolVar(name, type);
-		String search_name = name + func_scope_name + current_scope;
-		scopeNameAndVarName_var_map.put(search_name, sv);
+		scopeNameAndVarName_var_map.put(scope_name, sv);
 
 		return true;
 	}
 
-	/*
-	boolean add(String name, String type, String func_scope_name, int current_scope) {
-		if(name_exists_in_scope(name, func_scope_name, current_scope))
-			return false;
-
-		SymbolVar sv = new SymbolVar(name, type);
-		String search_name = name + func_scope_name + current_scope;
-		scopeNameAndVarName_var_map.put(search_name, sv);
-
-		return true;
-	}
-	*/
-
-	// @Note: get_type tries all scopes until max_scope and checks the global scope too.
-	String get_type(String name, String func_scope_name, int max_scope) {
-		int current_scope_index = max_scope;
+	// Checking from the inner most scope and expanding out untill 'global' scope.
+	String get_type(String name, String scope_name) {
 		String type = "not_known";
-		while(current_scope_index != -1) {
-			String search_name = name + func_scope_name + current_scope_index;
-			SymbolVar sv = scopeNameAndVarName_var_map.get(search_name);
-			if(sv == null)
-				current_scope_index -= 1;
+
+		if(scope_name.equals("global")) {
+			type = global_name_scope_map.get(name);
+			if(type != null)
+				return type;
+			return "not_known";
+		}
+
+		while(!scope_name.equals("")) {
+			SymbolVar sv = scopeNameAndVarName_var_map.get(scope_name);
+			if(sv == null) {
+				int index_of_underscore = scope_name.lastIndexOf('_');
+				if(index_of_underscore != -1)
+					scope_name = scope_name.substring(0, index_of_underscore);
+			}
 			else
 				return sv.type;
 		}
-
-		type = global_name_scope_map.get(name);
-		if(type != null)
-			return type;
 
 		return "not_known";
 	}

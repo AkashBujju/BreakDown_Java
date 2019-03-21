@@ -1,21 +1,9 @@
+b := 20;
 
 func main() -> void { # 4
-	var_1 := 20;
-	if true { # 10
-		var_1 := 10;
-		while true { # 3
-			if false {  # 0
-				# _4_10_3_0
-				res := var_1;
-			}
-			# _4_10_3
-		}
-		# _4_10
-	}
-
-	# _4
-
-	if true { # 1
+	a := 10;
+	if true {
+		a := 20;
 	}
 }
 

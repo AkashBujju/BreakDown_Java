@@ -32,7 +32,7 @@ public class EvalExp {
 		// System.out.println("postfix: " + postfix);
 	}
 
-	MsgType deduce_final_type(SymbolTable symbol_table, String func_scope_name, int max_scope) {
+	MsgType deduce_final_type(SymbolTable symbol_table, String scope_name) {
 		String final_type = "";
 
 		if(postfix.size() == 0)
@@ -43,7 +43,7 @@ public class EvalExp {
 			String type = Util.get_primitive_type(var_name);
 
 			if(type.equals("not_known")) {
-				String var_type = symbol_table.get_type(var_name, func_scope_name, max_scope);
+				String var_type = symbol_table.get_type(var_name, scope_name);
 				if(!var_type.equals("not_known"))
 					return new MsgType("none", var_type);
 				else { // Variable not found ...
@@ -70,7 +70,7 @@ public class EvalExp {
 
 					// Checking if the variable exists in the symbol table
 					if(right_type.equals("not_known")) {
-						String var_type = symbol_table.get_type(right_char, func_scope_name, max_scope);
+						String var_type = symbol_table.get_type(right_char, scope_name);
 						if(!var_type.equals(""))
 							right_type = var_type;
 					}
@@ -124,7 +124,7 @@ public class EvalExp {
 					if((s.equals("+") || s.equals("-")) && st.size() == 0) { // unary operation with + or - .
 						String left_type = Util.get_primitive_type(left_char);
 						if(left_type.equals("not_known")) {
-							String var_type = symbol_table.get_type(left_char, func_scope_name, max_scope);
+							String var_type = symbol_table.get_type(left_char, scope_name);
 							if(!var_type.equals(""))
 								left_type = var_type;
 						}
@@ -148,7 +148,7 @@ public class EvalExp {
 						String right_type = Util.get_primitive_type(right_char);
 
 						if(left_type.equals("not_known")) {
-							String var_type = symbol_table.get_type(left_char, func_scope_name, max_scope);
+							String var_type = symbol_table.get_type(left_char, scope_name);
 							if(!var_type.equals("not_known"))
 								left_type = var_type;
 							else { // checking in literal_type_map
@@ -158,7 +158,7 @@ public class EvalExp {
 							}
 						}
 						if(right_type.equals("not_known")) {
-							String var_type = symbol_table.get_type(right_char, func_scope_name, max_scope);
+							String var_type = symbol_table.get_type(right_char, scope_name);
 							if(!var_type.equals("not_known"))
 								right_type = var_type;
 							else { // checking in literal_type_map
@@ -272,7 +272,7 @@ public class EvalExp {
 		return new MsgType("none", final_type);
 	}
 
-	MsgType deduce_final_type_from_types(SymbolTable symbol_table, String func_scope_name, int max_scope) {
+	MsgType deduce_final_type_from_types(SymbolTable symbol_table, String scope_name) {
 		String final_type = "not_known";
 		if(postfix.size() == 1) {
 			String type = postfix.get(0);
