@@ -1,16 +1,10 @@
-a := 20;
 
 func main() -> void { # 4
 	a := 10;
-	if true {
-		a := 20;
-	}
+	c := 20;
 
 	if true {
 		a := 20;
+		a := 2;
 	}
-}
-
-func add(a: int, b: int) -> int {
-	return (a + b);
 }

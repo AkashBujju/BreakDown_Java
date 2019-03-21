@@ -5,10 +5,12 @@ import java.util.HashMap;
 class SymbolVar {
 	String name;
 	String type;
+	String scope_name;
 
-	SymbolVar(String name, String type) {
+	SymbolVar(String name, String type, String scope_name) {
 		this.name = name;
 		this.type = type;
+		this.scope_name = scope_name;
 	}
 }
 
@@ -40,9 +42,11 @@ public class SymbolTable {
 			return true;
 		}
 
-		SymbolVar sv = scopeNameAndVarName_var_map.get(scope_name);
+		SymbolVar sv = scopeNameAndVarName_var_map.get(scope_name + name);
 		if(sv == null)
 			return false;
+
+		System.out.println("yes");
 
 		return true;
 	}
@@ -61,8 +65,8 @@ public class SymbolTable {
 		if(name_exists_in_scope(name, scope_name))
 			return false;
 
-		SymbolVar sv = new SymbolVar(name, type);
-		scopeNameAndVarName_var_map.put(scope_name, sv);
+		SymbolVar sv = new SymbolVar(name, type, scope_name);
+		scopeNameAndVarName_var_map.put(scope_name + name, sv);
 
 		return true;
 	}
@@ -79,7 +83,7 @@ public class SymbolTable {
 		}
 
 		while(!scope_name.equals("")) {
-			SymbolVar sv = scopeNameAndVarName_var_map.get(scope_name);
+			SymbolVar sv = scopeNameAndVarName_var_map.get(scope_name + name);
 			if(sv == null) {
 				int index_of_underscore = scope_name.lastIndexOf('_');
 				if(index_of_underscore != -1)
