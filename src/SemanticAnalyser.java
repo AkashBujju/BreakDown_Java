@@ -60,59 +60,7 @@ public class SemanticAnalyser {
 		}
 	}
 
-	/*
-	private void init_all_func_scopes() {
-		for(Integer i: func_sig_indices)
-			init_func_scope(i);
-	}
-
-	private void init_func_scope(int index) {
-		FunctionInfo func_info = (FunctionInfo)(infos.get(index));
-		List<Info> in_infos = func_info.infos;
-		String scope_name = func_info.scope_name;
-		List<String> scope_names = new ArrayList<>();
-
-		int num_scopes = get_num_scopes(in_infos, 0);
-		for(int i = 0; i <= num_scopes; ++i) {
-			scope_names.add(scope_name + i);
-		}
-
-		FunctionInfo new_func_info = func_info;
-		new_func_info.scope_names = scope_names;
-		infos.set(index, new_func_info);
-	}
-
-	int get_num_scopes(List<Info> i, int count) {
-		for(Info info: i) {
-			if(info.info_type == InfoType.IF) {
-				IfInfo if_info = (IfInfo)(info);
-				List<Info> ii = if_info.infos;
-				count = get_num_scopes(ii, count + 1);
-			}
-			else if(info.info_type == InfoType.ELSE_IF) {
-				ElseIfInfo if_info = (ElseIfInfo)(info);
-				List<Info> ii = if_info.infos;
-				count = get_num_scopes(ii, count + 1);
-			}
-			else if(info.info_type == InfoType.WHILE) {
-				WhileInfo if_info = (WhileInfo)(info);
-				List<Info> ii = if_info.infos;
-				count = get_num_scopes(ii, count + 1);
-			}
-			else if(info.info_type == InfoType.ELSE) {
-				ElseInfo if_info = (ElseInfo)(info);
-				List<Info> ii = if_info.infos;
-				count = get_num_scopes(ii, count + 1);
-			}
-		}
-
-		return count;
-	}
-	*/
-
 	public void start() throws FileNotFoundException {
-		// init_all_func_scopes();
-
 		for(int i = 0; i < infos.size(); ++i) {
 			Info info = infos.get(i);	
 			int error_res = 0;
@@ -127,9 +75,8 @@ public class SemanticAnalyser {
 
 			if(error_res == -1)
 				count_errors += 1;
-			if(count_errors > 2) {
+			if(count_errors > 2)
 				return;
-			}
 		}
 	}
 
@@ -157,6 +104,8 @@ public class SemanticAnalyser {
 			res = eval_var_decl((VarDeclInfo)(info), func_scope_name, current_scope);
 		else if(info_type == InfoType.IF)
 			res = eval_if_info((IfInfo)(info), func_scope_name, current_scope);
+		else if(info_type == InfoType.WHILE)
+			res = eval_while_info((WhileInfo)(info), func_scope_name, current_scope);
 
 		return res;
 	}
@@ -173,6 +122,30 @@ public class SemanticAnalyser {
 		}
 
 		List<Info> infos = if_info.infos;
+		int len = infos.size();
+		for(int i = 0; i < len; ++i) {
+			Info current_info = infos.get(i);
+			int res = eval_info(current_info, func_scope_name, current_scope + 1);
+
+			if(res == -1)
+				return -1;
+		}
+
+		return 0;
+	}
+
+	private int eval_while_info(Info info, String func_scope_name, int current_scope) {
+		WhileInfo while_info = (WhileInfo)(info);
+		String exp = while_info.exp;
+
+		// Evaluting the type of exp and checking if its of type 'bool'.
+		String exp_type = get_type_of_exp(exp, func_scope_name, current_scope, while_info.exp_line_number);
+		if(!exp_type.equals("bool")) {
+			error_log.push("The test condition '" + exp + "' in 'while' has to be of type 'bool', but found '" + exp_type + "'.", exp, while_info.exp_line_number);
+			return -1;
+		}
+
+		List<Info> infos = while_info.infos;
 		int len = infos.size();
 		for(int i = 0; i < len; ++i) {
 			Info current_info = infos.get(i);

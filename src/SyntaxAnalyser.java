@@ -26,6 +26,7 @@ public class SyntaxAnalyser {
 	private boolean encountered_enum = false;
 	private boolean encountered_global_var = false;
 	private boolean show_invalid_stats = true;
+	int id_count = 0;
 
 	SyntaxAnalyser(SequenceInfo[] sequence_infos, MyFile file, List<RangeIndices> ri, HashMap<Integer, Integer> id_line, HashMap<Integer, Integer> id_char_index) {
 		this.sequence_infos = sequence_infos;
@@ -202,7 +203,7 @@ public class SyntaxAnalyser {
 				}
 
 				// Making a new VarDeclInfo and assing it to the list....
-				VarDeclInfo var_declinfo = new VarDeclInfo(name, type, exp, id_line.get(var_decl_info.id));
+				VarDeclInfo var_declinfo = new VarDeclInfo(name, type, exp, id_line.get(var_decl_info.id), id_count++);
 				var_decl_infos.add(var_declinfo);
 
 				num_variables += 1;
@@ -232,7 +233,7 @@ public class SyntaxAnalyser {
 		}
 
 		// Initialising StructInfo
-		StructInfo structinfo = new StructInfo(expr_seq_info.str, id_line.get(expr_seq_info.id), var_decl_infos);
+		StructInfo structinfo = new StructInfo(expr_seq_info.str, id_line.get(expr_seq_info.id), var_decl_infos, id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.info = structinfo;
@@ -285,7 +286,7 @@ public class SyntaxAnalyser {
 				return null;
 			}
 
-			VarDeclInfo var_info = new VarDeclInfo(arg_name, arg_type, "not_initialised", id_line.get(func_seq_info.id));
+			VarDeclInfo var_info = new VarDeclInfo(arg_name, arg_type, "not_initialised", id_line.get(func_seq_info.id), id_count++);
 			var_args.add(var_info);
 		}
 
@@ -380,7 +381,7 @@ public class SyntaxAnalyser {
 			return null;
 		}
 
-		FunctionInfo fi = new FunctionInfo(func_name, ret_type, var_args, func_infos, id_line.get(func_seq_info.id));
+		FunctionInfo fi = new FunctionInfo(func_name, ret_type, var_args, func_infos, id_line.get(func_seq_info.id), id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
@@ -508,7 +509,7 @@ public class SyntaxAnalyser {
 			return null;
 		}
 
-		IfInfo ifinfo = new IfInfo(exp_info.str, id_line.get(exp_info.id), if_infos);
+		IfInfo ifinfo = new IfInfo(exp_info.str, id_line.get(exp_info.id), if_infos, id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
@@ -636,7 +637,7 @@ public class SyntaxAnalyser {
 
 		inside_while = false;
 
-		WhileInfo whileinfo = new WhileInfo(exp_info.str, id_line.get(exp_info.id), while_infos);
+		WhileInfo whileinfo = new WhileInfo(exp_info.str, id_line.get(exp_info.id), while_infos, id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
@@ -662,7 +663,7 @@ public class SyntaxAnalyser {
 		}
 		visited_ids.put(semi_colon_info.id, true);
 
-		OtherInfo other_info = new OtherInfo("break", id_line.get(si.id));
+		OtherInfo other_info = new OtherInfo("break", id_line.get(si.id), id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 1;
@@ -688,7 +689,7 @@ public class SyntaxAnalyser {
 		}
 		visited_ids.put(semi_colon_info.id, true);
 
-		OtherInfo other_info = new OtherInfo("continue", id_line.get(si.id));
+		OtherInfo other_info = new OtherInfo("continue", id_line.get(si.id), id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 1;
@@ -737,11 +738,11 @@ public class SyntaxAnalyser {
 
 		Info info = null;
 		if(msg.equals("=")) {
-			VarAssignInfo var_assign_info = new VarAssignInfo(name, exp, id_line.get(si.id));
+			VarAssignInfo var_assign_info = new VarAssignInfo(name, exp, id_line.get(si.id), id_count++);
 			info = var_assign_info;
 		}
 		else {
-			VarDeclInfo var_decl_info = new VarDeclInfo(name, type, exp, id_line.get(si.id));
+			VarDeclInfo var_decl_info = new VarDeclInfo(name, type, exp, id_line.get(si.id), id_count++);
 			info = var_decl_info;
 		}
 
@@ -791,7 +792,7 @@ public class SyntaxAnalyser {
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		UseInfo useinfo = new UseInfo(filename, id_line.get(filename_info.id));
+		UseInfo useinfo = new UseInfo(filename, id_line.get(filename_info.id), id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index = 2;
@@ -876,7 +877,7 @@ public class SyntaxAnalyser {
 		}
 		visited_ids.put(close_brac.id, true);
 
-		EnumInfo enuminfo = new EnumInfo(enum_name_seq.str, id_line.get(enum_name_seq.id), split_value);
+		EnumInfo enuminfo = new EnumInfo(enum_name_seq.str, id_line.get(enum_name_seq.id), split_value, id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 3;
@@ -979,7 +980,7 @@ public class SyntaxAnalyser {
 
 		recv_after_if = false;
 
-		ElseInfo else_info = new ElseInfo(else_infos);
+		ElseInfo else_info = new ElseInfo(else_infos, id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;
@@ -1111,7 +1112,7 @@ public class SyntaxAnalyser {
 				visited_ids.put(s.id, true);
 			}
 
-			ElseIfInfo else_if_info = new ElseIfInfo(exp_info.str, id_line.get(exp_info.id), else_if_infos);
+			ElseIfInfo else_if_info = new ElseIfInfo(exp_info.str, id_line.get(exp_info.id), else_if_infos, id_count++);
 
 			viai.return_value = i;
 			viai.info = else_if_info;
@@ -1163,7 +1164,7 @@ public class SyntaxAnalyser {
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		ReturnInfo ret_info = new ReturnInfo(exp_info.str, id_line.get(exp_info.id));
+		ReturnInfo ret_info = new ReturnInfo(exp_info.str, id_line.get(exp_info.id), id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 2;
@@ -1196,7 +1197,7 @@ public class SyntaxAnalyser {
 		}
 		visited_ids.put(semicolon_info.id, true);
 
-		ExpInfo expinfo = new ExpInfo(exp_info.str, id_line.get(exp_info.id));
+		ExpInfo expinfo = new ExpInfo(exp_info.str, id_line.get(exp_info.id), id_count++);
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = index + 1;

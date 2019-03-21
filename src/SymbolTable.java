@@ -32,7 +32,7 @@ public class SymbolTable {
 		all_types.put(typename, true);
 	}
 
-	boolean name_exists_in_scope(String name, String func_scope_name, int current_scope) {
+	boolean name_exists_in_scope(String name, String scope_name) {
 		if(func_scope_name.equals("global")) {
 			String type = global_name_scope_map.get(name);
 			if(type == null)
@@ -48,6 +48,24 @@ public class SymbolTable {
 		return true;
 	}
 
+	/*
+	boolean name_exists_in_scope(String name, String func_scope_name, int current_scope) {
+		if(func_scope_name.equals("global")) {
+			String type = global_name_scope_map.get(name);
+			if(type == null)
+				return false;
+			return true;
+		}
+
+		String search_name = name + func_scope_name + current_scope;
+		SymbolVar sv = scopeNameAndVarName_var_map.get(search_name);
+		if(sv == null)
+			return false;
+
+		return true;
+	}
+	*/
+
 	boolean add_global(String name, String type) {
 		boolean contains = global_name_scope_map.containsKey(name);
 		if(contains == true)
@@ -58,8 +76,19 @@ public class SymbolTable {
 		return true;
 	}
 
+	boolean add(String name, String type, String scope_name) {
+		if(name_exists_in_scope(name, scope_name))
+			return false;
+
+		SymbolVar sv = new SymbolVar(name, type);
+		String search_name = name + func_scope_name + current_scope;
+		scopeNameAndVarName_var_map.put(search_name, sv);
+
+		return true;
+	}
+
+	/*
 	boolean add(String name, String type, String func_scope_name, int current_scope) {
-		// @Incomplete: Check if name already exists within current_scope.
 		if(name_exists_in_scope(name, func_scope_name, current_scope))
 			return false;
 
@@ -69,6 +98,7 @@ public class SymbolTable {
 
 		return true;
 	}
+	*/
 
 	// @Note: get_type tries all scopes until max_scope and checks the global scope too.
 	String get_type(String name, String func_scope_name, int max_scope) {
