@@ -1,7 +1,11 @@
-b := 20;
+a := 20;
 
 func main() -> void { # 4
 	a := 10;
+	if true {
+		a := 20;
+	}
+
 	if true {
 		a := 20;
 	}

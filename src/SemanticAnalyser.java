@@ -100,14 +100,32 @@ public class SemanticAnalyser {
 	private int eval_info(Info info, String scope_name) {
 		InfoType info_type = info.info_type;
 		int res = -1;
+
 		if(info_type == InfoType.VAR_DECL)
 			res = eval_var_decl((VarDeclInfo)(info), scope_name);
 		else if(info_type == InfoType.IF)
-			res = eval_if_info((IfInfo)(info), scope_name);
+			res = eval_if_info((IfInfo)(info), scope_name + '_' + info.id);
 		else if(info_type == InfoType.WHILE)
-			res = eval_while_info((WhileInfo)(info), scope_name);
+			res = eval_while_info((WhileInfo)(info), scope_name + '_' + info.id);
 
 		return res;
+	}
+
+	private int eval_function(FunctionInfo func_info) {
+		List<Info> infos = func_info.infos;
+		int current_scope = 0;
+		String scope_name = "_" + (func_info.id);
+
+		int infos_len = infos.size();
+		for(int i = 0; i < infos_len; ++i) {
+			Info info = infos.get(i);
+			int res = eval_info(info, scope_name);
+
+			if(res == -1)
+				return -1;
+		}
+
+		return 0;
 	}
 
 	private int eval_if_info(Info info, String scope_name) {
@@ -213,25 +231,6 @@ public class SemanticAnalyser {
 		}
 
 		return final_type;
-	}
-
-	private int eval_function(FunctionInfo func_info) {
-		List<Info> infos = func_info.infos;
-		int current_scope = 0;
-		String scope_name = "_" + (func_info.id);
-
-		// @Note: The 'current_scope' must be accordingly increased and decreased when entering / leaving a scope.
-		// @Note: The 'current_scope' must be accordingly increased and decreased when entering / leaving a scope.
-		int infos_len = infos.size();
-		for(int i = 0; i < infos_len; ++i) {
-			Info info = infos.get(i);
-			int res = eval_info(info, scope_name);
-
-			if(res == -1)
-				return -1;
-		}
-
-		return 0;
 	}
 
 	private int eval_var_decl(VarDeclInfo var_decl_info, String scope_name) {
