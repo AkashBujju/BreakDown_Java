@@ -5,15 +5,15 @@ a := 10;
 
 func main() -> void {
 	a := 20;
+	if true {
+		a := 3.13;
+		res := add(1, 2);
+		if false {
+			res := 10;
+		}
+	}
 }
 
-func add(a: int , b: int) -> int {
-	c := 10;
-	ptr := >> a;
-}
-
-func foo() -> void {
-	d := a;
-	a := d;
-	_a :int; # Note: This have to have the value 0 by default.
+func add(a: int, b: int) -> int {
+	return (a + b);
 }

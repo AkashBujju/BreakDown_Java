@@ -60,6 +60,7 @@ public class SemanticAnalyser {
 		}
 	}
 
+	/*
 	private void init_all_func_scopes() {
 		for(Integer i: func_sig_indices)
 			init_func_scope(i);
@@ -107,9 +108,10 @@ public class SemanticAnalyser {
 
 		return count;
 	}
+	*/
 
 	public void start() throws FileNotFoundException {
-		init_all_func_scopes();
+		// init_all_func_scopes();
 
 		for(int i = 0; i < infos.size(); ++i) {
 			Info info = infos.get(i);	
@@ -153,6 +155,8 @@ public class SemanticAnalyser {
 		int res = -1;
 		if(info_type == InfoType.VAR_DECL)
 			res = eval_var_decl((VarDeclInfo)(info), func_scope_name, current_scope);
+		else if(info_type == InfoType.IF)
+			res = eval_if_info((IfInfo)(info), func_scope_name, current_scope);
 
 		return res;
 	}
@@ -161,7 +165,81 @@ public class SemanticAnalyser {
 		IfInfo if_info = (IfInfo)(info);
 		String exp = if_info.exp;
 
-		return 0; // @TMP
+		// Evaluting the type of exp and checking if its of type 'bool'.
+		String exp_type = get_type_of_exp(exp, func_scope_name, current_scope, if_info.exp_line_number);
+		if(!exp_type.equals("bool")) {
+			error_log.push("The test condition '" + exp + "' in 'if' has to be of type 'bool', but found '" + exp_type + "'.", exp, if_info.exp_line_number);
+			return -1;
+		}
+
+		List<Info> infos = if_info.infos;
+		int len = infos.size();
+		for(int i = 0; i < len; ++i) {
+			Info current_info = infos.get(i);
+			int res = eval_info(current_info, func_scope_name, current_scope + 1);
+
+			if(res == -1)
+				return -1;
+		}
+
+		return 0;
+	}
+
+	// @Note: Don't use this function for exp's with split size == 1. It has to be big.
+	private String get_type_of_exp(String exp, String func_scope_name, int current_scope, int line_number) {
+		List<String> split_value = Util.split_with_ops(exp);
+		List<String> final_exp = new ArrayList<>();
+
+		int len = split_value.size();
+		int num_func_calls = 0;
+		for(int i = 0; i < len; ++i) {
+			String s = split_value.get(i);
+			if(Util.is_operator(s)) {
+				final_exp.add(s);
+			}
+			else {
+				boolean if_func_call = Util.if_func_call(s);
+				String type = "not_known";
+				if(if_func_call) {
+					num_func_calls += 1;
+					type = get_type_of_func_call(s, line_number, func_scope_name, current_scope);
+					// We need to know if 's' is name of a function, so that we can append '_func@' to it.
+					type = func_iden + type;
+				}
+				else {
+					String var_type = symbol_table.get_type(s, func_scope_name, current_scope);
+					type = get_type_of_exp(s, line_number, false, func_scope_name, current_scope);
+
+					// We need to know if 's' is name of a variable, so that we can append '_var@' to it.
+					if(!var_type.equals("not_known")) {
+						type = var_iden + type;
+					}
+				}	
+
+				final_exp.add(type);
+			}
+		}
+
+		String final_type = "not_known";
+		EvalExp eval_exp = null;
+
+		if(num_func_calls == 1 && final_exp.size() == 1) {
+			eval_exp = new EvalExp(final_exp, func_iden, var_iden);
+			final_type = eval_exp.deduce_final_type_from_types(symbol_table, func_scope_name, current_scope).type;
+		}
+		else {
+			List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
+			eval_exp = new EvalExp(postfix_exp, func_iden, var_iden);
+			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, func_scope_name, current_scope);
+			if(!msg_type.msg.equals("none")) {
+				error_log.push(msg_type.msg, exp, line_number);
+				return "not_known";
+			}
+
+			final_type = msg_type.type;
+		}
+
+		return final_type;
 	}
 
 	private int eval_function(FunctionInfo func_info) {
@@ -169,14 +247,12 @@ public class SemanticAnalyser {
 		String func_scope_name = func_info.scope_name;
 		int current_scope = 0;
 
+		// @Note: The 'current_scope' must be accordingly increased and decreased when entering / leaving a scope.
+		// @Note: The 'current_scope' must be accordingly increased and decreased when entering / leaving a scope.
 		int infos_len = infos.size();
 		for(int i = 0; i < infos_len; ++i) {
 			Info info = infos.get(i);
-			InfoType info_type = info.info_type;
-			int res = -1;
-
-			if(info_type == InfoType.VAR_DECL)
-				res = eval_var_decl((VarDeclInfo)(info), func_scope_name, current_scope);
+			int res = eval_info(info, func_scope_name, current_scope);
 
 			if(res == -1)
 				return -1;
@@ -196,63 +272,8 @@ public class SemanticAnalyser {
 			return -1;
 		}
 
-		List<String> split_value = Util.split_with_ops(raw_value);
-		List<String> final_exp = new ArrayList<>();
-
 		System.out.println("varname: " + name + ", raw_value: " + raw_value + ", scope_name: " + (func_scope_name + current_scope));
-
-		int len = split_value.size();
-		int num_func_calls = 0;
-		for(int i = 0; i < len; ++i) {
-			String s = split_value.get(i);
-			if(Util.is_operator(s)) {
-				final_exp.add(s);
-			}
-			else {
-				boolean if_func_call = Util.if_func_call(s);
-				String type = "not_known";
-				if(if_func_call) {
-					num_func_calls += 1;
-					type = get_type_of_func_call(s, var_decl_info.line_number, func_scope_name, current_scope);
-					type = func_iden + type;
-				}
-				else {
-					String var_type = symbol_table.get_type(s, func_scope_name, current_scope);
-					type = get_type_of_exp(s, var_decl_info.line_number, false, func_scope_name, current_scope);
-
-					// We need to know if 's' is name of a variable, so that we can append '_var@' to it.
-					if(!var_type.equals("not_known")) {
-						type = var_iden + type;
-					}
-				}	
-
-				final_exp.add(type);
-			}
-		}
-
-		/*
-		System.out.println("final_exp: " + final_exp + ", var_name: " + name);
-		System.out.println("-------------------");
-		*/
-
-		String final_type = "not_known";
-		EvalExp eval_exp = null;
-
-		if(num_func_calls == 1 && final_exp.size() == 1) {
-			eval_exp = new EvalExp(final_exp, func_iden, var_iden);
-			final_type = eval_exp.deduce_final_type_from_types(symbol_table, func_scope_name, current_scope).type;
-		}
-		else {
-			List<String> postfix_exp = InfixToPostFix.infixToPostFix(final_exp);
-			eval_exp = new EvalExp(postfix_exp, func_iden, var_iden);
-			MsgType msg_type = eval_exp.deduce_final_type_from_types(symbol_table, func_scope_name, current_scope);
-			if(!msg_type.msg.equals("none")) {
-				error_log.push(msg_type.msg, raw_value, var_decl_info.line_number);
-				return -1;
-			}
-
-			final_type = msg_type.type;
-		}
+		String final_type = get_type_of_exp(raw_value, func_scope_name, current_scope, var_decl_info.line_number);
 
 		if(func_scope_name.equals("global"))
 			symbol_table.add_global(var_decl_info.name, final_type);
