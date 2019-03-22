@@ -29,7 +29,7 @@ public class EvalExp {
 		this.func_iden = func_iden;
 		this.var_iden = var_iden;
 
-		// System.out.println("postfix: " + postfix);
+		System.out.println("postfix: " + postfix);
 	}
 
 	MsgType deduce_final_type(SymbolTable symbol_table, String scope_name) {
@@ -241,7 +241,7 @@ public class EvalExp {
 
 				String right_type = literal_type_map.get(right_literal);
 				String left_type = literal_type_map.get(left_literal);
-				
+
 				if(right_literal.equals("not_known"))
 					return new MsgType("Identifier '" + right_literal + "' not found", "not_known");
 				else if(left_literal.equals("not_known"))
@@ -268,6 +268,9 @@ public class EvalExp {
 		//	}
 		//	System.out.println();
 		//
+
+		if(final_type == null)
+			final_type = "not_known";
 
 		return new MsgType("none", final_type);
 	}
@@ -451,6 +454,9 @@ public class EvalExp {
 		}
 
 		final_type = literal_type_map.get("@" + _sz + "@");
+		if(final_type == null)
+			final_type = "not_known";
+
 		return new MsgType("none", final_type);
 	}
 }

@@ -1,10 +1,3 @@
-
 func main() -> void {
-	pi: double = 3.14;
-	a := 20;
-
-	a = pi;
-}
-
-func is_greater(a: int) -> bool {
+	a: char = 'a';
 }

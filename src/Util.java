@@ -373,6 +373,20 @@ public class Util {
 		if(str.equals("true") || str.equals("false"))
 			return "bool";
 
+		// is char
+		boolean is_char = true;
+		if(str.length() > 4 || str.length() <= 2)
+			is_char = false;
+		else {
+			if(str.indexOf("'") == -1)
+				is_char = false;
+			else if(str.lastIndexOf("'") == -1)
+				is_char = false;
+		}
+
+		if(is_char)
+			return "char";
+
 		return "not_known";
 	}
 
@@ -844,7 +858,7 @@ public class Util {
 		else if(type_1.equals("double") && type_2.equals("double")) {
 			if(is_op_arith)
 				res = "double";
-			else if(is_op_rela)
+			else if(is_op_rela || op.equals("=="))
 				res = "bool";
 		}
 		else if(type_1.equals("bool") && type_2.equals("bool")) {
@@ -903,7 +917,7 @@ public class Util {
 		else if(type_1.equals("double") && type_2.equals("double")) {
 			if(op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/") ||
 					op.equals("!=") || op.equals(">") || op.equals("<") || op.equals("<=")
-					|| op.equals(">="))
+					|| op.equals(">=") || op.equals("=="))
 				is_valid = true;
 		}
 		else { // Pointer arithmetic

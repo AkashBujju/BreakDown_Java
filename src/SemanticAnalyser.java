@@ -108,6 +108,10 @@ public class SemanticAnalyser {
 			res = eval_var_decl((VarDeclInfo)(info), scope_name);
 		else if(info_type == InfoType.IF)
 			res = eval_if_info((IfInfo)(info), scope_name + '_' + info.id);
+		else if(info_type == InfoType.ELSE_IF)
+			res = eval_else_if_info((ElseIfInfo)(info), scope_name + '_' + info.id);
+		else if(info_type == InfoType.ELSE)
+			res = eval_else_info((ElseInfo)(info), scope_name + '_' + info.id);
 		else if(info_type == InfoType.WHILE)
 			res = eval_while_info((WhileInfo)(info), scope_name + '_' + info.id);
 		else if(info_type == InfoType.VAR_ASSIGN)
@@ -137,6 +141,46 @@ public class SemanticAnalyser {
 		for(int i = 0; i < infos_len; ++i) {
 			Info info = infos.get(i);
 			int res = eval_info(info, scope_name);
+
+			if(res == -1)
+				return -1;
+		}
+
+		return 0;
+	}
+
+	private int eval_else_info(Info info, String scope_name) {
+		ElseInfo else_info = (ElseInfo)(info);
+
+		List<Info> infos = else_info.infos;
+		int len = infos.size();
+		for(int i = 0; i < len; ++i) {
+			Info current_info = infos.get(i);
+			int res = eval_info(current_info, scope_name);
+
+			if(res == -1)
+				return -1;
+		}
+		
+		return 0;
+	}
+
+	private int eval_else_if_info(Info info, String scope_name) {
+		ElseIfInfo else_if_info = (ElseIfInfo)(info);
+		String exp = else_if_info.exp;
+
+		// Evaluting the type of exp and checking if its of type 'bool'.
+		String exp_type = get_type_of_exp(exp, scope_name, else_if_info.line_number);
+		if(!exp_type.equals("bool")) {
+			error_log.push("The test condition '" + exp + "' in 'else if' has to be of type 'bool', but found '" + exp_type + "'.", exp, else_if_info.line_number);
+			return -1;
+		}
+
+		List<Info> infos = else_if_info.infos;
+		int len = infos.size();
+		for(int i = 0; i < len; ++i) {
+			Info current_info = infos.get(i);
+			int res = eval_info(current_info, scope_name);
 
 			if(res == -1)
 				return -1;
@@ -284,6 +328,14 @@ public class SemanticAnalyser {
 			error_log.push("Variable with name <" + name + "> already exists within current scope <" + scope_name + ">", name, var_decl_info.line_number);
 			return -1;
 		}
+
+		/*
+		if(raw_value.equals("")) { // It's just a declaration
+			String final_type = var_decl_info.type;
+			
+			return 0;
+		}
+		*/
 
 		System.out.println("varname: " + name + ", raw_value: " + raw_value + ", scope_name: " + scope_name);
 		String final_type = get_type_of_exp(raw_value, scope_name, var_decl_info.line_number);
