@@ -36,6 +36,15 @@ public class SymbolTable {
 	}
 
 	boolean type_exists(String typename) {
+		// Taking away the [] and *
+		int indexOf_arr = typename.indexOf('[');
+		if(indexOf_arr != -1)
+			typename = typename.substring(0, indexOf_arr);
+
+		int indexOf_star = typename.indexOf('*');
+		if(indexOf_star != -1)
+			typename = typename.substring(0, indexOf_star);
+
 		return all_types.containsKey(typename);
 	}
 

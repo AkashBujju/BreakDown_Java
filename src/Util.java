@@ -511,6 +511,7 @@ public class Util {
 			return true;
 
 		// Checking if its an array.
+		// @Note: It can also be an array of pointers...
 		int i = 1;
 		if(i < len) {
 			char c = type.charAt(i);
@@ -520,11 +521,12 @@ public class Util {
 		}
 
 		boolean array_square_encountered = false;
+		int num_digits = 0;
+		int num_stars = 0;
 		for(i = 2; i < len; ++i) {
 			char c = type.charAt(i);
 			if(!Util.is_char_alpha_digit_underscore(c)) {
 				int num_close_square = 0;
-				int num_digits = 0;
 				char open_square_char = ' ';
 
 				open_square_char = type.charAt(i);
@@ -541,7 +543,7 @@ public class Util {
 						if(c2 == ']') {
 							num_close_square += 1;
 							array_square_encountered = true;
-							i = j;
+							i = j++;
 							break;
 						}
 						else
@@ -553,8 +555,22 @@ public class Util {
 					j += 1;
 				}
 
-				if(num_close_square != 1 || num_digits == 0)
+				if(num_close_square != 1)
 					return false;
+
+				// Checking for pointers '*' s.
+				for(; j < type.length(); ++j) {
+					char c3 = type.charAt(j);
+					if(c3 != '*')
+						return false;
+					else
+						num_stars += 1;
+				}
+
+				if(num_stars > 1 && num_digits == 0)
+					return false;
+
+				i = j;
 			}
 			else if(array_square_encountered)
 				return false;
