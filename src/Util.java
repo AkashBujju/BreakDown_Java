@@ -378,14 +378,19 @@ public class Util {
 		if(str.length() > 4 || str.length() <= 2)
 			is_char = false;
 		else {
-			if(str.indexOf("'") == -1)
-				is_char = false;
-			else if(str.lastIndexOf("'") == -1)
+			if(str.indexOf("'") == -1 || str.lastIndexOf("'") == -1)
 				is_char = false;
 		}
 
 		if(is_char)
 			return "char";
+
+		// string(char*)
+		boolean is_string = true;
+		if(str.indexOf('\"') == -1 || str.lastIndexOf('\"') == -1)
+			is_string = false;
+		if(is_string)
+			return "string";
 
 		return "not_known";
 	}
@@ -1023,7 +1028,7 @@ public class Util {
 
 			all_exps.add(last_str.toString());
 		}
-		
+
 		for(int i = 0; i < all_exps.size(); ++i) {
 			String tmp_s = all_exps.get(i);
 			if(tmp_s.equals(" ") || tmp_s.equals("")) {
@@ -1055,12 +1060,12 @@ public class Util {
 		}
 
 		/*
-		System.out.print("final_all_exps: ");
-		for(int i = 0; i < final_all_exps.size(); ++i) {
+			System.out.print("final_all_exps: ");
+			for(int i = 0; i < final_all_exps.size(); ++i) {
 			System.out.print("< " + final_all_exps.get(i) + " > ");
-		}
-		System.out.println();
-		*/
+			}
+			System.out.println();
+			*/
 
 		// Note: We have to sort the array list in descending to ascending order in terms of size...
 		// Sorting

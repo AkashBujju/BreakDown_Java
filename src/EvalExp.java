@@ -29,7 +29,7 @@ public class EvalExp {
 		this.func_iden = func_iden;
 		this.var_iden = var_iden;
 
-		System.out.println("postfix: " + postfix);
+		// System.out.println("postfix: " + postfix);
 	}
 
 	MsgType deduce_final_type(SymbolTable symbol_table, String scope_name) {

@@ -320,36 +320,43 @@ public class SemanticAnalyser {
 		String raw_value = var_decl_info.raw_value;
 		String name = var_decl_info.name;
 		String given_type_name = var_decl_info.type;
+		int line_number = var_decl_info.line_number;
 
-		// @Incomplete: Check if variable name is not the name of any type.
-		// @Incomplete: Check if variable name is not the name of any type.
+		if(symbol_table.type_exists(name)) {
+			error_log.push("Name '" + name + "' is a name of a Type and cannot be used.", name + " ... ", line_number);
+			return -1;
+		}
 
 		if(symbol_table.name_exists_in_scope(name, scope_name)) {
-			error_log.push("Variable with name <" + name + "> already exists within current scope <" + scope_name + ">", name, var_decl_info.line_number);
+			error_log.push("Variable with name <" + name + "> already exists within current scope <" + scope_name + ">", name, line_number);
 			return -1;
 		}
 
-		/*
 		if(raw_value.equals("")) { // It's just a declaration
 			String final_type = var_decl_info.type;
-			
-			return 0;
+			if(!symbol_table.type_exists(final_type)) {
+				error_log.push("Type '" + final_type + "' does not exist.", name + ": " + final_type, line_number);
+				return -1;
+			}
+
+			symbol_table.add(name, final_type, scope_name);
 		}
-		*/
+		else {
+			String final_type = get_type_of_exp(raw_value, scope_name, line_number);
 
-		System.out.println("varname: " + name + ", raw_value: " + raw_value + ", scope_name: " + scope_name);
-		String final_type = get_type_of_exp(raw_value, scope_name, var_decl_info.line_number);
+			if(!given_type_name.equals("not_known") && !final_type.equals(given_type_name)) {
+				error_log.push("Declared type '" + given_type_name + "' does not match with deduced type '" + final_type + "' in variable '" + name + "'.", name + ": " + given_type_name + " = " + raw_value, line_number);
 
-		if(!given_type_name.equals("not_known") && !final_type.equals(given_type_name)) {
-			error_log.push("Declared type '" + given_type_name + "' does not match with deduced type '" + final_type + "' in variable '" + name + "'.", name + ": " + given_type_name + " = " + raw_value, var_decl_info.line_number);
+				return -1;
+			}
 
-			return -1;
+			if(scope_name.equals("global"))
+				symbol_table.add_global(var_decl_info.name, final_type);
+			else
+				symbol_table.add(var_decl_info.name, final_type, scope_name);
 		}
 
-		if(scope_name.equals("global"))
-			symbol_table.add_global(var_decl_info.name, final_type);
-		else
-			symbol_table.add(var_decl_info.name, final_type, scope_name);
+		System.out.println("varname: " + name + ", raw_value: <" + raw_value + ">, scope_name: " + scope_name);
 
 		// Checking of the variable was added correctly.
 		String in_table_type = symbol_table.get_type(name, scope_name);

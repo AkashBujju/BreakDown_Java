@@ -1,3 +1,10 @@
 func main() -> void {
 	a: char = 'a';
+	name := "hello";
+
+	name_ptr := >> name;
+
+	pi: double;
+
+	int: int = 10;
 }

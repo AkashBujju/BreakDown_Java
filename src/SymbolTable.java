@@ -27,6 +27,7 @@ public class SymbolTable {
 		all_types.put("int", true); all_types.put("uint", true);
 		all_types.put("double", true);
 		all_types.put("char", true);
+		all_types.put("string", true);
 		all_types.put("bool", true);
 	}
 

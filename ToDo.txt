@@ -1,6 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-	0) SemanticAnalyser.java. Goto line 162.
+	0) How to deal strings ?????????????????
 
 	1) Take away quotes_range_indices if possible ... There seems to be
 	problems with it !!!!!!!
