@@ -72,6 +72,9 @@ public class SemanticAnalyser {
 				error_res = eval_var_decl((VarDeclInfo)(info), "global");
 			else if(info.info_type == InfoType.FUNCTION)
 				error_res = eval_function((FunctionInfo)(info));
+			else {
+				error_log.push("Invalid InfoType found.", info.get_info(), info.line_number);
+			}
 
 			if(error_res == -1)
 				count_errors += 1;
@@ -107,6 +110,8 @@ public class SemanticAnalyser {
 			res = eval_if_info((IfInfo)(info), scope_name + '_' + info.id);
 		else if(info_type == InfoType.WHILE)
 			res = eval_while_info((WhileInfo)(info), scope_name + '_' + info.id);
+		else if(info_type == InfoType.VAR_ASSIGN)
+			res = eval_var_assign((VarAssignInfo)(info), scope_name);
 
 		return res;
 	}
@@ -115,6 +120,18 @@ public class SemanticAnalyser {
 		List<Info> infos = func_info.infos;
 		int current_scope = 0;
 		String scope_name = "_" + (func_info.id);
+
+		// Adding function args to symbol table.
+		int var_args_len = func_info.var_args.size();
+		for(int i = 0; i < var_args_len; ++i) {
+			VarDeclInfo var_decl_info = func_info.var_args.get(i);
+			if(!symbol_table.type_exists(var_decl_info.type)) {
+				error_log.push("Argument type '" + var_decl_info.type + "' does not exist.", var_decl_info.type, func_info.line_number);
+				return -1;
+			}
+
+			symbol_table.add(var_decl_info.name, var_decl_info.type, scope_name);
+		}
 
 		int infos_len = infos.size();
 		for(int i = 0; i < infos_len; ++i) {
@@ -133,9 +150,9 @@ public class SemanticAnalyser {
 		String exp = if_info.exp;
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
-		String exp_type = get_type_of_exp(exp, scope_name, if_info.exp_line_number);
+		String exp_type = get_type_of_exp(exp, scope_name, if_info.line_number);
 		if(!exp_type.equals("bool")) {
-			error_log.push("The test condition '" + exp + "' in 'if' has to be of type 'bool', but found '" + exp_type + "'.", exp, if_info.exp_line_number);
+			error_log.push("The test condition '" + exp + "' in 'if' has to be of type 'bool', but found '" + exp_type + "'.", exp, if_info.line_number);
 			return -1;
 		}
 
@@ -157,9 +174,9 @@ public class SemanticAnalyser {
 		String exp = while_info.exp;
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
-		String exp_type = get_type_of_exp(exp, scope_name, while_info.exp_line_number);
+		String exp_type = get_type_of_exp(exp, scope_name, while_info.line_number);
 		if(!exp_type.equals("bool")) {
-			error_log.push("The test condition '" + exp + "' in 'while' has to be of type 'bool', but found '" + exp_type + "'.", exp, while_info.exp_line_number);
+			error_log.push("The test condition '" + exp + "' in 'while' has to be of type 'bool', but found '" + exp_type + "'.", exp, while_info.line_number);
 			return -1;
 		}
 
@@ -233,19 +250,49 @@ public class SemanticAnalyser {
 		return final_type;
 	}
 
+	private int eval_var_assign(VarAssignInfo var_assign_info, String scope_name) {
+		String name = var_assign_info.var_name;
+		String raw_value = var_assign_info.raw_value;
+		int line_number = var_assign_info.line_number;
+
+		String type = symbol_table.get_type(name, scope_name);
+		if(type.equals("not_known")) {
+			error_log.push("First occurance of variable '" + name + "'.", name + " = " + raw_value, line_number);
+
+			return -1;
+		}
+
+		String final_type = get_type_of_exp(raw_value, scope_name, line_number);
+		if(!type.equals(final_type)) {
+			error_log.push("Variable '" + name + "' previously declared as Type '" + type + "', but being assigned to expression of Type '" + final_type + "'.", name + " = " + raw_value, line_number);
+
+			return -1;
+		}
+
+		return 0;
+	}
+
 	private int eval_var_decl(VarDeclInfo var_decl_info, String scope_name) {
 		String raw_value = var_decl_info.raw_value;
 		String name = var_decl_info.name;
+		String given_type_name = var_decl_info.type;
 
-		// Checking if the variable name is not the name of any type.
+		// @Incomplete: Check if variable name is not the name of any type.
+		// @Incomplete: Check if variable name is not the name of any type.
+
 		if(symbol_table.name_exists_in_scope(name, scope_name)) {
-			String type = symbol_table.get_type(name, scope_name);
 			error_log.push("Variable with name <" + name + "> already exists within current scope <" + scope_name + ">", name, var_decl_info.line_number);
 			return -1;
 		}
 
 		System.out.println("varname: " + name + ", raw_value: " + raw_value + ", scope_name: " + scope_name);
 		String final_type = get_type_of_exp(raw_value, scope_name, var_decl_info.line_number);
+
+		if(!given_type_name.equals("not_known") && !final_type.equals(given_type_name)) {
+			error_log.push("Declared type '" + given_type_name + "' does not match with deduced type '" + final_type + "' in variable '" + name + "'.", name + ": " + given_type_name + " = " + raw_value, var_decl_info.line_number);
+
+			return -1;
+		}
 
 		if(scope_name.equals("global"))
 			symbol_table.add_global(var_decl_info.name, final_type);

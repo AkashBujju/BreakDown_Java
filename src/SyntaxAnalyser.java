@@ -735,6 +735,9 @@ public class SyntaxAnalyser {
 			type = split_str.get(1);
 			exp = split_str.get(2);
 		}
+		else {
+			exp = split_str.get(1);
+		}
 
 		Info info = null;
 		if(msg.equals("=")) {
@@ -980,7 +983,7 @@ public class SyntaxAnalyser {
 
 		recv_after_if = false;
 
-		ElseInfo else_info = new ElseInfo(else_infos, id_count++);
+		ElseInfo else_info = new ElseInfo(else_infos, id_count++, id_line.get(else_seq.id));
 
 		ValidIndexAndInfo viai = new ValidIndexAndInfo();
 		viai.return_value = i;

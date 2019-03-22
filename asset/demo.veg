@@ -1,10 +1,10 @@
 
-func main() -> void { # 4
-	a := 10;
-	c := 20;
+func main() -> void {
+	pi: double = 3.14;
+	a := 20;
 
-	if true {
-		a := 20;
-		a := 2;
-	}
+	a = pi;
+}
+
+func is_greater(a: int) -> bool {
 }

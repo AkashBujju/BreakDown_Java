@@ -838,7 +838,7 @@ public class Util {
 		else if(type_1.equals("int") && type_2.equals("int")) {
 			if(is_op_arith || is_op_bitwise || op.equals("%"))
 				res = "int";
-			else if(is_op_rela)
+			else if(is_op_rela || op.equals("=="))
 				res = "bool";
 		}
 		else if(type_1.equals("double") && type_2.equals("double")) {
@@ -897,12 +897,12 @@ public class Util {
 		else if(type_1.equals("int") && type_2.equals("int")) {
 			if(op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/") ||
 					op.equals("%") || op.equals(">") || op.equals("<") || op.equals(">=") || op.equals("<=")
-					|| op.equals("&") || op.equals("|") || op.equals("^") || op.equals(">>>") || op.equals("<<<"))
+					|| op.equals("&") || op.equals("|") || op.equals("^") || op.equals(">>>") || op.equals("<<<") || op.equals("=="))
 				is_valid = true;
 		}
 		else if(type_1.equals("double") && type_2.equals("double")) {
 			if(op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/") ||
-					op.equals("==") || op.equals("!=") || op.equals(">") || op.equals("<") || op.equals("<=")
+					op.equals("!=") || op.equals(">") || op.equals("<") || op.equals("<=")
 					|| op.equals(">="))
 				is_valid = true;
 		}

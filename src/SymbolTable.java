@@ -34,6 +34,10 @@ public class SymbolTable {
 		all_types.put(typename, true);
 	}
 
+	boolean type_exists(String typename) {
+		return all_types.containsKey(typename);
+	}
+
 	boolean name_exists_in_scope(String name, String scope_name) {
 		if(scope_name.equals("global")) {
 			String type = global_name_scope_map.get(name);
