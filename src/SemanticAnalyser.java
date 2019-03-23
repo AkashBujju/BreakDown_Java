@@ -32,6 +32,10 @@ public class SemanticAnalyser {
 		func_name_args = new ArrayList<>();
 		error_log = new ErrorLog();
 
+	}
+
+	public void start() throws FileNotFoundException {
+		// Filling in func_name_args
 		int count = 0;
 		for(Info i: infos) {
 			if(i.info_type == InfoType.FUNCTION) {
@@ -40,27 +44,26 @@ public class SemanticAnalyser {
 				FuncNameArgs func_name_arg = new FuncNameArgs();
 				func_name_arg.name = func_info.name;
 				func_name_arg.return_type = func_info.return_type;
+				String scope_name = "_" + func_info.id;
 
 				List<String> var_arg_types = new ArrayList<>();
-				for(VarDeclInfo var: func_info.var_args)
-					var_arg_types.add(var.type);
+				for(VarDeclInfo var: func_info.var_args) {
+					int res = eval_var_decl(var, scope_name);
+					if(res == -1)
+						return;
+
+					String type = symbol_table.get_type(var.name, scope_name);
+					var_arg_types.add(type);
+				}
 
 				func_name_arg.arg_types = var_arg_types;
 				func_name_args.add(func_name_arg);
-
-				/*
-				System.out.println("name: " + func_name_arg.name);
-				System.out.println("return_type: " + func_name_arg.return_type);
-				System.out.println("arg_types: " + func_name_arg.arg_types);
-				System.out.println();
-				*/
 			}
 
 			count += 1;
 		}
-	}
 
-	public void start() throws FileNotFoundException {
+		// Actual start
 		for(int i = 0; i < infos.size(); ++i) {
 			Info info = infos.get(i);	
 			int error_res = 0;
@@ -151,15 +154,7 @@ public class SemanticAnalyser {
 		List<Info> infos = func_info.infos;
 		int current_scope = 0;
 		String scope_name = "_" + (func_info.id);
-
-		// Adding function args to symbol table.
-		int var_args_len = func_info.var_args.size();
-		for(int i = 0; i < var_args_len; ++i) {
-			VarDeclInfo var_decl_info = func_info.var_args.get(i);
-			int res = eval_var_decl(var_decl_info, scope_name);
-			if(res == -1)
-				return -1;
-		}
+		// @Note: Function args already evaluated.
 
 		int infos_len = infos.size();
 		for(int i = 0; i < infos_len; ++i) {
