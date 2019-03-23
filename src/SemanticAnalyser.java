@@ -14,12 +14,17 @@ class FuncNameArgs {
 	String return_type;
 }
 
+class StructVars {
+	List<VarDeclInfo> var_decl_infos;	
+}
+
 public class SemanticAnalyser {
 	List<Info> infos;	
 	SymbolTable symbol_table;
 	List<Integer> func_sig_indices;
 	List<RangeIndices> quotes_range_indices;
 	List<FuncNameArgs> func_name_args;
+	HashMap<String, StructVars> name_structvars_map;
 	ErrorLog error_log;
 	String func_iden = "_func@";
 	String var_iden = "_var@";
@@ -31,7 +36,7 @@ public class SemanticAnalyser {
 		symbol_table = new SymbolTable();
 		func_name_args = new ArrayList<>();
 		error_log = new ErrorLog();
-
+		name_structvars_map = new HashMap<>();
 	}
 
 	public void start() throws FileNotFoundException {
@@ -86,6 +91,20 @@ public class SemanticAnalyser {
 			if(count_errors > 2)
 				return;
 		}
+
+		// @Tmp
+		Set<String> key_set = name_structvars_map.keySet();
+		Iterator<String> it = key_set.iterator();
+		while(it.hasNext()) {
+			String struct_name = it.next();
+			StructVars struct_vars = name_structvars_map.get(struct_name);
+
+			System.out.println("StructName: " + struct_name);
+			for(VarDeclInfo var_decl_info: struct_vars.var_decl_infos) {
+				System.out.println("name: " + var_decl_info.name + ", type: " + var_decl_info.type);
+			}
+			System.out.println();
+		}
 	}
 
 	// @NotKnown: From where does the filepath start from ??????
@@ -131,15 +150,21 @@ public class SemanticAnalyser {
 		List<VarDeclInfo> var_decl_infos = struct_info.var_decl_infos;
 		String scope_name = "_" + struct_info.id;
 
+		StructVars struct_vars = new StructVars();
+
 		for(VarDeclInfo var_decl_info: var_decl_infos) {
 			int res = 0;
 			res = eval_var_decl(var_decl_info, scope_name);
+
+			var_decl_info.type = symbol_table.get_type(var_decl_info.name, scope_name);
 
 			if(res == -1)
 				return -1;
 		}
 
 		symbol_table.add_type(struct_info.name);
+		struct_vars.var_decl_infos = var_decl_infos;
+		name_structvars_map.put(struct_info.name, struct_vars);
 
 		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
 		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
@@ -349,7 +374,7 @@ public class SemanticAnalyser {
 		else {
 			type = symbol_table.get_type(name, scope_name);
 			if(type.indexOf("@array@") != -1) {
-				error_log.push("Cannot modify lvalue '" + name + "'.", name, line_number);
+				error_log.push("Cannot modify lvalue '" + name + "'.", name + " = " + raw_value, line_number);
 				return -1;
 			}
 		}
