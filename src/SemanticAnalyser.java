@@ -242,8 +242,6 @@ public class SemanticAnalyser {
 		List<String> split_value = Util.split_with_ops(exp);
 		List<String> final_exp = new ArrayList<>();
 
-		System.out.println("exp: " + exp);
-
 		int len = split_value.size();
 		int num_func_calls = 0;
 		for(int i = 0; i < len; ++i) {
@@ -300,8 +298,44 @@ public class SemanticAnalyser {
 		String name = var_assign_info.var_name;
 		String raw_value = var_assign_info.raw_value;
 		int line_number = var_assign_info.line_number;
+		String type = "";
 
-		String type = symbol_table.get_type(name, scope_name);
+		// Checking if name is an array call.
+		int indexOf_open = name.indexOf('[');
+		int indexOf_close = name.lastIndexOf(']');
+		if(indexOf_open != -1 && indexOf_close != -1) {
+			String arr_size_str = name.substring(indexOf_open + 1, indexOf_close);
+			if(arr_size_str.length() == 0) {
+				error_log.push("Missing expression for array index for variable '" + name + "'", name, line_number);
+
+				return -1;
+			}
+
+			String arr_size_type = get_type_of_exp(arr_size_str, scope_name, line_number);
+			if(!arr_size_type.equals("int")) {
+				error_log.push("Array index should be of Type 'int', but found '" + arr_size_type + "'.", name, line_number);
+
+				return -1;
+			}
+
+			String broken_name = name.substring(0, indexOf_open);
+			type = symbol_table.get_type(broken_name, scope_name);
+			if(type.equals("not_known")) {
+				error_log.push("Unknown identifier '" + name + "' found.", name, line_number);
+				return -1;
+			}
+
+			type = type.substring(0, type.indexOf("@array@"));
+			System.out.println("type: " + type);
+		}
+		else {
+			type = symbol_table.get_type(name, scope_name);
+			if(type.indexOf("@array@") != -1) {
+				error_log.push("Cannot modify lvalue '" + name + "'.", name, line_number);
+				return -1;
+			}
+		}
+
 		if(type.equals("not_known")) {
 			error_log.push("First occurance of variable '" + name + "'.", name + " = " + raw_value, line_number);
 
@@ -363,7 +397,6 @@ public class SemanticAnalyser {
 			if(split_raw_value.size() > 1 || is_array) { // rhs is an array
 				List<String> split_types = new ArrayList<>();
 				for(String s: split_raw_value) {
-					System.out.println("split_value: " + s);
 					split_types.add(get_type_of_exp(s, scope_name, line_number));
 				}
 
@@ -439,7 +472,7 @@ public class SemanticAnalyser {
 	String get_type_of_one_exp(String s, int line_number, String scope_name) {
 		// @Note: Checking if it's an array call.
 		int indexOf_open = s.indexOf('[');
-		int indexOf_close = s.indexOf(']');
+		int indexOf_close = s.lastIndexOf(']');
 		String arr_size_str = "";
 		boolean is_array = false;
 
@@ -455,7 +488,7 @@ public class SemanticAnalyser {
 		if(is_array) {
 			String arr_size_type = get_type_of_exp(arr_size_str, scope_name, line_number);
 			if(!arr_size_type.equals("int")) {
-				error_log.push("Array index should be an 'int', but found '" + arr_size_type + "'.", " ... " + s + " ... ", line_number);
+				error_log.push("Array index should be of Type 'int', but found '" + arr_size_type + "'.", " ... " + s + " ... ", line_number);
 
 				return "not_known";
 			}
@@ -464,8 +497,6 @@ public class SemanticAnalyser {
 			String type = symbol_table.get_type(var_name, scope_name);
 			// Taking away @array@
 			type = type.substring(0, type.indexOf('@'));
-			System.out.println("type: " + type + ", varname: " + var_name);
-
 			return type;
 		}
 

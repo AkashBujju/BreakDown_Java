@@ -1,5 +1,7 @@
 func main() -> void {
 	arr: int[2] = 1, 2;
+	names_1: string[] = "akash_1", "bujju_2";
+	names_2: string[] = "akash_2", "bujju_3";
 
-	a := arr[1] + 1;
+	names_2[arr[0]] = names_1[0];
 }
