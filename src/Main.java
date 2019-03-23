@@ -74,6 +74,7 @@ public class Main {
 			System.out.println("--------------------------------");
 			System.out.println("Internal Compiler Error !!!!!!!!");
 			System.out.println("What: " + e);
+			e.printStackTrace();
 			System.out.println("--------------------------------");
 		}
 	}

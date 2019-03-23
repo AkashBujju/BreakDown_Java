@@ -72,6 +72,8 @@ public class SemanticAnalyser {
 				error_res = eval_var_decl((VarDeclInfo)(info), "global");
 			else if(info.info_type == InfoType.FUNCTION)
 				error_res = eval_function((FunctionInfo)(info));
+			else if(info.info_type == InfoType.STRUCT)
+				error_res = eval_struct((StructInfo)(info));
 			else {
 				error_log.push("Invalid InfoType found.", info.get_info(), info.line_number);
 			}
@@ -118,6 +120,25 @@ public class SemanticAnalyser {
 			res = eval_var_assign((VarAssignInfo)(info), scope_name);
 
 		return res;
+	}
+
+	// @Incomplete: NOT DONE.
+	// @Incomplete: NOT DONE.
+	private int eval_struct(StructInfo struct_info) {
+		List<VarDeclInfo> var_decl_infos = struct_info.var_decl_infos;
+		String scope_name = struct_info.name + "@struct@";
+
+		for(VarDeclInfo var_decl_info: var_decl_infos) {
+			int res = 0;
+			res = eval_var_decl(var_decl_info, scope_name);
+
+			if(res == -1)
+				return -1;
+		}
+
+		symbol_table.add_type(struct_info.name);
+		
+		return 0;
 	}
 
 	private int eval_function(FunctionInfo func_info) {
@@ -436,6 +457,7 @@ public class SemanticAnalyser {
 			else {
 				final_type = get_type_of_exp(raw_value, scope_name, line_number);
 			}
+
 
 			if(is_array) {
 				if(!symbol_table.type_exists(given_type_name)) {

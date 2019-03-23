@@ -102,6 +102,8 @@ public class SymbolTable {
 				int index_of_underscore = scope_name.lastIndexOf('_');
 				if(index_of_underscore != -1)
 					scope_name = scope_name.substring(0, index_of_underscore);
+				else
+					return "not_known";
 			}
 			else
 				return sv.type;
