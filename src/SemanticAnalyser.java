@@ -324,6 +324,7 @@ public class SemanticAnalyser {
 		boolean is_array = false;
 
 		System.out.println("varname: " + name + ", raw_value: <" + raw_value + ">, scope_name: " + scope_name);
+
 		if(Util.is_typename_array(given_type_name))
 			is_array = true;
 
@@ -348,12 +349,32 @@ public class SemanticAnalyser {
 		}
 		else {
 			// Checking if raw_value is an array.
+			String final_type = "not_known";
+			boolean rhs_is_array = false;
+
 			List<String> split_raw_value = Util.my_split(raw_value, ',');
-			if(split_raw_value.size() > 1) { // rhs is an array
+			if(split_raw_value.size() > 1 || is_array) { // rhs is an array
 				List<String> split_types = new ArrayList<>();
 				for(String s: split_raw_value) {
 					split_types.add(get_type_of_exp(s, scope_name, line_number));
 				}
+
+				int arr_size = 0;
+				if(is_array) {
+					// getting the number inside [].
+					int indexOf_open = given_type_name.indexOf('[');
+					int indexOf_close = given_type_name.indexOf(']');
+					
+					if(indexOf_close != indexOf_open + 1)
+						arr_size = Integer.parseInt(given_type_name.substring(indexOf_open + 1, indexOf_close));
+
+					if(arr_size != 0 && arr_size != split_raw_value.size()) {
+						error_log.push("Array size: '" + arr_size + "' does not match the number of elements in the array '" + name + "'.", name + ": " + given_type_name + " = " + raw_value, line_number);
+
+						return -1;
+					}
+				}
+
 
 				// All the types have to be the same
 				String to_check_type = split_types.get(0);
@@ -367,20 +388,28 @@ public class SemanticAnalyser {
 					}
 				}
 
-				String final_type = to_check_type;
+				rhs_is_array = true;
+
+				final_type = to_check_type;
 				// @Note: appending @array@ to type
 				final_type += "@array@";
-
-				System.out.println("final_type: " + final_type);
+			}
+			else {
+				final_type = get_type_of_exp(raw_value, scope_name, line_number);
 			}
 
-			String final_type = get_type_of_exp(raw_value, scope_name, line_number);
+			if(is_array) {
+				given_type_name = Util.get_array_typename(given_type_name);
+				// @Note: appending @array@ to type
+				given_type_name += "@array@";
+			}
 
 			if(!given_type_name.equals("not_known") && !final_type.equals(given_type_name)) {
 				error_log.push("Declared type '" + given_type_name + "' does not match with deduced type '" + final_type + "' in variable '" + name + "'.", name + ": " + given_type_name + " = " + raw_value, line_number);
 
 				return -1;
 			}
+
 
 			if(scope_name.equals("global"))
 				symbol_table.add_global(var_decl_info.name, final_type);
