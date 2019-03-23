@@ -326,7 +326,6 @@ public class SemanticAnalyser {
 			}
 
 			type = type.substring(0, type.indexOf("@array@"));
-			System.out.println("type: " + type);
 		}
 		else {
 			type = symbol_table.get_type(name, scope_name);
@@ -495,6 +494,11 @@ public class SemanticAnalyser {
 
 			String var_name = s.substring(0, indexOf_open);
 			String type = symbol_table.get_type(var_name, scope_name);
+			if(type.equals("not_known")) {
+				error_log.push("Unknown identifier '" + var_name + "' found.", var_name, line_number);
+				return "not_known";
+			}
+
 			// Taking away @array@
 			type = type.substring(0, type.indexOf('@'));
 			return type;
