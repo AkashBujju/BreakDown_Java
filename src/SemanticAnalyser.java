@@ -242,6 +242,8 @@ public class SemanticAnalyser {
 		List<String> split_value = Util.split_with_ops(exp);
 		List<String> final_exp = new ArrayList<>();
 
+		System.out.println("exp: " + exp);
+
 		int len = split_value.size();
 		int num_func_calls = 0;
 		for(int i = 0; i < len; ++i) {
@@ -260,7 +262,7 @@ public class SemanticAnalyser {
 				}
 				else {
 					String var_type = symbol_table.get_type(s, scope_name);
-					type = get_type_of_exp(s, line_number, false, scope_name);
+					type = get_type_of_one_exp(s, line_number, scope_name);
 
 					// We need to know if 's' is name of a variable, so that we can append '_var@' to it.
 					if(!var_type.equals("not_known")) {
@@ -339,23 +341,29 @@ public class SemanticAnalyser {
 		}
 
 		if(raw_value.equals("")) { // It's just a declaration
-			String final_type = var_decl_info.type;
-			if(!symbol_table.type_exists(final_type)) {
-				error_log.push("Type '" + final_type + "' does not exist.", name + ": " + final_type, line_number);
+			if(!symbol_table.type_exists(given_type_name)) {
+				error_log.push("Type '" + given_type_name + "' does not exist.", name + ": " + given_type_name, line_number);
 				return -1;
 			}
 
-			symbol_table.add(name, final_type, scope_name);
+			if(is_array) {
+				given_type_name = Util.get_array_typename(given_type_name);
+				// @Note: appending @array@ to type
+				given_type_name += "@array@";
+			}
+
+			symbol_table.add(name, given_type_name, scope_name);
 		}
 		else {
 			// Checking if raw_value is an array.
 			String final_type = "not_known";
 			boolean rhs_is_array = false;
 
-			List<String> split_raw_value = Util.my_split(raw_value, ',');
+			List<String> split_raw_value = Util.split_array(raw_value);
 			if(split_raw_value.size() > 1 || is_array) { // rhs is an array
 				List<String> split_types = new ArrayList<>();
 				for(String s: split_raw_value) {
+					System.out.println("split_value: " + s);
 					split_types.add(get_type_of_exp(s, scope_name, line_number));
 				}
 
@@ -368,13 +376,12 @@ public class SemanticAnalyser {
 					if(indexOf_close != indexOf_open + 1)
 						arr_size = Integer.parseInt(given_type_name.substring(indexOf_open + 1, indexOf_close));
 
-					if(arr_size != 0 && arr_size != split_raw_value.size()) {
+					if(arr_size != 0 && arr_size < split_raw_value.size()) {
 						error_log.push("Array size: '" + arr_size + "' does not match the number of elements in the array '" + name + "'.", name + ": " + given_type_name + " = " + raw_value, line_number);
 
 						return -1;
 					}
 				}
-
 
 				// All the types have to be the same
 				String to_check_type = split_types.get(0);
@@ -399,6 +406,10 @@ public class SemanticAnalyser {
 			}
 
 			if(is_array) {
+				if(!symbol_table.type_exists(given_type_name)) {
+					error_log.push("Type '" + given_type_name + "' does not exist.", name + ": " + given_type_name, line_number);
+					return -1;
+				}
 				given_type_name = Util.get_array_typename(given_type_name);
 				// @Note: appending @array@ to type
 				given_type_name += "@array@";
@@ -410,13 +421,11 @@ public class SemanticAnalyser {
 				return -1;
 			}
 
-
 			if(scope_name.equals("global"))
 				symbol_table.add_global(var_decl_info.name, final_type);
 			else
 				symbol_table.add(var_decl_info.name, final_type, scope_name);
 		}
-
 
 		// Checking of the variable was added correctly.
 		String in_table_type = symbol_table.get_type(name, scope_name);
@@ -426,23 +435,45 @@ public class SemanticAnalyser {
 		return  0;
 	}
 
-	String get_type_of_exp(String s, int line_number, boolean contains_only_types, String scope_name) {
-		List<String> in_list = Util.split_with_ops(s);
-		List<String> out_list = InfixToPostFix.infixToPostFix(in_list);
+	// @Note: 's' should contain just one value(literal \ variable).
+	String get_type_of_one_exp(String s, int line_number, String scope_name) {
+		// @Note: Checking if it's an array call.
+		int indexOf_open = s.indexOf('[');
+		int indexOf_close = s.indexOf(']');
+		String arr_size_str = "";
+		boolean is_array = false;
 
-		EvalExp eval_exp = new EvalExp(out_list, func_iden, var_iden);
-		MsgType msg_type = null;
-		if(contains_only_types)
-			msg_type = eval_exp.deduce_final_type_from_types(symbol_table, scope_name);
-		else
-			msg_type = eval_exp.deduce_final_type(symbol_table, scope_name);
+		if(indexOf_open != -1 && s.charAt(0) != '\"') { // It should'nt be a string
+			arr_size_str = s.substring(indexOf_open + 1, indexOf_close);
+			if(arr_size_str.length() == 0) {
+				error_log.push("Missing array index ... ? ...", s, line_number);
+				return "not_known";
+			}
 
-		if(msg_type.msg.equals("none"))
-			return msg_type.type;
-		else
-			error_log.push(msg_type.msg, s, line_number);
+			is_array = true;
+		}
+		if(is_array) {
+			String arr_size_type = get_type_of_exp(arr_size_str, scope_name, line_number);
+			if(!arr_size_type.equals("int")) {
+				error_log.push("Array index should be an 'int', but found '" + arr_size_type + "'.", " ... " + s + " ... ", line_number);
 
-		return msg_type.type;
+				return "not_known";
+			}
+
+			String var_name = s.substring(0, indexOf_open);
+			String type = symbol_table.get_type(var_name, scope_name);
+			// Taking away @array@
+			type = type.substring(0, type.indexOf('@'));
+			System.out.println("type: " + type + ", varname: " + var_name);
+
+			return type;
+		}
+
+		String type = Util.get_primitive_type(s);
+		if(!type.equals("not_known"))
+			return type;
+
+		return symbol_table.get_type(s, scope_name);
 	}
 
 	String get_type_of_func_call(String s, int line_number, String scope_name) {
@@ -465,7 +496,7 @@ public class SemanticAnalyser {
 			List<RangeIndices> ignore_indices = names_na_indices.range_indices;
 
 			for(String exp: exps) {
-				String type = get_type_of_exp(exp, line_number, false, scope_name);
+				String type = get_type_of_one_exp(exp, line_number, scope_name);
 				String in_table_type = symbol_table.get_type(exp, scope_name);
 
 				if(!in_table_type.equals("not_known")) { 

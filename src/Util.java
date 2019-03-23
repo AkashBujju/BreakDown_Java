@@ -587,6 +587,38 @@ public class Util {
 		return false;
 	}
 
+	static List<String> split_array(String str) {
+		List<String> li = new ArrayList<>();
+		int index_of_prev_ch = 0;
+
+		int quotes_count = 0;
+		int open_braces_count = 0;
+		int close_braces_count = 0;
+		for(int i = 0; i < str.length(); ++i) {
+			char c = str.charAt(i);
+			if(c == '\"')
+				quotes_count++;
+			else if(c == '(')
+				open_braces_count += 1;
+			else if(c == ')')
+				close_braces_count += 1;
+
+			else if(quotes_count % 2 == 0 && open_braces_count == close_braces_count && c == ',') {
+				String s = str.substring(index_of_prev_ch, i);
+				li.add(s);
+
+				index_of_prev_ch = i + 1;
+			}
+		}
+
+		String s = str.substring(index_of_prev_ch);
+		if(!s.equals(""))
+			li.add(s);
+
+		return li;
+
+	}
+
 	static String get_array_typename(String typename) {
 		StringBuffer sb = new StringBuffer(typename);
 		sb = sb.delete(sb.indexOf("["), sb.indexOf("]") + 1);
