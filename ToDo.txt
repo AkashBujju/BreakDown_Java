@@ -1,7 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-  -1) Deal with arrays !!!!
-	0) How to deal strings ?????????????????
+	0) Goto eval_struct in SemanticAnalyzer.java
 
 	1) Take away quotes_range_indices if possible ... There seems to be
 	problems with it !!!!!!!

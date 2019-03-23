@@ -1,9 +1,33 @@
 
-Person::struct {
-	name := "null";
-	age := 0;
-}
+# Person::struct {
+#	name := "null";
+#	age := 0;
+# }
+
+# Student::struct {
+#	person: Person;
+#	usn: string;
+#	marks: int[5];
+# }
 
 func main() -> void {
-	person: Person;
+ 	# person_1: Person = "akash", 20;
+
+	a := 5;
+	marks_1: int[5] = 80, 50, 60, 70, 90;
+	# ptr := >> marks_1;
+
+	# b := foo(marks_1);
+
+	# student_1: Student = person_1, "001", marks_1;
+	
+	b: int[];
+}
+
+func foo_2(a: int) -> int {
+	b := a;
+}
+
+func foo_1(a: int[]) -> int {
+
 }

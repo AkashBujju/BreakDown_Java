@@ -85,12 +85,14 @@ public class SyntaxAnalyser {
 				res = validate_use(i);
 				encountered_use = true;
 			}
-			else
+			else {
 				num_errors += 1;
+			}
 
 			if(res != null) {
 				i = res.return_value;
 				infos.add(res.info);
+				num_errors = 0;
 			}
 			else
 				num_errors += 1;
@@ -286,7 +288,7 @@ public class SyntaxAnalyser {
 				return null;
 			}
 
-			VarDeclInfo var_info = new VarDeclInfo(arg_name, arg_type, "not_initialised", id_line.get(func_seq_info.id), id_count++);
+			VarDeclInfo var_info = new VarDeclInfo(arg_name, arg_type, "", id_line.get(func_seq_info.id), id_count++);
 			var_args.add(var_info);
 		}
 

@@ -73,7 +73,7 @@ public class SemanticAnalyser {
 			else if(info.info_type == InfoType.FUNCTION)
 				error_res = eval_function((FunctionInfo)(info));
 			else if(info.info_type == InfoType.STRUCT)
-				error_res = eval_struct((StructInfo)(info));
+				error_res = eval_struct((StructInfo)(info), i);
 			else {
 				error_log.push("Invalid InfoType found.", info.get_info(), info.line_number);
 			}
@@ -124,9 +124,9 @@ public class SemanticAnalyser {
 
 	// @Incomplete: NOT DONE.
 	// @Incomplete: NOT DONE.
-	private int eval_struct(StructInfo struct_info) {
+	private int eval_struct(StructInfo struct_info, int i) {
 		List<VarDeclInfo> var_decl_infos = struct_info.var_decl_infos;
-		String scope_name = struct_info.name + "@struct@";
+		String scope_name = "_" + struct_info.id;
 
 		for(VarDeclInfo var_decl_info: var_decl_infos) {
 			int res = 0;
@@ -137,6 +137,12 @@ public class SemanticAnalyser {
 		}
 
 		symbol_table.add_type(struct_info.name);
+
+		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
+		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
+		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
+		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
+		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
 		
 		return 0;
 	}
@@ -150,12 +156,9 @@ public class SemanticAnalyser {
 		int var_args_len = func_info.var_args.size();
 		for(int i = 0; i < var_args_len; ++i) {
 			VarDeclInfo var_decl_info = func_info.var_args.get(i);
-			if(!symbol_table.type_exists(var_decl_info.type)) {
-				error_log.push("Argument type '" + var_decl_info.type + "' does not exist.", var_decl_info.type, func_info.line_number);
+			int res = eval_var_decl(var_decl_info, scope_name);
+			if(res == -1)
 				return -1;
-			}
-
-			symbol_table.add(var_decl_info.name, var_decl_info.type, scope_name);
 		}
 
 		int infos_len = infos.size();
@@ -401,6 +404,13 @@ public class SemanticAnalyser {
 			}
 
 			if(is_array) {
+				int indexOf_open = given_type_name.indexOf('[');
+				int indexOf_close = given_type_name.indexOf(']');
+				if(indexOf_close == indexOf_open + 1) {
+					error_log.push("Incomplete Type '" + given_type_name + "' found.", given_type_name, line_number);
+					return -1;
+				}
+
 				given_type_name = Util.get_array_typename(given_type_name);
 				// @Note: appending @array@ to type
 				given_type_name += "@array@";
@@ -425,7 +435,7 @@ public class SemanticAnalyser {
 					// getting the number inside [].
 					int indexOf_open = given_type_name.indexOf('[');
 					int indexOf_close = given_type_name.indexOf(']');
-					
+
 					if(indexOf_close != indexOf_open + 1)
 						arr_size = Integer.parseInt(given_type_name.substring(indexOf_open + 1, indexOf_close));
 
@@ -456,8 +466,11 @@ public class SemanticAnalyser {
 			}
 			else {
 				final_type = get_type_of_exp(raw_value, scope_name, line_number);
+				if(final_type.indexOf("@array@") !=  -1) {
+					error_log.push("Language dosen't allow pointers to arrays, ie. to '" + raw_value + "'.", raw_value, line_number);
+					return -1;
+				}
 			}
-
 
 			if(is_array) {
 				if(!symbol_table.type_exists(given_type_name)) {
@@ -530,7 +543,9 @@ public class SemanticAnalyser {
 		if(!type.equals("not_known"))
 			return type;
 
-		return symbol_table.get_type(s, scope_name);
+		type = symbol_table.get_type(s, scope_name);
+
+		return type;
 	}
 
 	String get_type_of_func_call(String s, int line_number, String scope_name) {
