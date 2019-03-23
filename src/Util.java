@@ -493,21 +493,22 @@ public class Util {
 		}
 
 		// Normal single variable type.
-		boolean is_valid = true;
+		boolean is_valid_var_name = true;
 		for(int i = 1; i < len; ++i) {
 			char c = type.charAt(i);
 			if(!is_char_alpha_digit_underscore(c)) {
-				for(int j = i + 1; j < len; ++j) {
+				for(int j = i; j < len; ++j) {
 					char c2 = type.charAt(j);
 					if(c2 != '*') {
-						is_valid = false;
+						is_valid_var_name = false;
 						break;
 					}
 				}
 			}
 		}
 
-		if(is_valid)
+
+		if(is_valid_var_name)
 			return true;
 
 		// Checking if its an array.
@@ -577,6 +578,20 @@ public class Util {
 		}
 
 		return true;
+	}
+
+	static boolean is_typename_array(String typename) {
+		if(typename.indexOf('[') != -1 && typename.indexOf(']') != -1)
+			return true;
+
+		return false;
+	}
+
+	static String get_array_typename(String typename) {
+		StringBuffer sb = new StringBuffer(typename);
+		sb = sb.delete(sb.indexOf("["), sb.indexOf("]") + 1);
+
+		return sb.toString();
 	}
 
 	static boolean is_valid_primitive_type(String type, List<String> all_types) {

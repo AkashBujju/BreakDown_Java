@@ -321,6 +321,11 @@ public class SemanticAnalyser {
 		String name = var_decl_info.name;
 		String given_type_name = var_decl_info.type;
 		int line_number = var_decl_info.line_number;
+		boolean is_array = false;
+
+		System.out.println("varname: " + name + ", raw_value: <" + raw_value + ">, scope_name: " + scope_name);
+		if(Util.is_typename_array(given_type_name))
+			is_array = true;
 
 		if(symbol_table.type_exists(name)) {
 			error_log.push("Name '" + name + "' is a name of a Type and cannot be used.", name + " ... ", line_number);
@@ -342,6 +347,33 @@ public class SemanticAnalyser {
 			symbol_table.add(name, final_type, scope_name);
 		}
 		else {
+			// Checking if raw_value is an array.
+			List<String> split_raw_value = Util.my_split(raw_value, ',');
+			if(split_raw_value.size() > 1) { // rhs is an array
+				List<String> split_types = new ArrayList<>();
+				for(String s: split_raw_value) {
+					split_types.add(get_type_of_exp(s, scope_name, line_number));
+				}
+
+				// All the types have to be the same
+				String to_check_type = split_types.get(0);
+				for(int i = 0; i < split_types.size(); ++i) {
+					String rw = split_raw_value.get(i);
+					String t = split_types.get(i);
+
+					if(!t.equals(to_check_type)) {
+						error_log.push("Not all expressions deduce to the same type in the array '" + name + "', " + rw + " -> '" + t + "'.", name + " ... = " + raw_value, line_number);
+						return -1;
+					}
+				}
+
+				String final_type = to_check_type;
+				// @Note: appending @array@ to type
+				final_type += "@array@";
+
+				System.out.println("final_type: " + final_type);
+			}
+
 			String final_type = get_type_of_exp(raw_value, scope_name, line_number);
 
 			if(!given_type_name.equals("not_known") && !final_type.equals(given_type_name)) {
@@ -356,7 +388,6 @@ public class SemanticAnalyser {
 				symbol_table.add(var_decl_info.name, final_type, scope_name);
 		}
 
-		System.out.println("varname: " + name + ", raw_value: <" + raw_value + ">, scope_name: " + scope_name);
 
 		// Checking of the variable was added correctly.
 		String in_table_type = symbol_table.get_type(name, scope_name);
