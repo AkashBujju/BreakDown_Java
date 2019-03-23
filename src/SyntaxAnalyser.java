@@ -113,7 +113,7 @@ public class SyntaxAnalyser {
 				error_log.push("Invalid sequence '" + si.str + "' found.", si.str, id_line.get(si.id));
 			}
 
-			if(count > 10)
+			if(count > 2)
 				break;
 		}
 

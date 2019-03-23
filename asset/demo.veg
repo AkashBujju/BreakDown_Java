@@ -1,3 +1,9 @@
+
+Person::struct {
+	name := "null";
+	age := 0;
+}
+
 func main() -> void {
 	arr: int[2] = 1, 2;
 	names_1: string[] = "akash_1", "bujju_2";
