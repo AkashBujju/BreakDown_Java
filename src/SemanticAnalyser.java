@@ -154,7 +154,27 @@ public class SemanticAnalyser {
 			int res = 0;
 			res = eval_var_decl(var_decl_info, scope_name);
 
-			var_decl_info.type = symbol_table.get_type(var_decl_info.name, scope_name);
+			String type = symbol_table.get_type(var_decl_info.name, scope_name);
+			// Checking if type is an array
+			if(type.indexOf("@array@") != -1) {
+				if(var_decl_info.type.equals("not_known")) {
+					error_log.push("Array's 'type and size' needed for array '" + var_decl_info.name + "' inside struct '" + struct_info.name + "'", var_decl_info.name + " := " + var_decl_info.raw_value, var_decl_info.line_number);
+
+					return -1;
+				}
+				else { // Array size has to be present
+					int indexOf_open = var_decl_info.type.indexOf('[');
+					int indexOf_close = var_decl_info.type.lastIndexOf(']');
+					String arr_size_str = var_decl_info.type.substring(indexOf_open + 1, indexOf_close);
+					if(arr_size_str.length() == 0) {
+						error_log.push("Array bounds/size cannot be deduced inside struct '" + struct_info.name + "' for array '" + var_decl_info.name + "'", var_decl_info.name + " ... " + var_decl_info.raw_value, var_decl_info.line_number);
+
+						return -1;
+					}
+				}
+			}
+
+			var_decl_info.type = type;
 
 			if(res == -1)
 				return -1;
@@ -197,7 +217,7 @@ public class SemanticAnalyser {
 			if(res == -1)
 				return -1;
 		}
-		
+
 		return 0;
 	}
 
@@ -406,6 +426,12 @@ public class SemanticAnalyser {
 
 			if(!vdi.type.equals(split_str_type)) {
 				error_log.push("Type mismatch, needed '" + vdi.type + "', given '" + split_str_type + "' at argument number '" + i + "'.", raw_value, line_number);
+				return -1;
+			}
+
+			if(split_str_type.indexOf("@array@") != -1) {
+				String actual_type = split_str_type.substring(0, split_str_type.indexOf("@array@"));
+				error_log.push("Cannot convert '" + split_str + "' of type '" + split_str_type + "' to '" + actual_type + "' at argument number '" + i + "'.", raw_value, line_number);
 				return -1;
 			}
 

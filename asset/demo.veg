@@ -7,13 +7,13 @@ Person::struct {
 Student::struct {
 	person: Person;
 	usn: string;
-	marks: int[5];
+	marks: int[3] = 1, 2, 3;
 }
 
 func main() -> void {
 	person: Person = "jay", 2;
 
-	marks: int[5] = 80, 90, 75, 30, 55;
+	marks := 80, 90, 75, 30, 55;
 	student: Student = person, "001", marks;
 }
 
