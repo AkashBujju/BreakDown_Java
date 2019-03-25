@@ -7,15 +7,16 @@ Person::struct {
 Student::struct {
 	person: Person;
 	usn: string;
-	marks: int[3];
-	height := 0;
+	marks: int[2] = 1, 2;
+	height := 0.0;
+	weight := 0.0;
 }
 
 func main() -> void {
 	person: Person = "jay", 2;
 
 	marks := 80, 90, 75, 30, 55;
-	student: Student = person, "001", 2, 3, 4, 5;
+	student: Student = person, "001", 2, 3;
 }
 
 func foo_1(a: int[5]) -> int {

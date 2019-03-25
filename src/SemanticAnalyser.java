@@ -171,14 +171,15 @@ public class SemanticAnalyser {
 					int indexOf_open = var_decl_info.type.indexOf('[');
 					int indexOf_close = var_decl_info.type.lastIndexOf(']');
 					String arr_size_str = var_decl_info.type.substring(indexOf_open + 1, indexOf_close);
-					int arr_size = Integer.parseInt(arr_size_str);
-					max_vars = max_vars + arr_size;
 
 					if(arr_size_str.length() == 0) {
 						error_log.push("Array bounds/size cannot be deduced inside struct '" + struct_info.name + "' for array '" + var_decl_info.name + "'", var_decl_info.name + " ... " + var_decl_info.raw_value, var_decl_info.line_number);
 
 						return -1;
 					}
+
+					int arr_size = Integer.parseInt(arr_size_str);
+					max_vars = max_vars + arr_size;
 				}
 			}
 			else
@@ -431,7 +432,7 @@ public class SemanticAnalyser {
 		int split_len = split_raw_value.size();
 		int struct_vars_len = struct_vars.var_decl_infos.size();
 		if(split_len > struct_vars.max_vars) {
-			error_log.push("Number of struct arguments on LHS ie. '" + split_len + "' exceeds the number of Max struct arguments ie. '" + struct_vars_len + "' for struct '" + type + "'.", raw_value, line_number);
+			error_log.push("Number of struct arguments on RHS ie. '" + split_len + "' exceeds the number of Max struct arguments ie. '" + struct_vars.max_vars + "' for struct '" + type + "'.", raw_value, line_number);
 
 			return -1;
 		}
@@ -466,7 +467,7 @@ public class SemanticAnalyser {
 			}
 
 			else if(!vdi.type.equals(split_str_type)) {
-				error_log.push("Type mismatch, needed '" + vdi.type + "', given expression '" + split_str + "' of type '" + split_str_type + "' at argument number '" + i + "'.", raw_value, line_number);
+				error_log.push("Type mismatch, needed '" + vdi.type + "', but given expression '" + split_str + "' of type '" + split_str_type + "' at argument number '" + split_value_index + "'.", raw_value, line_number);
 				return -1;
 			}
 
@@ -492,6 +493,11 @@ public class SemanticAnalyser {
 		int line_number = var_decl_info.line_number;
 		boolean is_array = false;
 
+		if(symbol_table.name_exists_in_scope(name, scope_name)) {
+			error_log.push("Variable with name <" + name + "> already exists within current scope <" + scope_name + ">", name, line_number);
+			return -1;
+		}
+
 		System.out.println("varname: " + name + ", raw_value: <" + raw_value + ">, scope_name: " + scope_name);
 
 		// Checking if it's a user defined type.
@@ -513,11 +519,6 @@ public class SemanticAnalyser {
 
 		if(symbol_table.type_exists(name)) {
 			error_log.push("Name '" + name + "' is a name of a Type and cannot be used.", name + " ... ", line_number);
-			return -1;
-		}
-
-		if(symbol_table.name_exists_in_scope(name, scope_name)) {
-			error_log.push("Variable with name <" + name + "> already exists within current scope <" + scope_name + ">", name, line_number);
 			return -1;
 		}
 
