@@ -16,6 +16,8 @@ class FuncNameArgs {
 
 class StructVars {
 	List<VarDeclInfo> var_decl_infos;	
+	List<String> actual_types;
+	int max_vars = 0;
 }
 
 public class SemanticAnalyser {
@@ -149,10 +151,13 @@ public class SemanticAnalyser {
 		String scope_name = "_" + struct_info.id;
 
 		StructVars struct_vars = new StructVars();
+		List<String> actual_types = new ArrayList<>();
+		int max_vars = 0;
 
 		for(VarDeclInfo var_decl_info: var_decl_infos) {
 			int res = 0;
 			res = eval_var_decl(var_decl_info, scope_name);
+			actual_types.add(var_decl_info.type);
 
 			String type = symbol_table.get_type(var_decl_info.name, scope_name);
 			// Checking if type is an array
@@ -166,6 +171,9 @@ public class SemanticAnalyser {
 					int indexOf_open = var_decl_info.type.indexOf('[');
 					int indexOf_close = var_decl_info.type.lastIndexOf(']');
 					String arr_size_str = var_decl_info.type.substring(indexOf_open + 1, indexOf_close);
+					int arr_size = Integer.parseInt(arr_size_str);
+					max_vars = max_vars + arr_size;
+
 					if(arr_size_str.length() == 0) {
 						error_log.push("Array bounds/size cannot be deduced inside struct '" + struct_info.name + "' for array '" + var_decl_info.name + "'", var_decl_info.name + " ... " + var_decl_info.raw_value, var_decl_info.line_number);
 
@@ -173,6 +181,8 @@ public class SemanticAnalyser {
 					}
 				}
 			}
+			else
+				max_vars += 1;
 
 			var_decl_info.type = type;
 
@@ -182,6 +192,8 @@ public class SemanticAnalyser {
 
 		symbol_table.add_type(struct_info.name);
 		struct_vars.var_decl_infos = var_decl_infos;
+		struct_vars.actual_types = actual_types;
+		struct_vars.max_vars = max_vars;
 		name_structvars_map.put(struct_info.name, struct_vars);
 
 		return 0;
@@ -418,14 +430,43 @@ public class SemanticAnalyser {
 
 		int split_len = split_raw_value.size();
 		int struct_vars_len = struct_vars.var_decl_infos.size();
+		if(split_len > struct_vars.max_vars) {
+			error_log.push("Number of struct arguments on LHS ie. '" + split_len + "' exceeds the number of Max struct arguments ie. '" + struct_vars_len + "' for struct '" + type + "'.", raw_value, line_number);
+
+			return -1;
+		}
+
 		int i = 0;
-		while(i < struct_vars_len && i < split_len) {
-			String split_str = split_raw_value.get(i);
+		int split_value_index = 0;
+		while(i < struct_vars_len && split_value_index < split_len) {
+			String split_str = split_raw_value.get(split_value_index);
 			VarDeclInfo vdi = struct_vars.var_decl_infos.get(i);
 			String split_str_type = get_type_of_exp(split_str, scope_name, line_number);
 
-			if(!vdi.type.equals(split_str_type)) {
-				error_log.push("Type mismatch, needed '" + vdi.type + "', given '" + split_str_type + "' at argument number '" + i + "'.", raw_value, line_number);
+			if(vdi.type.indexOf("@array@") != -1) {
+				String actual_type = struct_vars.actual_types.get(i);				
+				String arr_size_str = actual_type.substring(actual_type.indexOf('[') + 1, actual_type.lastIndexOf(']'));
+				String array_type = vdi.type.substring(0, vdi.type.indexOf("@array@"));
+
+				int _arr_size = Integer.parseInt(arr_size_str);
+				int j = 0;
+				while(j < _arr_size && split_value_index < split_len) {
+					String arr_val_str = split_raw_value.get(split_value_index);
+					String arr_type = get_type_of_exp(arr_val_str, scope_name, line_number);
+					if(!arr_type.equals(array_type)) {
+						error_log.push("Type mismatch at argument number '" + (split_value_index) + "' of expression '" + arr_val_str +  "', needed Type '" + array_type + "' for the array '" + vdi.name + "' but found Type '" + arr_type + "'.", raw_value, line_number);
+
+						return -1;
+					}
+
+					j = j + 1;
+					split_value_index += 1;
+				}
+				split_value_index -= 1;
+			}
+
+			else if(!vdi.type.equals(split_str_type)) {
+				error_log.push("Type mismatch, needed '" + vdi.type + "', given expression '" + split_str + "' of type '" + split_str_type + "' at argument number '" + i + "'.", raw_value, line_number);
 				return -1;
 			}
 
@@ -436,6 +477,7 @@ public class SemanticAnalyser {
 			}
 
 			i = i + 1;
+			split_value_index += 1;
 		}
 
 		symbol_table.add(name, type, scope_name);

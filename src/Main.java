@@ -71,8 +71,8 @@ public class Main {
 		}
 		catch (Exception e) {
 			System.out.println();
+			System.out.println("INTERNAL COMPILER ERROR !!!!!!");
 			System.out.println("--------------------------------");
-			System.out.println("Internal Compiler Error !!!!!!!!");
 			System.out.println("What: " + e);
 			e.printStackTrace();
 			System.out.println("--------------------------------");
