@@ -144,8 +144,6 @@ public class SemanticAnalyser {
 		return res;
 	}
 
-	// @Incomplete: NOT DONE.
-	// @Incomplete: NOT DONE.
 	private int eval_struct(StructInfo struct_info, int i) {
 		List<VarDeclInfo> var_decl_infos = struct_info.var_decl_infos;
 		String scope_name = "_" + struct_info.id;
@@ -166,12 +164,6 @@ public class SemanticAnalyser {
 		struct_vars.var_decl_infos = var_decl_infos;
 		name_structvars_map.put(struct_info.name, struct_vars);
 
-		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
-		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
-		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
-		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
-		// @Incomplete: Update the infos with the new List<VarDeclInfo> ...
-		
 		return 0;
 	}
 
@@ -395,6 +387,36 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
+	private int eval_udt_decl(VarDeclInfo var_decl_info, String scope_name) {
+		String raw_value = var_decl_info.raw_value;	
+		String name = var_decl_info.name;
+		String type = var_decl_info.type;
+		int line_number = var_decl_info.line_number;
+
+		StructVars struct_vars = name_structvars_map.get(type);
+		List<String> split_raw_value = Util.split_array(raw_value);
+
+		int split_len = split_raw_value.size();
+		int struct_vars_len = struct_vars.var_decl_infos.size();
+		int i = 0;
+		while(i < struct_vars_len && i < split_len) {
+			String split_str = split_raw_value.get(i);
+			VarDeclInfo vdi = struct_vars.var_decl_infos.get(i);
+			String split_str_type = get_type_of_exp(split_str, scope_name, line_number);
+
+			if(!vdi.type.equals(split_str_type)) {
+				error_log.push("Type mismatch, needed '" + vdi.type + "', given '" + split_str_type + "' at argument number '" + i + "'.", raw_value, line_number);
+				return -1;
+			}
+
+			i = i + 1;
+		}
+
+		symbol_table.add(name, type, scope_name);
+
+		return 0;
+	}
+
 	private int eval_var_decl(VarDeclInfo var_decl_info, String scope_name) {
 		String raw_value = var_decl_info.raw_value;
 		String name = var_decl_info.name;
@@ -403,6 +425,20 @@ public class SemanticAnalyser {
 		boolean is_array = false;
 
 		System.out.println("varname: " + name + ", raw_value: <" + raw_value + ">, scope_name: " + scope_name);
+
+		// Checking if it's a user defined type.
+		boolean userdefined_type = name_structvars_map.containsKey(var_decl_info.type);
+		if(userdefined_type && !raw_value.equals("")) {
+			int res = eval_udt_decl(var_decl_info, scope_name);
+			if(res == -1)
+				return res;
+
+			String in_table_type = symbol_table.get_type(name, scope_name);
+			System.out.println("IN_TABLE_TYPE <" + in_table_type + ">");
+			System.out.println();
+
+			return 0;
+		}
 
 		if(Util.is_typename_array(given_type_name))
 			is_array = true;

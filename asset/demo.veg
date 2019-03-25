@@ -11,7 +11,10 @@ Student::struct {
 }
 
 func main() -> void {
-	person: Person;
+	person: Person = "jay", 2;
+
+	marks: int[5] = 80, 90, 75, 30, 55;
+	student: Student = person, "001", marks;
 }
 
 func foo_1(a: int[5]) -> int {

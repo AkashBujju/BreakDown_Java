@@ -60,8 +60,6 @@ public class SymbolTable {
 		if(sv == null)
 			return false;
 
-		System.out.println("yes");
-
 		return true;
 	}
 
