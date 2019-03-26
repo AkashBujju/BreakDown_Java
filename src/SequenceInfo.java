@@ -362,6 +362,17 @@ class SequenceTypeInfo {
 
 		if(!Util.is_char_alpha_digit_underscore(s.charAt(0)))
 			return false;
+		
+		int len = s.length();
+		for(int i = 1; i < len; ++i) {
+			char ch = s.charAt(i);
+			if(Util.is_char_alpha_digit_underscore(ch)) {}
+			else if(ch != '(')
+				return false;
+			else
+				break;
+			
+		}
 
 		int index_of_arrow = s.indexOf("->");
 		if(index_of_arrow != -1)

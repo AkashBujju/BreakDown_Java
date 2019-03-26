@@ -306,7 +306,7 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	// @Note: Don't use this function for exp's with split size == 1. It has to be big.
+	// @Note: Don't use this function for exp's with split size == 1. It has to be size > 1.
 	private String get_type_of_exp(String exp, String scope_name, int line_number) {
 		List<String> split_value = Util.split_with_ops(exp);
 		List<String> final_exp = new ArrayList<>();
@@ -330,6 +330,10 @@ public class SemanticAnalyser {
 				else {
 					String var_type = symbol_table.get_type(s, scope_name);
 					type = get_type_of_one_exp(s, line_number, scope_name);
+					if(type.equals("not_known")) {
+						error_log.push("Unknown Identifier '" + s + "' found.", s, line_number);
+						return "not_known";
+					}
 
 					// We need to know if 's' is name of a variable, so that we can append '_var@' to it.
 					if(!var_type.equals("not_known")) {
@@ -629,6 +633,105 @@ public class SemanticAnalyser {
 
 	// @Note: 's' should contain just one value(literal \ variable).
 	String get_type_of_one_exp(String s, int line_number, String scope_name) {
+		// Checking if it's a double literal. We don't wont that to get split.
+		String tmp_type = Util.get_primitive_type(s);
+		if(!tmp_type.equals("not_known"))
+			return tmp_type;
+
+		List<String> li = Util.split_into_var_names(s);
+		int len = li.size();
+		System.out.println("li: " + li);
+
+		if(len == 1) {
+			String type = get_iden_type(li.get(0), scope_name, line_number);
+			if(type.indexOf("@array@") != -1)
+				type = type.substring(0, type.indexOf("@array@"));
+			return type;
+		}
+
+		String current_op = "";
+		String prev_var = "";
+		String current_var = "";
+		String prev_type = "";
+		String curr_type = "";
+		int num_vars = 0;
+
+		current_var = li.get(0);
+		curr_type = get_iden_type(current_var, scope_name, line_number);
+		if(curr_type.equals("not_known"))
+			return "not_known";
+		boolean is_udt = name_structvars_map.containsKey(curr_type);
+		if(!is_udt) {
+			error_log.push("Type '" + curr_type + "' does not have any data members.", s, line_number);
+			return "not_known";
+		}
+
+		for(int i = 1; i < len; ++i) {
+			String str = li.get(i);
+			System.out.println("str: " + str);
+			if(str.equals("^") || str.equals(".")) {
+				current_op = str;	
+				if(i == len) {
+					error_log.push("Incomplete Call '" + current_op + "' found.", s, line_number);
+					return "not_known";
+				}
+			}
+			else {
+				if(i - 1 < 0) {
+					error_log.push("Invalid Identifier '" + current_op + "' found.", s, line_number);
+					return "not_known";
+				}
+
+				prev_var = li.get(i - 1);
+				current_var = li.get(i);
+				num_vars += 1;
+
+				curr_type = get_iden_type(current_var, scope_name, line_number);
+				prev_type = get_iden_type(prev_var, scope_name, line_number);
+				if(curr_type.equals("not_known") || prev_type.equals("not_known")) {
+					return "not_known";
+				}
+
+				boolean is_pointer_op = current_op.equals("^") ? true : false;
+				if(is_pointer_op) {
+					if(prev_type.indexOf("*") == -1) {
+						error_log.push("Applying pointer operation '^' to non-pointer type.", prev_var + " ^ .....", line_number);
+						return "not_known";
+					}
+				}
+				else {
+					if(prev_type.indexOf("*") != -1) {
+						error_log.push("Applying non-pointer operation '.' to pointer type.", prev_var + ". .....", line_number);
+
+					}
+				}
+				
+				if(curr_type.indexOf("@array@") != -1) {
+					String current_array_type = curr_type.substring(0, curr_type.indexOf("@array@"));
+					StructVars struct_vars = name_structvars_map.get(prev_type);
+					if(!does_var_exist_in_struct(struct_vars, current_var)) {
+						error_log.push("Member '" + current_var + "' does not exist inside struct '" + prev_type + "'.", current_var, line_number);
+
+						return "not_known";
+					}
+					if(i == len)
+						curr_type = current_array_type;
+
+					continue;
+				}
+
+				StructVars struct_vars = name_structvars_map.get(prev_type);
+				if(!does_var_exist_in_struct(struct_vars, current_var)) {
+					error_log.push("Member '" + current_var + "' does not exist inside struct '" + prev_type + "'.", current_var, line_number);
+
+					return "not_known";
+				}
+			}
+		}
+
+		return curr_type;
+
+		/*
 		// @Note: Checking if it's an array call.
 		int indexOf_open = s.indexOf('[');
 		int indexOf_close = s.lastIndexOf(']');
@@ -636,41 +739,42 @@ public class SemanticAnalyser {
 		boolean is_array = false;
 
 		if(indexOf_open != -1 && s.charAt(0) != '\"') { // It should'nt be a string
-			arr_size_str = s.substring(indexOf_open + 1, indexOf_close);
-			if(arr_size_str.length() == 0) {
-				error_log.push("Missing array index ... ? ...", s, line_number);
-				return "not_known";
-			}
+		arr_size_str = s.substring(indexOf_open + 1, indexOf_close);
+		if(arr_size_str.length() == 0) {
+		error_log.push("Missing array index [?] .", s, line_number);
+		return "not_known";
+		}
 
-			is_array = true;
+		is_array = true;
 		}
 		if(is_array) {
-			String arr_size_type = get_type_of_exp(arr_size_str, scope_name, line_number);
-			if(!arr_size_type.equals("int")) {
-				error_log.push("Array index should be of Type 'int', but found '" + arr_size_type + "'.", " ... " + s + " ... ", line_number);
+		String arr_size_type = get_type_of_exp(arr_size_str, scope_name, line_number);
+		if(!arr_size_type.equals("int")) {
+		error_log.push("Array index should be of Type 'int', but found '" + arr_size_type + "'.", " ... " + s + " ... ", line_number);
 
-				return "not_known";
-			}
+		return "not_known";
+		}
 
-			String var_name = s.substring(0, indexOf_open);
-			String type = symbol_table.get_type(var_name, scope_name);
-			if(type.equals("not_known")) {
-				error_log.push("Unknown identifier '" + var_name + "' found.", var_name, line_number);
-				return "not_known";
-			}
+		String var_name = s.substring(0, indexOf_open);
+		String type = symbol_table.get_type(var_name, scope_name);
+		if(type.equals("not_known")) {
+		error_log.push("Unknown identifier '" + var_name + "' found.", var_name, line_number);
+		return "not_known";
+		}
 
-			// Taking away @array@
-			type = type.substring(0, type.indexOf('@'));
-			return type;
+// Taking away @array@
+type = type.substring(0, type.indexOf('@'));
+return type;
 		}
 
 		String type = Util.get_primitive_type(s);
 		if(!type.equals("not_known"))
-			return type;
+		return type;
 
 		type = symbol_table.get_type(s, scope_name);
 
 		return type;
+		*/
 	}
 
 	String get_type_of_func_call(String s, int line_number, String scope_name) {
@@ -854,5 +958,65 @@ public class SemanticAnalyser {
 		}
 
 		return li;
+	}
+
+	boolean does_var_exist_in_struct(StructVars struct_vars, String varname) {
+		int len = struct_vars.var_decl_infos.size();
+		for(int i = 0; i < len; ++i) {
+			VarDeclInfo var_decl_info = struct_vars.var_decl_infos.get(i);
+			if(varname.equals(var_decl_info.name))
+				return true;
+		}
+
+		return false;
+	}
+
+	String get_iden_type(String s, String scopename, int line_number) {
+		String type = "";
+
+		boolean is_array = s.indexOf('[') != -1 && s.indexOf(']') != -1 ? true : false;
+		if(is_array) {
+			type = get_array_call_type(s, scopename, line_number);
+			return type;
+		}
+
+		type = Util.get_primitive_type(s);
+		if(!type.equals("not_known"))
+			return type;
+
+		type = symbol_table.get_type(s, scopename);
+		if(!type.equals("not_known"))
+			return type;
+
+		error_log.push("Unknown Identifier '" + s + "' found.", s, line_number);
+		return "not_known";
+	}
+
+	String get_array_call_type(String s, String scope_name, int line_number) {
+		int indexOf_open = s.indexOf('[');
+		int indexOf_close = s.lastIndexOf(']');
+		String arr_size_str = "";
+
+		arr_size_str = s.substring(indexOf_open + 1, indexOf_close);
+		if(arr_size_str.length() == 0) {
+			error_log.push("Missing array index [?] .", s, line_number);
+			return "not_known";
+		}
+
+		String arr_size_type = get_type_of_exp(arr_size_str, scope_name, line_number);
+		if(!arr_size_type.equals("int")) {
+			error_log.push("Array index should be of Type 'int', but found '" + arr_size_type + "'.", " ... " + s + " ... ", line_number);
+
+			return "not_known";
+		}
+
+		String var_name = s.substring(0, indexOf_open);
+		String type = symbol_table.get_type(var_name, scope_name);
+		if(type.equals("not_known")) {
+			error_log.push("Unknown identifier '" + var_name + "' found.", var_name, line_number);
+			return "not_known";
+		}
+
+		return type;
 	}
 }

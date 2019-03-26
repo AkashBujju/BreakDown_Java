@@ -39,7 +39,7 @@ public class Util {
 		operators.add("+"); operators.add("-"); operators.add("*"); operators.add("/"); operators.add("%");
 		operators.add("=="); operators.add("!="); operators.add(">"); operators.add(">="); operators.add("<"); operators.add("<=");
 		operators.add("&&"); operators.add("||"); operators.add("!");
-		operators.add("&"); operators.add("|"); operators.add("^"); operators.add(">>>"); operators.add("<<<");
+		operators.add("&"); operators.add("|"); operators.add("^^"); operators.add(">>>"); operators.add("<<<");
 		operators.add("("); operators.add(")"); operators.add("["); operators.add("]");
 		operators.add("<<"); operators.add(">>");
 		operators.add(":=");
@@ -1214,5 +1214,31 @@ public class Util {
 		str_na_indices.range_indices = ignore_indices;
 
 		return str_na_indices;
+	}
+
+	static List<String> split_into_var_names(String s) {
+		List<String> li = new ArrayList<>();
+		int index_of_prev_ch = 0;
+
+		int quotes_count = 0;
+		for(int i = 0; i < s.length(); ++i) {
+			char c = s.charAt(i);
+			if(c == '\"')
+				quotes_count++;
+
+			else if(quotes_count % 2 == 0 && (c == '.') || c == '^') {
+				String str = s.substring(index_of_prev_ch, i);
+				li.add(str);
+				li.add(String.valueOf(c));
+
+				index_of_prev_ch = i + 1;
+			}
+		}
+
+		String last_str = s.substring(index_of_prev_ch);
+		if(!s.equals(""))
+			li.add(last_str);
+
+		return li;
 	}
 }

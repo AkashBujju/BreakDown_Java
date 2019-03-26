@@ -17,6 +17,12 @@ func main() -> void {
 
 	marks := 80, 90, 75, 30, 55;
 	student: Student = person, "001", 2, 3;
+	student_ptr: Student* = >> student;
+
+	c := marks[0];
+
+	a := student_ptr^marks[0];
+	b := student_ptr^height;
 }
 
 func foo_1(a: int[5]) -> int {
