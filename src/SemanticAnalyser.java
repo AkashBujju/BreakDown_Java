@@ -702,7 +702,7 @@ public class SemanticAnalyser {
 					return "not_known";
 
 				// If the last member is an array type, then take away the @array@.
-				if(i == len - 1 && current_type.indexOf("@array@") != -1) {
+				if(i == len - 1 && current_type.indexOf("@array@") != -1 && current_var.indexOf('[') != -1) {
 					current_type = current_type.substring(0, current_type.indexOf("@array@"));
 				}
 

@@ -29,7 +29,7 @@ func main() -> void {
 	d := person_1.age;
 	e := students[0]^usn;
 	f := student_1.height;
-	g := student_1.marks[0];
+	g := student_1.marks;
 
 	tmp := marks[0];
 }
