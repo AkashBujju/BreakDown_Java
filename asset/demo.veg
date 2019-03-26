@@ -23,13 +23,12 @@ func main() -> void {
 
 	students: Student[2]* = >> student_1, >> student_2;
 
-	a := students[0]^person.name;
+	a := students[0]^person[0].name;
 	b := student_1.usn;
-	c := student_1.person[0].name;
 	d := person_1.age;
 	e := students[0]^usn;
 	f := student_1.height;
-	g := student_1.marks;
+	g := student_1.person[1].name;
 
 	tmp := marks[0];
 }

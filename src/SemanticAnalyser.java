@@ -694,15 +694,24 @@ public class SemanticAnalyser {
 
 				StructVars struct_vars = name_structvars_map.get(new_prev_type);
 				// Taking away [] from current_var if exists
-				if(current_var.indexOf('[') != -1)
+				boolean array_call = false;
+				if(current_var.indexOf('[') != -1) {
 					current_var = current_var.substring(0, current_var.indexOf('['));
+					array_call = true;
+				}
 
 				current_type = get_vartype_from_struct(struct_vars, current_var);
+				if(current_type.indexOf("@array@") != -1 && !array_call) {
+					error_log.push("Array '" + current_var + "' cannot be referenced as a pointer.", s, line_number);
+
+					return "not_known";
+				}
+
 				if(current_type.equals("not_known"))
 					return "not_known";
 
 				// If the last member is an array type, then take away the @array@.
-				if(i == len - 1 && current_type.indexOf("@array@") != -1 && current_var.indexOf('[') != -1) {
+				if(i == len - 1 && current_type.indexOf("@array@") != -1 && array_call) {
 					current_type = current_type.substring(0, current_type.indexOf("@array@"));
 				}
 
