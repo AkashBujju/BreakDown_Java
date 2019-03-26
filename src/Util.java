@@ -1228,7 +1228,8 @@ public class Util {
 
 			else if(quotes_count % 2 == 0 && (c == '.') || c == '^') {
 				String str = s.substring(index_of_prev_ch, i);
-				li.add(str);
+				if(i != 1 && !str.equals(""))
+					li.add(str);
 				li.add(String.valueOf(c));
 
 				index_of_prev_ch = i + 1;
@@ -1240,5 +1241,15 @@ public class Util {
 			li.add(last_str);
 
 		return li;
+	}
+
+	static String eat_pointers_and_array(String s) {
+		String new_string = s;
+		if(s.indexOf('*') != -1)
+			new_string = s.substring(0, s.indexOf('*'));
+		else if(s.indexOf("@array@") != -1)
+			new_string = s.substring(0, s.indexOf("@array@"));
+
+		return new_string;
 	}
 }

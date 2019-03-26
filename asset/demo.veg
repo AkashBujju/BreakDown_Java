@@ -5,7 +5,7 @@ Person::struct {
 }
 
 Student::struct {
-	person: Person;
+	person: Person[2];
 	usn: string;
 	marks: int[2] = 1, 2;
 	height := 0.0;
@@ -13,16 +13,25 @@ Student::struct {
 }
 
 func main() -> void {
-	person: Person = "jay", 2;
+	person_1: Person = "jay", 2;
+	person_2: Person = "jay", 2;
 
 	marks := 80, 90, 75, 30, 55;
-	student: Student = person, "001", 2, 3;
-	student_ptr: Student* = >> student;
 
-	c := marks[0];
+	student_1: Student = person_1, person_2, "001", 2, 3;
+	student_2: Student = person_1, person_2, "002", 4, 5;
 
-	a := student_ptr^marks[0];
-	b := student_ptr^height;
+	students: Student[2]* = >> student_1, >> student_2;
+
+	a := students[0]^person.name;
+	b := student_1.usn;
+	c := student_1.person[0].name;
+	d := person_1.age;
+	e := students[0]^usn;
+	f := student_1.height;
+	g := student_1.marks[0];
+
+	tmp := marks[0];
 }
 
 func foo_1(a: int[5]) -> int {
