@@ -740,7 +740,8 @@ public class SemanticAnalyser {
 			String var = li.get(0);
 			String type = get_iden_type(var, scope_name, line_number);
 			if(type.indexOf("@array@") != -1 && var.indexOf('[') != -1)
-				type = type.substring(0, type.indexOf("@array@"));
+				type = var_iden + type.substring(0, type.indexOf("@array@"));
+
 			return type;
 		}
 
