@@ -340,9 +340,8 @@ public class SemanticAnalyser {
 					}
 
 					// We need to know if 's' is name of a variable, so that we can append '_var@' to it.
-					if(!var_type.equals("not_known")) {
+					if(!var_type.equals("not_known"))
 						type = var_iden + type;
-					}
 				}	
 
 				final_exp.add(type);
@@ -646,8 +645,9 @@ public class SemanticAnalyser {
 		int len = li.size();
 
 		if(len == 1) {
-			String type = get_iden_type(li.get(0), scope_name, line_number);
-			if(type.indexOf("@array@") != -1)
+			String var = li.get(0);
+			String type = get_iden_type(var, scope_name, line_number);
+			if(type.indexOf("@array@") != -1 && var.indexOf('[') != -1)
 				type = type.substring(0, type.indexOf("@array@"));
 			return type;
 		}
@@ -707,8 +707,10 @@ public class SemanticAnalyser {
 					return "not_known";
 				}
 
-				if(current_type.equals("not_known"))
+				if(current_type.equals("not_known")) {
+					error_log.push("Member '" + current_var + "' does not belong to struct '" + new_prev_type + "'.", s, line_number);
 					return "not_known";
+				}
 
 				// If the last member is an array type, then take away the @array@.
 				if(i == len - 1 && current_type.indexOf("@array@") != -1 && array_call) {
@@ -734,7 +736,7 @@ public class SemanticAnalyser {
 			}
 		}
 
-		return current_type;
+		return var_iden + current_type;
 	}
 
 	String get_type_of_func_call(String s, int line_number, String scope_name) {

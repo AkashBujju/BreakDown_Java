@@ -1,3 +1,3 @@
 @echo off
 cls
-java -cp out\ Main
+java -cp out\ Main %*

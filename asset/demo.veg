@@ -29,8 +29,9 @@ func main() -> void {
 	e := students[0]^usn;
 	f := student_1.height;
 	g := student_1.person[1].name;
-
 	tmp := marks[0];
+
+	tmp_2 := >> student_1.person[2];
 }
 
 func foo_1(a: int[5]) -> int {
