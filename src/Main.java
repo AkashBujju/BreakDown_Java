@@ -68,6 +68,7 @@ public class Main {
 			SyntaxAnalyser sc = new SyntaxAnalyser(sq_arr, my_file, Util.quotes_range_indices, id_number, id_char_index);
 			ErrorLog error_log = sc.validate_syntax();
 			if(error_log.log.size() > 0) {
+				System.out.println("Syntax Errors Found.");
 				error_log.show();
 				return;
 			}

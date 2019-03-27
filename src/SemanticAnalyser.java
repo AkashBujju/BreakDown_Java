@@ -27,6 +27,7 @@ public class SemanticAnalyser {
 	List<RangeIndices> quotes_range_indices;
 	List<FuncNameArgs> func_name_args;
 	HashMap<String, StructVars> name_structvars_map;
+	HashMap<Integer, FuncNameArgs> func_id_fna_map;
 	ErrorLog error_log;
 	String func_iden = "_func@";
 	String var_iden = "_var@";
@@ -39,6 +40,7 @@ public class SemanticAnalyser {
 		func_name_args = new ArrayList<>();
 		error_log = new ErrorLog();
 		name_structvars_map = new HashMap<>();
+		func_id_fna_map = new HashMap<>();
 	}
 
 	public void start() throws FileNotFoundException {
@@ -65,6 +67,7 @@ public class SemanticAnalyser {
 
 				func_name_arg.arg_types = var_arg_types;
 				func_name_args.add(func_name_arg);
+				func_id_fna_map.put(func_info.id, func_name_arg);
 			}
 
 			count += 1;
@@ -126,22 +129,26 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_info(Info info, String scope_name) {
+	private int eval_info(Info info, String scope_name, String expected_return_type) {
 		InfoType info_type = info.info_type;
 		int res = -1;
 
 		if(info_type == InfoType.VAR_DECL)
 			res = eval_var_decl((VarDeclInfo)(info), scope_name);
 		else if(info_type == InfoType.IF)
-			res = eval_if_info((IfInfo)(info), scope_name + '_' + info.id);
+			res = eval_if_info((IfInfo)(info), scope_name + '_' + info.id, expected_return_type);
 		else if(info_type == InfoType.ELSE_IF)
-			res = eval_else_if_info((ElseIfInfo)(info), scope_name + '_' + info.id);
+			res = eval_else_if_info((ElseIfInfo)(info), scope_name + '_' + info.id, expected_return_type);
 		else if(info_type == InfoType.ELSE)
-			res = eval_else_info((ElseInfo)(info), scope_name + '_' + info.id);
+			res = eval_else_info((ElseInfo)(info), scope_name + '_' + info.id, expected_return_type);
 		else if(info_type == InfoType.WHILE)
-			res = eval_while_info((WhileInfo)(info), scope_name + '_' + info.id);
+			res = eval_while_info((WhileInfo)(info), scope_name + '_' + info.id, expected_return_type);
 		else if(info_type == InfoType.VAR_ASSIGN)
 			res = eval_var_assign((VarAssignInfo)(info), scope_name);
+		else if(info_type == InfoType.RETURN)
+			res = eval_return((ReturnInfo)(info), scope_name, expected_return_type);
+		else if(info_type == InfoType.EXPRESSION)
+			res = eval_exp_info((ExpInfo)(info), scope_name);
 
 		return res;
 	}
@@ -204,32 +211,87 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_function(FunctionInfo func_info) {
-		List<Info> infos = func_info.infos;
-		int current_scope = 0;
-		String scope_name = "_" + (func_info.id);
-		// @Note: Function args already evaluated.
+	private int eval_return(ReturnInfo return_info, String scope_name, String expected_return_type) {
+		String exp = return_info.exp;
+		String exp_type = get_type_of_exp(exp, scope_name, return_info.line_number);
 
-		int infos_len = infos.size();
-		for(int i = 0; i < infos_len; ++i) {
-			Info info = infos.get(i);
-			int res = eval_info(info, scope_name);
+		if(exp_type.equals("not_known"))
+			return -1;
 
-			if(res == -1)
-				return -1;
+		if(!exp_type.equals(expected_return_type)) {
+			error_log.push("Deduced 'return' Type '" + exp_type + "' does not match with the expected 'return' Type '" + expected_return_type + "'.", "return " + exp, return_info.line_number);
+			return -1;
 		}
 
 		return 0;
 	}
 
-	private int eval_else_info(Info info, String scope_name) {
+	private void add_multiple_return_stat_error(int id, String exp, int line_number, String info_type) {
+		error_log.push("Found multiple 'return' statements within the same scope of '" + info_type + "' with scope '" + "_" + id + "'.", "return " + exp, line_number);
+	}
+
+	private int eval_exp_info(ExpInfo exp_info, String scope_name) {
+		String exp = exp_info.exp;
+		String type = get_type_of_exp(exp, scope_name, exp_info.line_number);
+
+		if(type.equals("not_known"))
+			return -1;
+
+		return 0;
+	}
+
+	private int eval_function(FunctionInfo func_info) {
+		List<Info> infos = func_info.infos;
+		int current_scope = 0;
+		String scope_name = "_" + (func_info.id);
+		int num_returns = 0;
+
+		// @Note: Function args already evaluated.
+		String return_type = func_id_fna_map.get(func_info.id).return_type;
+
+		int infos_len = infos.size();
+		for(int i = 0; i < infos_len; ++i) {
+			Info info = infos.get(i);
+			if(info.info_type == InfoType.RETURN)
+				num_returns += 1;
+
+			if(num_returns > 1) {
+				ReturnInfo return_info = (ReturnInfo)(info);
+				add_multiple_return_stat_error(func_info.id, return_info.exp, return_info.line_number, "function " + func_info.name);
+				return -1;
+			}
+
+			int res = eval_info(info, scope_name, return_type);
+
+			if(res == -1)
+				return -1;
+		}
+
+		if(num_returns == 0) {
+			error_log.push("Function '" + func_info.name + "' missing return statement.", "... ??? ... }", func_info.line_number);
+			return -1;
+		}
+
+		return 0;
+	}
+
+	private int eval_else_info(Info info, String scope_name, String return_type) {
 		ElseInfo else_info = (ElseInfo)(info);
+		int num_returns = 0;
 
 		List<Info> infos = else_info.infos;
 		int len = infos.size();
 		for(int i = 0; i < len; ++i) {
 			Info current_info = infos.get(i);
-			int res = eval_info(current_info, scope_name);
+			if(current_info.info_type == InfoType.RETURN) {
+				ReturnInfo return_info = (ReturnInfo)(current_info);
+				num_returns += 1;
+				if(num_returns > 1) {
+					add_multiple_return_stat_error(current_info.id, return_info.exp, return_info.line_number, "else");
+					return -1;
+				}
+			}
+			int res = eval_info(current_info, scope_name, return_type);
 
 			if(res == -1)
 				return -1;
@@ -238,9 +300,10 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_else_if_info(Info info, String scope_name) {
+	private int eval_else_if_info(Info info, String scope_name, String return_type) {
 		ElseIfInfo else_if_info = (ElseIfInfo)(info);
 		String exp = else_if_info.exp;
+		int num_returns = 0;
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
 		String exp_type = get_type_of_exp(exp, scope_name, else_if_info.line_number);
@@ -253,7 +316,15 @@ public class SemanticAnalyser {
 		int len = infos.size();
 		for(int i = 0; i < len; ++i) {
 			Info current_info = infos.get(i);
-			int res = eval_info(current_info, scope_name);
+			if(current_info.info_type == InfoType.RETURN) {
+				ReturnInfo return_info = (ReturnInfo)(current_info);
+				num_returns += 1;
+				if(num_returns > 1) {
+					add_multiple_return_stat_error(current_info.id, return_info.exp, return_info.line_number, "else if");
+					return -1;
+				}
+			}
+			int res = eval_info(current_info, scope_name, return_type);
 
 			if(res == -1)
 				return -1;
@@ -262,9 +333,10 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_if_info(Info info, String scope_name) {
+	private int eval_if_info(Info info, String scope_name, String return_type) {
 		IfInfo if_info = (IfInfo)(info);
 		String exp = if_info.exp;
+		int num_returns = 0;
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
 		String exp_type = get_type_of_exp(exp, scope_name, if_info.line_number);
@@ -277,7 +349,15 @@ public class SemanticAnalyser {
 		int len = infos.size();
 		for(int i = 0; i < len; ++i) {
 			Info current_info = infos.get(i);
-			int res = eval_info(current_info, scope_name);
+			if(current_info.info_type == InfoType.RETURN) {
+				ReturnInfo return_info = (ReturnInfo)(current_info);
+				num_returns += 1;
+				if(num_returns > 1) {
+					add_multiple_return_stat_error(current_info.id, return_info.exp, return_info.line_number, "if");
+					return -1;
+				}
+			}
+			int res = eval_info(current_info, scope_name, return_type);
 
 			if(res == -1)
 				return -1;
@@ -286,9 +366,10 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_while_info(Info info, String scope_name) {
+	private int eval_while_info(Info info, String scope_name, String return_type) {
 		WhileInfo while_info = (WhileInfo)(info);
 		String exp = while_info.exp;
+		int num_returns = 0;
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
 		String exp_type = get_type_of_exp(exp, scope_name, while_info.line_number);
@@ -301,7 +382,15 @@ public class SemanticAnalyser {
 		int len = infos.size();
 		for(int i = 0; i < len; ++i) {
 			Info current_info = infos.get(i);
-			int res = eval_info(current_info, scope_name);
+			if(current_info.info_type == InfoType.RETURN) {
+				ReturnInfo return_info = (ReturnInfo)(current_info);
+				num_returns += 1;
+				if(num_returns > 1) {
+					add_multiple_return_stat_error(current_info.id, return_info.exp, return_info.line_number, "while");
+					return -1;
+				}
+			}
+			int res = eval_info(current_info, scope_name, return_type);
 
 			if(res == -1)
 				return -1;
@@ -640,6 +729,9 @@ public class SemanticAnalyser {
 		String tmp_type = Util.get_primitive_type(s);
 		if(!tmp_type.equals("not_known"))
 			return tmp_type;
+
+		if(s.equals("void")) // @Hack: FIX IT
+			return "void";
 
 		List<String> li = Util.split_into_var_names(s);
 		int len = li.size();

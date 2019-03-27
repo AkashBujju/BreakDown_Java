@@ -222,6 +222,7 @@ class ExpInfo extends Info {
 		this.exp = exp;
 		this.id = id;
 		this.line_number = line_number;
+		info_type = InfoType.EXPRESSION;
 	}
 
 	String get_info() {

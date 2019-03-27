@@ -313,8 +313,10 @@ public class EvalExp {
 					if(right_type.equals("not_known"))
 						return new MsgType("Type 'not_known' found.", "not_known");
 
-					else if(s.equals(">>") && (right_type.charAt(0) == '@' || !is_var || is_func))
+					else if(s.equals(">>") && (right_type.charAt(0) == '@' || !is_var || is_func)) {
+						System.out.println("INSIDE: " + right_type);
 						return new MsgType("Cannot apply '>>' to literals  or expressions or functions. ie: type <" + right_type + ">.", "not_known");
+					}
 
 					t = "@" + (t_list.size() + 1) + "@";
 					literal_type_map.put(t, "not_known");

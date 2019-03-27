@@ -1,6 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-	0) Goto eval_struct in SemanticAnalyzer.java
+	0) var_iden is not getting inserted to Ex: marks[0], to arrays...
 
 	1) Take away quotes_range_indices if possible ... There seems to be
 	problems with it !!!!!!!

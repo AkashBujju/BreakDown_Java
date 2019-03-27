@@ -12,15 +12,14 @@ Student::struct {
 	weight := 0.0;
 }
 
-func main() -> void {
+func main(argc: int) -> int {
 	person_1: Person = "jay", 2;
 	person_2: Person = "jay", 2;
 
-	marks := 80, 90, 75, 30, 55;
+	marks :int[] = 80, 90, 75, 30, 55;
 
 	student_1: Student = person_1, person_2, "001", 2, 3;
 	student_2: Student = person_1, person_2, "002", 4, 5;
-
 	students: Student[2]* = >> student_1, >> student_2;
 
 	a := students[0]^person[0].name;
@@ -29,10 +28,36 @@ func main() -> void {
 	e := students[0]^usn;
 	f := student_1.height;
 	g := student_1.person[1].name;
-	tmp := marks[0];
+
+	num := 0;
+	num_2 := 0.0;
+	tmp := marks[num];
+
+	foo_1 := >> marks[0];
+
+	foo_1(marks);
+
+	if num == 0 {
+		return num;
+	}
+	else if num == 0 {
+		return num;
+	}
+	else {
+		return 0;
+	}	
+
+	while true {
+		return num;
+	}
 
 	tmp_2 := >> student_1.person[2];
+	tmp_2 = >> person_1;
+
+	return num;
 }
 
 func foo_1(a: int[5]) -> int {
+
+	return 1;
 }

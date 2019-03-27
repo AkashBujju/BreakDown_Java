@@ -606,6 +606,9 @@ public class SyntaxAnalyser {
 			else if(si.seq_type == SequenceType.BREAK) {
 				vi = validate_break(i);
 			}
+			else if(si.seq_type == SequenceType.RETURN) {
+				vi = validate_return(i);
+			}
 			else if(si.seq_type == SequenceType.CONTINUE) {
 				vi = validate_continue(i);
 			}
