@@ -15,10 +15,9 @@ Student::struct {
 func main(argc: int) -> int {
 	person_1: Person = "jay", 2;
 	person_2: Person = "jay", 2;
-
 	marks :int[] = 80, 90, 75, 30, 55;
-
 	student_1: Student = person_1, person_2, "001", 2, 3;
+
 	student_2: Student = person_1, person_2, "002", 4, 5;
 	students: Student[2]* = >> student_1, >> student_2;
 
@@ -30,34 +29,32 @@ func main(argc: int) -> int {
 	g := student_1.person[1].name;
 
 	num := 0;
-	num_2 := 0.0;
-	tmp := marks[num];
+	foo_2(>> num);
 
-	foo_1 := >> marks[0];
+	name := "1" + "2";
 
-	foo_1(marks);
+	data_int := make_objects(int*, foo_1(marks));
+	data_persons := make_objects(Person, 5);
 
-	if num == 0 {
-		return num;
-	}
-	else if num == 0 {
-		return num;
-	}
-	else {
-		return 0;
-	}	
-
-	while true {
-		return num;
-	}
-
-	tmp_2 := >> student_1.person[2];
-	tmp_2 = >> person_1;
+	free_objects(<< data_int);
+	print("Hello");
 
 	return num;
+}
+
+func append(s1: string, s2: string) -> string {
+	return s1 + s2;
+}
+
+func foo_2(a: int*) -> int {
+	return 0;
 }
 
 func foo_1(a: int[5]) -> int {
 
 	return 1;
+}
+
+func demo() -> void {
+	return void;
 }

@@ -1,6 +1,10 @@
 --------------------------------------------------------------
 ToDo:
-	0) var_iden is not getting inserted to Ex: marks[0], to arrays...
+	0) Do in-built functions.
+		a) make_objects(type: Type, size: num) -> Type*;
+		b) free_objects(ptr: Type*) -> void;
+		c) print(s: string, ... primitive types);
+		d) scan(s: string, .. primitive types);
 
 	1) Take away quotes_range_indices if possible ... There seems to be
 	problems with it !!!!!!!

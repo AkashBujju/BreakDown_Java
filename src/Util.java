@@ -933,6 +933,10 @@ public class Util {
 			if(is_op_logical || op.equals("==") || op.equals("!="))
 				res = "bool";
 		}
+		else if(type_1.equals("string") && type_2.equals("string")) {
+			if(op.equals("+"))
+				res = "string";
+		}
 		else { // pointer arithmetic.
 			if(is_type_pointer(type_1) && type_2.equals("int"))
 				res = type_1;
@@ -967,7 +971,11 @@ public class Util {
 	static boolean validate_operation(String type_1, String type_2, String op) {
 		boolean is_valid = false;
 
-		if(type_1.equals("bool") && type_2.equals("bool")) {
+		if(type_1.equals("string") && type_2.equals("string")) {
+			if(op.equals("+"))
+				is_valid = true;
+		}
+		else if(type_1.equals("bool") && type_2.equals("bool")) {
 			if(op.equals("==") || op.equals("!=") || op.equals("&&") || op.equals("||"))
 				is_valid = true;
 		}

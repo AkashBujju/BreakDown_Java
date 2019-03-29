@@ -8,6 +8,10 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.Iterator;
 
+/* @Note: It is not mandatory to check for 'break' and 'continue' statements
+ * , since the syntax analyser checks it.
+ */
+
 class FuncNameArgs {
 	String name;
 	List<String> arg_types;
@@ -20,12 +24,23 @@ class StructVars {
 	int max_vars = 0;
 }
 
+class BuiltInFunc {
+	String name;
+	int num_args = 0;
+
+	BuiltInFunc(String name, int num_args) {
+		this.name = name;
+		this.num_args = num_args;
+	}
+}
+
 public class SemanticAnalyser {
 	List<Info> infos;	
 	SymbolTable symbol_table;
 	List<Integer> func_sig_indices;
 	List<RangeIndices> quotes_range_indices;
 	List<FuncNameArgs> func_name_args;
+	List<BuiltInFunc> built_in_funcs;
 	HashMap<String, StructVars> name_structvars_map;
 	HashMap<Integer, FuncNameArgs> func_id_fna_map;
 	ErrorLog error_log;
@@ -41,9 +56,18 @@ public class SemanticAnalyser {
 		error_log = new ErrorLog();
 		name_structvars_map = new HashMap<>();
 		func_id_fna_map = new HashMap<>();
+		built_in_funcs = new ArrayList<>();
+	}
+
+	void init_built_in_funcs() {
+		built_in_funcs.add(new BuiltInFunc("make_objects", 2));
+		built_in_funcs.add(new BuiltInFunc("free_objects", 1));
+		built_in_funcs.add(new BuiltInFunc("print", 100));
 	}
 
 	public void start() throws FileNotFoundException {
+		init_built_in_funcs();
+
 		// Filling in func_name_args
 		int count = 0;
 		for(Info i: infos) {
@@ -149,6 +173,8 @@ public class SemanticAnalyser {
 			res = eval_return((ReturnInfo)(info), scope_name, expected_return_type);
 		else if(info_type == InfoType.EXPRESSION)
 			res = eval_exp_info((ExpInfo)(info), scope_name);
+		else if(info_type == InfoType.OTHER)
+			return 0;
 
 		return res;
 	}
@@ -614,7 +640,7 @@ public class SemanticAnalyser {
 			is_array = true;
 
 		if(symbol_table.type_exists(name)) {
-			error_log.push("Name '" + name + "' is a name of a Type and cannot be used.", name + " ... ", line_number);
+			error_log.push("Identifier '" + name + "' is a name of a Type and cannot be used.", name + " ... ", line_number);
 			return -1;
 		}
 
@@ -706,6 +732,11 @@ public class SemanticAnalyser {
 			if(!given_type_name.equals("not_known") && !final_type.equals(given_type_name)) {
 				error_log.push("Declared type '" + given_type_name + "' does not match with deduced type '" + final_type + "' in variable '" + name + "'.", name + ": " + given_type_name + " = " + raw_value, line_number);
 
+				return -1;
+			}
+
+			if(final_type.equals("void")) {
+				error_log.push("Cannot assign expression of Type 'void' to variable '" + name + "'.", var_decl_info.get_info(), line_number);
 				return -1;
 			}
 
@@ -832,14 +863,76 @@ public class SemanticAnalyser {
 		return var_iden + current_type;
 	}
 
+	String get_type_of_built_in_func_call(String s, int line_number, String scope_name) {
+		List<String> all_args = Util.get_func_args(s);
+		String args = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
+		String func_name = s.substring(0, s.indexOf('('));
+		
+		if(func_name.equals("make_objects")) {
+			if(all_args.size() != 2) {
+				push_func_invalid_error(func_name, all_args.size(), line_number);
+				return "not_known";
+			}
+
+			String obj_type = all_args.get(0);
+			if(!symbol_table.type_exists(obj_type)) {
+				error_log.push("Type '" + obj_type + "' does not exist @ argument 1", func_name + "(" + obj_type + ", .... ", line_number);
+				return "not_known";
+			}
+
+			String size_type = get_type_of_exp(all_args.get(1), scope_name, line_number);
+			if(!size_type.equals("int")) {
+				error_log.push("'size' must be of type 'int', but found '" + size_type + "'.", func_name + "( ...., " + size_type + ")", line_number);
+				return "not_known";
+			}
+
+			return obj_type + "*";
+		}
+		else if(func_name.equals("free_objects")) {
+			if(all_args.size() != 1) {
+				push_func_invalid_error(func_name, all_args.size(), line_number);
+				return "not_known";
+			}
+			String ptr_name = all_args.get(0);
+			String type = get_type_of_exp(ptr_name, scope_name, line_number);
+
+			if(type.lastIndexOf("*") == -1) {
+				error_log.push("Needed expression of Type 'Type*' but found '" + type + "' @ argument 1.", func_name + "(" + ptr_name + ")", line_number);
+				return "not_known";
+			}
+
+			return "void";
+		}
+		else if(func_name.equals("print")) {
+			if(all_args.size() == 0) {
+				push_func_invalid_error(func_name, all_args.size(), line_number);
+				return "not_known";
+			}
+
+			String arg_1 = all_args.get(0);
+			if(!arg_1.equals("string")) {
+				error_log.push("Function 'print' needs it's 1st function Type as 'string', but found '" + arg_1 + "'.", func_name + "(" + arg_1 + ", ....", line_number);
+				return "not_known";
+			}
+		}
+
+		return "not_known";
+	}
+
 	String get_type_of_func_call(String s, int line_number, String scope_name) {
 		List<String> all_args = Util.get_func_args(s);
 		String args = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
 		String func_name = s.substring(0, s.indexOf('('));
 		boolean func_exists = func_with_num_args_exists(func_name, all_args.size());
-		if(!func_exists) {
+		boolean in_built_func = built_in_func_exists(func_name, all_args.size());
+
+		if(!func_exists && !in_built_func) {
 			error_log.push("Function with name '" + func_name + "' taking '" + all_args.size() + "' arguments dosen't exist.", s, line_number);
 			return "not_known";
+		}
+
+		if(in_built_func) {
+			return get_type_of_built_in_func_call(s, line_number, scope_name);
 		}
 
 		List<String> new_args = new ArrayList<>();
@@ -969,6 +1062,15 @@ public class SemanticAnalyser {
 		return func_name_arg.return_type;
 	}
 
+	boolean built_in_func_exists(String func_name, int num_args) {
+		for(BuiltInFunc bf: built_in_funcs) {
+			if(func_name.equals(bf.name))
+				return true;
+		}
+
+		return false;
+	}
+
 	FuncNameArgs get_func_name_with_args(String name, List<String> types) {
 		for(FuncNameArgs func_name_arg: func_name_args) {
 			if(name.equals(func_name_arg.name)) {
@@ -1075,5 +1177,9 @@ public class SemanticAnalyser {
 		}
 
 		return type;
+	}
+
+	void push_func_invalid_error(String func_name, int args_size, int line_number) {
+		error_log.push("Function with name '" + func_name + "' and arguments size of '" + args_size + "' does not exist.", func_name, line_number);
 	}
 }
