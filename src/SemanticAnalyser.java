@@ -9,8 +9,7 @@ import java.util.Set;
 import java.util.Iterator;
 
 /* @Note: It is not mandatory to check for 'break' and 'continue' statements
- * , since the syntax analyser checks it.
- */
+ * , since the syntax analyser checks it. */
 
 class FuncNameArgs {
 	String name;
@@ -42,6 +41,7 @@ public class SemanticAnalyser {
 	List<FuncNameArgs> func_name_args;
 	List<BuiltInFunc> built_in_funcs;
 	HashMap<String, StructVars> name_structvars_map;
+	HashMap<Integer, String> id_scope_map;
 	HashMap<Integer, FuncNameArgs> func_id_fna_map;
 	ErrorLog error_log;
 	String func_iden = "_func@";
@@ -56,6 +56,7 @@ public class SemanticAnalyser {
 		error_log = new ErrorLog();
 		name_structvars_map = new HashMap<>();
 		func_id_fna_map = new HashMap<>();
+		id_scope_map = new HashMap<>();
 		built_in_funcs = new ArrayList<>();
 	}
 
@@ -82,7 +83,7 @@ public class SemanticAnalyser {
 
 				List<String> var_arg_types = new ArrayList<>();
 				for(VarDeclInfo var: func_info.var_args) {
-					int res = eval_var_decl(var, scope_name);
+					int res = eval_var_decl(var, scope_name, true);
 					if(res == -1)
 						return;
 
@@ -107,7 +108,7 @@ public class SemanticAnalyser {
 			if(info.info_type == InfoType.USE)
 				error_res = eval_use((UseInfo)(info));
 			else if(info.info_type == InfoType.VAR_DECL) // global variable
-				error_res = eval_var_decl((VarDeclInfo)(info), "global");
+				error_res = eval_var_decl((VarDeclInfo)(info), "global", false);
 			else if(info.info_type == InfoType.FUNCTION)
 				error_res = eval_function((FunctionInfo)(info));
 			else if(info.info_type == InfoType.STRUCT)
@@ -159,7 +160,7 @@ public class SemanticAnalyser {
 		int res = -1;
 
 		if(info_type == InfoType.VAR_DECL)
-			res = eval_var_decl((VarDeclInfo)(info), scope_name);
+			res = eval_var_decl((VarDeclInfo)(info), scope_name, false);
 		else if(info_type == InfoType.IF)
 			res = eval_if_info((IfInfo)(info), scope_name + '_' + info.id, expected_return_type);
 		else if(info_type == InfoType.ELSE_IF)
@@ -190,7 +191,7 @@ public class SemanticAnalyser {
 
 		for(VarDeclInfo var_decl_info: var_decl_infos) {
 			int res = 0;
-			res = eval_var_decl(var_decl_info, scope_name);
+			res = eval_var_decl(var_decl_info, scope_name, false);
 			String type = symbol_table.get_type(var_decl_info.name, scope_name);
 
 			if(type.indexOf("@array@") != -1)
@@ -609,12 +610,14 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_var_decl(VarDeclInfo var_decl_info, String scope_name) {
+	private int eval_var_decl(VarDeclInfo var_decl_info, String scope_name, boolean allow_empty_array_index) {
 		String raw_value = var_decl_info.raw_value;
 		String name = var_decl_info.name;
 		String given_type_name = var_decl_info.type;
 		int line_number = var_decl_info.line_number;
 		boolean is_array = false;
+
+		id_scope_map.put(var_decl_info.id, scope_name);
 
 		if(symbol_table.name_exists_in_scope(name, scope_name)) {
 			error_log.push("Variable with name <" + name + "> already exists within current scope <" + scope_name + ">", name, line_number);
@@ -654,7 +657,7 @@ public class SemanticAnalyser {
 			if(is_array) {
 				int indexOf_open = given_type_name.indexOf('[');
 				int indexOf_close = given_type_name.indexOf(']');
-				if(indexOf_close == indexOf_open + 1) {
+				if(indexOf_close == indexOf_open + 1 && !allow_empty_array_index) {
 					error_log.push("Incomplete Type '" + given_type_name + "' found.", given_type_name, line_number);
 					return -1;
 				}
@@ -869,7 +872,7 @@ public class SemanticAnalyser {
 		String args = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
 		String func_name = s.substring(0, s.indexOf('('));
 		
-		if(func_name.equals("make_objects")) {
+		if(func_name.equals("make_object")) {
 			if(all_args.size() != 2) {
 				push_func_invalid_error(func_name, all_args.size(), line_number);
 				return "not_known";
@@ -889,7 +892,7 @@ public class SemanticAnalyser {
 
 			return obj_type + "*";
 		}
-		else if(func_name.equals("free_objects")) {
+		else if(func_name.equals("free_object")) {
 			if(all_args.size() != 1) {
 				push_func_invalid_error(func_name, all_args.size(), line_number);
 				return "not_known";

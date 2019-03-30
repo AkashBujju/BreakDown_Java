@@ -91,10 +91,13 @@ public class Main {
 			System.out.println("-----------------");
 			System.out.println();
 
+			Translater translater = new Translater(sa);
+			translater.translate("C:\\Users\\Akash\\Documents\\GitHub\\BreakDown_Java\\asset\\output.cpp");
+
 			Instant end_time = Instant.now();
 			long timeElapsed = Duration.between(start_time, end_time).toMillis();
 			System.out.println();
-			System.out.println("Taken " + timeElapsed + " ms to compile.");
+			System.out.println("Took " + timeElapsed + " ms to compile.");
 		}
 		catch (Exception e) {
 			System.out.println();
