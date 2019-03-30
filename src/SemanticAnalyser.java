@@ -60,9 +60,10 @@ public class SemanticAnalyser {
 	}
 
 	void init_built_in_funcs() {
-		built_in_funcs.add(new BuiltInFunc("make_objects", 2));
-		built_in_funcs.add(new BuiltInFunc("free_objects", 1));
+		built_in_funcs.add(new BuiltInFunc("make_object", 2));
+		built_in_funcs.add(new BuiltInFunc("free_object", 1));
 		built_in_funcs.add(new BuiltInFunc("print", 100));
+		built_in_funcs.add(new BuiltInFunc("scan", 100));
 	}
 
 	public void start() throws FileNotFoundException {
@@ -931,7 +932,36 @@ public class SemanticAnalyser {
 			return "int";	
 		}
 		else if(func_name.equals("scan")) {
+			if(all_args.size() == 0) {
+				push_func_invalid_error(func_name, all_args.size(), line_number);
+				return "not_known";
+			}
 
+			String arg_1 = all_args.get(0);
+			String arg_1_type = Util.get_primitive_type(arg_1);
+			if(!arg_1_type.equals("string")) {
+				error_log.push("Function 'scan' needs it's 1st argument Type as 'string' literal.", func_name + "(" + arg_1 + ", ....", line_number);
+				return "not_known";
+			}
+
+			// checking if rest of the arguments are primitive types and are pointers
+			int len = all_args.size();
+			for(int i = 1; i < len; ++i) {
+				String arg = all_args.get(i);
+				String type = get_type_of_exp(arg, scope_name, line_number);
+
+				if(!symbol_table.is_primitive_type(type)) {
+					error_log.push("In Function 'print', only primitive 'Types' can be passed as arguments. But found argument '" + arg + "' with Type '" + type + "'.", "print(...., " + arg + ", ...", line_number);
+					return "not_known";
+				}
+
+				if(type.lastIndexOf('*') == -1) {
+					error_log.push("Function 'scan' takes pointers to variables, but found argument '" + arg + "' of Type '" + type + "'.", func_name + "( ..., " + arg + ", ...)", line_number);
+					return "not_known";
+				}
+			}
+		
+			return "int";
 		}
 
 		return "not_known";

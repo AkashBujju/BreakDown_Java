@@ -33,12 +33,15 @@ func main(argc: int) -> int {
 
 	name := "1" + "2";
 
-	data_int := make_objects(int*, foo_1(marks));
-	data_persons := make_objects(Person, 5);
+	data_int := make_object(int*, foo_1(marks));
+	data_persons := make_object(Person, 5);
 
-	free_objects(<< data_int);
+	free_object(<< data_int);
 
 	print("Hello %d\n", person_1.age);
+
+	input_name := make_object(char, 20);
+	scan("%s", << input_name);
 
 	return num;
 }
