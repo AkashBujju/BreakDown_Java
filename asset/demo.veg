@@ -37,7 +37,8 @@ func main(argc: int) -> int {
 	data_persons := make_objects(Person, 5);
 
 	free_objects(<< data_int);
-	print("Hello");
+
+	print("Hello %d\n", person_1.age);
 
 	return num;
 }

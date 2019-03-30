@@ -910,10 +910,28 @@ public class SemanticAnalyser {
 			}
 
 			String arg_1 = all_args.get(0);
-			if(!arg_1.equals("string")) {
-				error_log.push("Function 'print' needs it's 1st function Type as 'string', but found '" + arg_1 + "'.", func_name + "(" + arg_1 + ", ....", line_number);
+			String arg_1_type = Util.get_primitive_type(arg_1);
+			if(!arg_1_type.equals("string")) {
+				error_log.push("Function 'print' needs it's 1st argument Type as 'string' literal.", func_name + "(" + arg_1 + ", ....", line_number);
 				return "not_known";
 			}
+
+			// checking if rest of the arguments are primitive types
+			int len = all_args.size();
+			for(int i = 1; i < len; ++i) {
+				String arg = all_args.get(i);
+				String type = get_type_of_exp(arg, scope_name, line_number);
+
+				if(!symbol_table.is_primitive_type(type)) {
+					error_log.push("In Function 'print', only primitive 'Types' can be passed as arguments. But found argument '" + arg + "' with Type '" + type + "'.", "print(...., " + arg + ", ...", line_number);
+					return "not_known";
+				}
+			}
+
+			return "int";	
+		}
+		else if(func_name.equals("scan")) {
+
 		}
 
 		return "not_known";
