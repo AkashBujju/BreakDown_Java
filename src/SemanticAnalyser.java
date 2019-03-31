@@ -63,8 +63,8 @@ public class SemanticAnalyser {
 	void init_built_in_funcs() {
 		built_in_funcs.add(new BuiltInFunc("make_object", 2));
 		built_in_funcs.add(new BuiltInFunc("free_object", 1));
-		built_in_funcs.add(new BuiltInFunc("print", 100));
-		built_in_funcs.add(new BuiltInFunc("scan", 100));
+		built_in_funcs.add(new BuiltInFunc("printf", 100));
+		built_in_funcs.add(new BuiltInFunc("scanf", 100));
 	}
 
 	public void start() throws FileNotFoundException {
@@ -242,6 +242,7 @@ public class SemanticAnalyser {
 	private int eval_return(ReturnInfo return_info, String scope_name, String expected_return_type) {
 		String exp = return_info.exp;
 		String exp_type = get_type_of_exp(exp, scope_name, return_info.line_number);
+		exp_type = Util.remove_str_in_string(exp_type, var_iden);
 
 		if(exp_type.equals("not_known"))
 			return -1;
@@ -261,6 +262,7 @@ public class SemanticAnalyser {
 	private int eval_exp_info(ExpInfo exp_info, String scope_name) {
 		String exp = exp_info.exp;
 		String type = get_type_of_exp(exp, scope_name, exp_info.line_number);
+		type = Util.remove_str_in_string(type, var_iden);
 
 		if(type.equals("not_known"))
 			return -1;
@@ -335,6 +337,8 @@ public class SemanticAnalyser {
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
 		String exp_type = get_type_of_exp(exp, scope_name, else_if_info.line_number);
+		exp_type = Util.remove_str_in_string(exp_type, var_iden);
+
 		if(!exp_type.equals("bool")) {
 			error_log.push("The test condition '" + exp + "' in 'else if' has to be of type 'bool', but found '" + exp_type + "'.", exp, else_if_info.line_number);
 			return -1;
@@ -368,6 +372,7 @@ public class SemanticAnalyser {
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
 		String exp_type = get_type_of_exp(exp, scope_name, if_info.line_number);
+
 		if(!exp_type.equals("bool")) {
 			error_log.push("The test condition '" + exp + "' in 'if' has to be of type 'bool', but found '" + exp_type + "'.", exp, if_info.line_number);
 			return -1;
@@ -401,6 +406,8 @@ public class SemanticAnalyser {
 
 		// Evaluting the type of exp and checking if its of type 'bool'.
 		String exp_type = get_type_of_exp(exp, scope_name, while_info.line_number);
+		exp_type = Util.remove_str_in_string(exp_type, var_iden);
+
 		if(!exp_type.equals("bool")) {
 			error_log.push("The test condition '" + exp + "' in 'while' has to be of type 'bool', but found '" + exp_type + "'.", exp, while_info.line_number);
 			return -1;
@@ -451,6 +458,8 @@ public class SemanticAnalyser {
 				else {
 					String var_type = symbol_table.get_type(s, scope_name);
 					type = get_type_of_one_exp(s, line_number, scope_name);
+					type = Util.remove_str_in_string(type, var_iden);
+
 					if(type.equals("not_known")) {
 						error_log.push("Unknown Identifier '" + s + "' found.", s, line_number);
 						return "not_known";
@@ -491,8 +500,18 @@ public class SemanticAnalyser {
 		String name = var_assign_info.var_name;
 		String raw_value = var_assign_info.raw_value;
 		int line_number = var_assign_info.line_number;
-		String type = "";
+		String type = get_type_of_one_exp(name, line_number, scope_name);
 
+		if(type.indexOf(var_iden) == -1) {
+			error_log.push("Cannot assign value to Exp '" + name + "'.", var_assign_info.get_info(), line_number);
+			return -1;
+		}
+		if(type.equals("not_known")) {
+			error_log.push("Unable to deduce type for '" + name + "'.", var_assign_info.get_info(), line_number);
+			return -1;
+		}
+
+		/*
 		// Checking if name is an array call.
 		int indexOf_open = name.indexOf('[');
 		int indexOf_close = name.lastIndexOf(']');
@@ -533,7 +552,9 @@ public class SemanticAnalyser {
 
 			return -1;
 		}
+		*/
 
+		type = Util.remove_str_in_string(type, var_iden);
 		String final_type = get_type_of_exp(raw_value, scope_name, line_number);
 		if(!type.equals(final_type)) {
 			error_log.push("Variable '" + name + "' previously declared as Type '" + type + "', but being assigned to expression of Type '" + final_type + "'.", name + " = " + raw_value, line_number);
@@ -544,12 +565,16 @@ public class SemanticAnalyser {
 		return 0;
 	}
 
-	private int eval_udt_decl(VarDeclInfo var_decl_info, String scope_name) {
-		String raw_value = var_decl_info.raw_value;	
-		String name = var_decl_info.name;
-		String type = var_decl_info.type;
-		int line_number = var_decl_info.line_number;
+	private int eval_udt_assign(VarAssignInfo var_assign_info, String scope_name) {
+		String raw_value = var_assign_info.raw_value;	
+		String name = var_assign_info.var_name;
+		String type = symbol_table.get_type(name, scope_name);
+		int line_number = var_assign_info.line_number;
 
+		return eval_udt_decl_assign(name, type, raw_value, line_number, scope_name, false);
+	}
+
+	private int eval_udt_decl_assign(String name, String type, String raw_value, int line_number, String scope_name, boolean is_decl) {
 		StructVars struct_vars = name_structvars_map.get(type);
 		List<String> split_raw_value = Util.split_array(raw_value);
 
@@ -567,6 +592,10 @@ public class SemanticAnalyser {
 			String split_str = split_raw_value.get(split_value_index);
 			VarDeclInfo vdi = struct_vars.var_decl_infos.get(i);
 			String split_str_type = get_type_of_exp(split_str, scope_name, line_number);
+			split_str_type = Util.remove_str_in_string(split_str_type, var_iden);
+
+			if(split_str_type.indexOf(var_iden) != -1)
+				split_str_type = split_str_type.substring(var_iden.length());
 
 			if(vdi.type.indexOf("@array@") != -1) {
 				String actual_type = struct_vars.actual_types.get(i);				
@@ -578,6 +607,11 @@ public class SemanticAnalyser {
 				while(j < _arr_size && split_value_index < split_len) {
 					String arr_val_str = split_raw_value.get(split_value_index);
 					String arr_type = get_type_of_exp(arr_val_str, scope_name, line_number);
+					arr_type = Util.remove_str_in_string(arr_type, var_iden);
+
+					if(arr_type.indexOf(var_iden) != -1)
+						arr_type = arr_type.substring(var_iden.length());
+
 					if(!arr_type.equals(array_type)) {
 						error_log.push("Type mismatch at argument number '" + (split_value_index) + "' of expression '" + arr_val_str +  "', needed Type '" + array_type + "' for the array '" + vdi.name + "' but found Type '" + arr_type + "'.", raw_value, line_number);
 
@@ -605,9 +639,19 @@ public class SemanticAnalyser {
 			split_value_index += 1;
 		}
 
-		symbol_table.add(name, type, scope_name);
-
+		if(is_decl)
+			symbol_table.add(name, type, scope_name);
+		
 		return 0;
+	}
+
+	private int eval_udt_decl(VarDeclInfo var_decl_info, String scope_name) {
+		String raw_value = var_decl_info.raw_value;	
+		String name = var_decl_info.name;
+		String type = var_decl_info.type;
+		int line_number = var_decl_info.line_number;
+
+		return eval_udt_decl_assign(name, type, raw_value, line_number, scope_name, true);
 	}
 
 	private int eval_var_decl(VarDeclInfo var_decl_info, String scope_name, boolean allow_empty_array_index) {
@@ -678,7 +722,9 @@ public class SemanticAnalyser {
 			if(split_raw_value.size() > 1 || is_array) { // rhs is an array
 				List<String> split_types = new ArrayList<>();
 				for(String s: split_raw_value) {
-					split_types.add(get_type_of_exp(s, scope_name, line_number));
+					String tmp_type = get_type_of_exp(s, scope_name, line_number);
+					tmp_type = Util.remove_str_in_string(tmp_type, var_iden);
+					split_types.add(tmp_type);
 				}
 
 				int arr_size = 0;
@@ -717,6 +763,8 @@ public class SemanticAnalyser {
 			}
 			else {
 				final_type = get_type_of_exp(raw_value, scope_name, line_number);
+				final_type = Util.remove_str_in_string(final_type, var_iden);
+
 				if(final_type.indexOf("@array@") !=  -1) {
 					error_log.push("Language dosen't allow pointers to arrays, ie. to '" + raw_value + "'.", raw_value, line_number);
 					return -1;
@@ -777,7 +825,7 @@ public class SemanticAnalyser {
 			if(type.indexOf("@array@") != -1 && var.indexOf('[') != -1)
 				type = var_iden + type.substring(0, type.indexOf("@array@"));
 
-			return type;
+			return var_iden + type;
 		}
 
 		String current_op = "";
@@ -879,12 +927,16 @@ public class SemanticAnalyser {
 			}
 
 			String obj_type = all_args.get(0);
+			obj_type = Util.remove_str_in_string(obj_type, var_iden);
+
 			if(!symbol_table.type_exists(obj_type)) {
 				error_log.push("Type '" + obj_type + "' does not exist @ argument 1", func_name + "(" + obj_type + ", .... ", line_number);
 				return "not_known";
 			}
 
 			String size_type = get_type_of_exp(all_args.get(1), scope_name, line_number);
+			size_type = Util.remove_str_in_string(size_type, var_iden);
+
 			if(!size_type.equals("int")) {
 				error_log.push("'size' must be of type 'int', but found '" + size_type + "'.", func_name + "( ...., " + size_type + ")", line_number);
 				return "not_known";
@@ -907,7 +959,7 @@ public class SemanticAnalyser {
 
 			return "void";
 		}
-		else if(func_name.equals("print")) {
+		else if(func_name.equals("printf")) {
 			if(all_args.size() == 0) {
 				push_func_invalid_error(func_name, all_args.size(), line_number);
 				return "not_known";
@@ -915,6 +967,8 @@ public class SemanticAnalyser {
 
 			String arg_1 = all_args.get(0);
 			String arg_1_type = Util.get_primitive_type(arg_1);
+			arg_1_type = Util.remove_str_in_string(arg_1_type, var_iden);
+
 			if(!arg_1_type.equals("string")) {
 				error_log.push("Function 'print' needs it's 1st argument Type as 'string' literal.", func_name + "(" + arg_1 + ", ....", line_number);
 				return "not_known";
@@ -934,7 +988,7 @@ public class SemanticAnalyser {
 
 			return "int";	
 		}
-		else if(func_name.equals("scan")) {
+		else if(func_name.equals("scanf")) {
 			if(all_args.size() == 0) {
 				push_func_invalid_error(func_name, all_args.size(), line_number);
 				return "not_known";
@@ -942,6 +996,8 @@ public class SemanticAnalyser {
 
 			String arg_1 = all_args.get(0);
 			String arg_1_type = Util.get_primitive_type(arg_1);
+			arg_1_type = Util.remove_str_in_string(arg_1_type, var_iden);
+
 			if(!arg_1_type.equals("string")) {
 				error_log.push("Function 'scan' needs it's 1st argument Type as 'string' literal.", func_name + "(" + arg_1 + ", ....", line_number);
 				return "not_known";
@@ -997,6 +1053,8 @@ public class SemanticAnalyser {
 
 			for(String exp: exps) {
 				String type = get_type_of_one_exp(exp, line_number, scope_name);
+				type = Util.remove_str_in_string(type, var_iden);
+
 				String in_table_type = symbol_table.get_type(exp, scope_name);
 
 				if(!in_table_type.equals("not_known")) { 
@@ -1214,6 +1272,8 @@ public class SemanticAnalyser {
 		}
 
 		String arr_size_type = get_type_of_exp(arr_size_str, scope_name, line_number);
+		arr_size_type = Util.remove_str_in_string(arr_size_type, var_iden);
+
 		if(!arr_size_type.equals("int")) {
 			error_log.push("Array index should be of Type 'int', but found '" + arr_size_type + "'.", " ... " + s + " ... ", line_number);
 

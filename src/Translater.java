@@ -71,6 +71,21 @@ public class Translater {
 		}
 	}
 
+	private void write_var_assgn(VarAssignInfo var_assign_info) {
+			/*
+		try {
+			String name = var_assign_info.var_name;
+			String raw_value = var_assign_info.raw_value;
+
+				
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
+			*/
+
+	}
+
 	private void write_var_decl(VarDeclInfo var_decl_info) {
 		try {
 			String raw_value = var_decl_info.raw_value;
@@ -220,6 +235,22 @@ public class Translater {
 		catch(IOException e) {
 			System.out.println(e);
 		}
+	}
+
+	private String replace_in_built_funcs(String s) {
+		StringBuffer sb = new StringBuffer(s);
+
+		// @Incomplete: 
+		// @Incomplete: 
+		// @Incomplete: 
+		// @Incomplete: 
+		// @Incomplete: 
+		// @Incomplete: 
+		// @Incomplete: 
+		// @Incomplete: 
+
+
+		return sb.toString();
 	}
 
 	private String replace_all_ops(String str) {

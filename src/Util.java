@@ -1260,4 +1260,15 @@ public class Util {
 
 		return new_string;
 	}
+
+	static String remove_str_in_string(String str, String rm) {
+		String new_string = str;
+		int index = new_string.indexOf(rm);
+		while(index >= 0) {
+			new_string = new_string.substring(index + rm.length());
+			index = new_string.indexOf(rm);
+		}
+
+		return new_string;
+	}
 }
