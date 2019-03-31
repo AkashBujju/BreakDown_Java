@@ -17,13 +17,14 @@ func main(argc: int, argv: char**) -> int {
 	person_2: Person = "jay", 2;
 	marks :int[] = 80, 90, 75, 30, 55;
 	student_1: Student = person_1, person_2, "001", 2, 3, 4.0, 5.0, ;
-	# student_1 = person_1, person_2, "001", 2, 3;
+	student_1 = person_1, person_2, "001", 2, 3;
 
 	student_2: Student = person_1, person_2, "002", 4, 5;
 	students := >> student_1, >> student_2;
 
+	student_1.person[0] = "akash", 3;
+
 	student_1.usn = "0";
-	student_1.prson[1] = person_1;
 
 	numbers := 10, 12, 34, 56, 97, 100;
 	size := 6;

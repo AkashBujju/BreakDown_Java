@@ -511,53 +511,17 @@ public class SemanticAnalyser {
 			return -1;
 		}
 
-		/*
-		// Checking if name is an array call.
-		int indexOf_open = name.indexOf('[');
-		int indexOf_close = name.lastIndexOf(']');
-		if(indexOf_open != -1 && indexOf_close != -1) {
-			String arr_size_str = name.substring(indexOf_open + 1, indexOf_close);
-			if(arr_size_str.length() == 0) {
-				error_log.push("Missing expression for array index for variable '" + name + "'", name, line_number);
-
-				return -1;
-			}
-
-			String arr_size_type = get_type_of_exp(arr_size_str, scope_name, line_number);
-			if(!arr_size_type.equals("int")) {
-				error_log.push("Array index should be of Type 'int', but found '" + arr_size_type + "'.", name, line_number);
-
-				return -1;
-			}
-
-			String broken_name = name.substring(0, indexOf_open);
-			type = symbol_table.get_type(broken_name, scope_name);
-			if(type.equals("not_known")) {
-				error_log.push("Unknown identifier '" + name + "' found.", name, line_number);
-				return -1;
-			}
-
-			type = type.substring(0, type.indexOf("@array@"));
-		}
-		else {
-			type = symbol_table.get_type(name, scope_name);
-			if(type.indexOf("@array@") != -1) {
-				error_log.push("Cannot modify lvalue '" + name + "'.", name + " = " + raw_value, line_number);
-				return -1;
-			}
-		}
-
-		if(type.equals("not_known")) {
-			error_log.push("First occurance of variable '" + name + "'.", name + " = " + raw_value, line_number);
-
-			return -1;
-		}
-		*/
-
 		type = Util.remove_str_in_string(type, var_iden);
-		String final_type = get_type_of_exp(raw_value, scope_name, line_number);
-		if(!type.equals(final_type)) {
-			error_log.push("Variable '" + name + "' previously declared as Type '" + type + "', but being assigned to expression of Type '" + final_type + "'.", name + " = " + raw_value, line_number);
+		boolean userdefined_type = name_structvars_map.containsKey(type);
+		String final_exp_type = "";
+		if(userdefined_type) {
+			return eval_udt_assign(var_assign_info, scope_name);
+		}
+		else
+			final_exp_type = get_type_of_exp(raw_value, scope_name, line_number);
+
+		if(!type.equals(final_exp_type)) {
+			error_log.push("Variable '" + name + "' previously declared as Type '" + type + "', but being assigned to expression of Type '" + final_exp_type + "'.", name + " = " + raw_value, line_number);
 
 			return -1;
 		}
@@ -568,13 +532,21 @@ public class SemanticAnalyser {
 	private int eval_udt_assign(VarAssignInfo var_assign_info, String scope_name) {
 		String raw_value = var_assign_info.raw_value;	
 		String name = var_assign_info.var_name;
-		String type = symbol_table.get_type(name, scope_name);
 		int line_number = var_assign_info.line_number;
+		String type = get_type_of_one_exp(name, line_number, scope_name);
+		type = Util.remove_str_in_string(type, var_iden);
 
-		return eval_udt_decl_assign(name, type, raw_value, line_number, scope_name, false);
+		String ret_type = get_udt_type_decl_assign(name, type, raw_value, line_number, scope_name, false);
+
+		if(!ret_type.equals(type)) {
+			error_log.push("Variable '" + name + "' previously declared as Type '" + type + "', but being assigned to expression of Type '" + ret_type + "'.", name + " = " + raw_value, line_number);
+			return -1;
+		}
+
+		return 0;
 	}
 
-	private int eval_udt_decl_assign(String name, String type, String raw_value, int line_number, String scope_name, boolean is_decl) {
+	private String get_udt_type_decl_assign(String name, String type, String raw_value, int line_number, String scope_name, boolean is_decl) {
 		StructVars struct_vars = name_structvars_map.get(type);
 		List<String> split_raw_value = Util.split_array(raw_value);
 
@@ -583,7 +555,7 @@ public class SemanticAnalyser {
 		if(split_len > struct_vars.max_vars) {
 			error_log.push("Number of struct arguments on RHS ie. '" + split_len + "' exceeds the number of Max struct arguments ie. '" + struct_vars.max_vars + "' for struct '" + type + "'.", raw_value, line_number);
 
-			return -1;
+			return "not_known";
 		}
 
 		int i = 0;
@@ -615,7 +587,7 @@ public class SemanticAnalyser {
 					if(!arr_type.equals(array_type)) {
 						error_log.push("Type mismatch at argument number '" + (split_value_index) + "' of expression '" + arr_val_str +  "', needed Type '" + array_type + "' for the array '" + vdi.name + "' but found Type '" + arr_type + "'.", raw_value, line_number);
 
-						return -1;
+						return "not_known";
 					}
 
 					j = j + 1;
@@ -626,23 +598,20 @@ public class SemanticAnalyser {
 
 			else if(!vdi.type.equals(split_str_type)) {
 				error_log.push("Type mismatch, needed '" + vdi.type + "', but given expression '" + split_str + "' of type '" + split_str_type + "' at argument number '" + split_value_index + "'.", raw_value, line_number);
-				return -1;
+				return "not_known";
 			}
 
 			if(split_str_type.indexOf("@array@") != -1) {
 				String actual_type = split_str_type.substring(0, split_str_type.indexOf("@array@"));
 				error_log.push("Cannot convert '" + split_str + "' of type '" + split_str_type + "' to '" + actual_type + "' at argument number '" + i + "'.", raw_value, line_number);
-				return -1;
+				return "not_known";
 			}
 
 			i = i + 1;
 			split_value_index += 1;
 		}
 
-		if(is_decl)
-			symbol_table.add(name, type, scope_name);
-		
-		return 0;
+		return type;
 	}
 
 	private int eval_udt_decl(VarDeclInfo var_decl_info, String scope_name) {
@@ -651,7 +620,10 @@ public class SemanticAnalyser {
 		String type = var_decl_info.type;
 		int line_number = var_decl_info.line_number;
 
-		return eval_udt_decl_assign(name, type, raw_value, line_number, scope_name, true);
+		String ret_type = get_udt_type_decl_assign(name, type, raw_value, line_number, scope_name, true);
+
+		symbol_table.add(name, ret_type, scope_name);
+		return 0;
 	}
 
 	private int eval_var_decl(VarDeclInfo var_decl_info, String scope_name, boolean allow_empty_array_index) {
@@ -919,7 +891,7 @@ public class SemanticAnalyser {
 		List<String> all_args = Util.get_func_args(s);
 		String args = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')'));
 		String func_name = s.substring(0, s.indexOf('('));
-		
+
 		if(func_name.equals("make_object")) {
 			if(all_args.size() != 2) {
 				push_func_invalid_error(func_name, all_args.size(), line_number);
@@ -1019,7 +991,7 @@ public class SemanticAnalyser {
 					return "not_known";
 				}
 			}
-		
+
 			return "int";
 		}
 

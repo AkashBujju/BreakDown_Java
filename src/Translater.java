@@ -72,18 +72,15 @@ public class Translater {
 	}
 
 	private void write_var_assgn(VarAssignInfo var_assign_info) {
-			/*
+		/*
 		try {
 			String name = var_assign_info.var_name;
 			String raw_value = var_assign_info.raw_value;
-
-				
 		}
 		catch(IOException e) {
 			System.out.println(e);
 		}
-			*/
-
+		*/
 	}
 
 	private void write_var_decl(VarDeclInfo var_decl_info) {
