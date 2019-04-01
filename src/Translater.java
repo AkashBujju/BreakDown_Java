@@ -6,6 +6,7 @@ public class Translater {
 	SemanticAnalyser sa;
 	FileWriter fw;
 	String tab = "	";
+	int num_tabs = 1;
 
 	Translater(SemanticAnalyser sa) {
 		this.sa = sa;
@@ -25,6 +26,8 @@ public class Translater {
 					write_struct((StructInfo)(info));
 				else if(info.info_type == InfoType.FUNCTION)
 					write_function((FunctionInfo)(info));
+				else if(info.info_type == InfoType.VAR_DECL)
+					write_var_decl((VarDeclInfo)(info));
 			}
 
 			fw.close();
@@ -50,19 +53,32 @@ public class Translater {
 	private void write_ifs(IfInfo if_info) {
 		try {
 			write_tab();
-			fw.write("if (" + if_info.exp + ") {\n");
+			String exp = replace_all_ops(if_info.exp);
+			fw.write("if (" + exp + ") {\n");
 			List<Info> infos = if_info.infos;
 			int len = if_info.infos.size();
 
+			num_tabs += 1;
 			for(int i = 0; i < len; ++i) {
 				Info info = infos.get(i);
-				write_tab();
-				if(info.info_type == InfoType.VAR_DECL)
+
+				if(info.info_type == InfoType.VAR_DECL) {
+					write_tab();
 					write_var_decl((VarDeclInfo)(info));
+				}
+				else if(info.info_type == InfoType.VAR_ASSIGN) {
+					write_tab();
+					write_var_assgn((VarAssignInfo)(info));
+				}
+				else if(info.info_type == InfoType.EXPRESSION) {
+					write_tab();
+					write_exp((ExpInfo)(info));
+				}
 				else if(info.info_type == InfoType.IF)
 					write_ifs((IfInfo)(info));
 			}
 
+			num_tabs -= 1;
 			write_tab();
 			fw.write("}\n");
 		}
@@ -71,16 +87,29 @@ public class Translater {
 		}
 	}
 
-	private void write_var_assgn(VarAssignInfo var_assign_info) {
-		/*
+	private void write_exp(ExpInfo exp_info) {
 		try {
-			String name = var_assign_info.var_name;
-			String raw_value = var_assign_info.raw_value;
+			String exp = replace_all_ops(exp_info.exp);
+			fw.write(exp + ";\n");
 		}
 		catch(IOException e) {
 			System.out.println(e);
 		}
-		*/
+	}
+
+	private void write_var_assgn(VarAssignInfo var_assign_info) {
+		try {
+			String name = var_assign_info.var_name;
+			String raw_value = var_assign_info.raw_value;
+
+			raw_value = replace_all_ops(raw_value);
+			name = replace_all_ops(name);
+
+			fw.write(name + " = { " + raw_value + " };\n");
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
 	}
 
 	private void write_var_decl(VarDeclInfo var_decl_info) {
@@ -122,6 +151,7 @@ public class Translater {
 				fw.write(type + " " + name + ";\n");
 			else {
 				raw_value = replace_all_ops(raw_value);
+				raw_value = replace_in_built_funcs(raw_value);
 				fw.write(type + " " + name + " = " + raw_value + ";\n");
 			}
 		}
@@ -169,6 +199,14 @@ public class Translater {
 				if(info.info_type == InfoType.VAR_DECL) {
 					write_tab();
 					write_var_decl((VarDeclInfo)(info));
+				}
+				else if(info.info_type == InfoType.VAR_ASSIGN) {
+					write_tab();
+					write_var_assgn((VarAssignInfo)(info));
+				}
+				else if(info.info_type == InfoType.EXPRESSION) {
+					write_tab();
+					write_exp((ExpInfo)(info));
 				}
 				else if(info.info_type == InfoType.IF)
 					write_ifs((IfInfo)(info));
@@ -227,7 +265,8 @@ public class Translater {
 
 	private void write_tab() {
 		try {
-			fw.write(tab);
+			for(int i = 1; i <= num_tabs; ++i)
+				fw.write(tab);
 		}
 		catch(IOException e) {
 			System.out.println(e);
@@ -236,16 +275,22 @@ public class Translater {
 
 	private String replace_in_built_funcs(String s) {
 		StringBuffer sb = new StringBuffer(s);
+		String make_object_str = "make_object(";
 
-		// @Incomplete: 
-		// @Incomplete: 
-		// @Incomplete: 
-		// @Incomplete: 
-		// @Incomplete: 
-		// @Incomplete: 
-		// @Incomplete: 
-		// @Incomplete: 
+		while(true) {
+			int indexOf_makeObject = sb.indexOf("make_object(");
+			if(indexOf_makeObject != -1 && !Util.is_index_inside_quotes(indexOf_makeObject, sa.quotes_range_indices)) {
+				int end_index = Util.get_matching_close_bracket_index(sb.toString(), "(", indexOf_makeObject + make_object_str.length() - 1);
 
+				String func_call = sb.substring(indexOf_makeObject, end_index + 1);
+				List<String> args = Util.get_func_args(func_call);
+
+				String new_func_call = "(" + args.get(0) + "*)(malloc(sizeof(" + args.get(0) + ") * " + args.get(1) + "))";
+				sb = sb.replace(indexOf_makeObject, end_index + 1, new_func_call);
+			}
+			else
+				break;
+		}
 
 		return sb.toString();
 	}

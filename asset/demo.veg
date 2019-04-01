@@ -1,3 +1,4 @@
+a := 10;
 
 Person::struct {
 	name := "null";
@@ -25,6 +26,7 @@ func main(argc: int, argv: char**) -> int {
 	student_1.person[0] = "akash", 3;
 
 	student_1.usn = "0";
+	students[0]^height = 1.0;
 
 	numbers := 10, 12, 34, 56, 97, 100;
 	size := 6;
@@ -34,8 +36,10 @@ func main(argc: int, argv: char**) -> int {
 	if numbers[i] < max {
 		max = numbers[i];
 		tmp := 1;
+		if true {
+			tmp = 1;
+		}
 	}
-
 
 	printf("max: %d", max);
 	scanf("%d", >> max);
@@ -58,7 +62,7 @@ func main(argc: int, argv: char**) -> int {
 	# (int**)(malloc(sizeof(int*) * foo_1(marks)));
 
 	data_persons := make_object(Person, 5);
-	free_object(<< data_int);
+	free(<< data_int);
 
 	return num;
 }

@@ -62,7 +62,7 @@ public class SemanticAnalyser {
 
 	void init_built_in_funcs() {
 		built_in_funcs.add(new BuiltInFunc("make_object", 2));
-		built_in_funcs.add(new BuiltInFunc("free_object", 1));
+		built_in_funcs.add(new BuiltInFunc("free", 1));
 		built_in_funcs.add(new BuiltInFunc("printf", 100));
 		built_in_funcs.add(new BuiltInFunc("scanf", 100));
 	}
@@ -130,11 +130,11 @@ public class SemanticAnalyser {
 			String struct_name = it.next();
 			StructVars struct_vars = name_structvars_map.get(struct_name);
 
-			System.out.println("StructName: " + struct_name);
-			for(VarDeclInfo var_decl_info: struct_vars.var_decl_infos) {
-				System.out.println("name: " + var_decl_info.name + ", type: " + var_decl_info.type);
-			}
-			System.out.println();
+		//	System.out.println("StructName: " + struct_name);
+		//	for(VarDeclInfo var_decl_info: struct_vars.var_decl_infos) {
+		//		System.out.println("name: " + var_decl_info.name + ", type: " + var_decl_info.type);
+		//	}
+		//	System.out.println();
 		}
 	}
 
@@ -640,7 +640,7 @@ public class SemanticAnalyser {
 			return -1;
 		}
 
-		System.out.println("varname: " + name + ", raw_value: <" + raw_value + ">, scope_name: " + scope_name);
+		// System.out.println("varname: " + name + ", raw_value: <" + raw_value + ">, scope_name: " + scope_name);
 
 		// Checking if it's a user defined type.
 		boolean userdefined_type = name_structvars_map.containsKey(var_decl_info.type);
@@ -650,8 +650,8 @@ public class SemanticAnalyser {
 				return res;
 
 			String in_table_type = symbol_table.get_type(name, scope_name);
-			System.out.println("IN_TABLE_TYPE <" + in_table_type + ">");
-			System.out.println();
+			// System.out.println("IN_TABLE_TYPE <" + in_table_type + ">");
+			// System.out.println();
 
 			return 0;
 		}
@@ -772,8 +772,8 @@ public class SemanticAnalyser {
 
 		// Checking of the variable was added correctly.
 		String in_table_type = symbol_table.get_type(name, scope_name);
-		System.out.println("IN_TABLE_TYPE <" + in_table_type + ">");
-		System.out.println();
+		// System.out.println("IN_TABLE_TYPE <" + in_table_type + ">");
+		// System.out.println();
 
 		return  0;
 	}
@@ -916,7 +916,7 @@ public class SemanticAnalyser {
 
 			return obj_type + "*";
 		}
-		else if(func_name.equals("free_object")) {
+		else if(func_name.equals("free")) {
 			if(all_args.size() != 1) {
 				push_func_invalid_error(func_name, all_args.size(), line_number);
 				return "not_known";
