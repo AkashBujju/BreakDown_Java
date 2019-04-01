@@ -88,6 +88,14 @@ public class Translater {
 			write_tab();
 			write_exp((ExpInfo)(info));
 		}
+		else if(info.info_type == InfoType.RETURN) {
+			write_tab();
+			write_return((ReturnInfo)(info));
+		}
+		else if(info.info_type == InfoType.OTHER) {
+			write_tab();
+			write_others((OtherInfo)(info));
+		}
 		else if(info.info_type == InfoType.IF)
 			write_ifs((IfInfo)(info));
 		else if(info.info_type == InfoType.ELSE_IF)
@@ -98,17 +106,34 @@ public class Translater {
 			write_while((WhileInfo)(info));
 	}
 
+	private void write_return(ReturnInfo return_info) {
+		try {
+			String exp = return_info.exp;
+			exp = replace_all_ops(exp);
+			exp = replace_in_built_funcs(exp);
+
+			fw.write("return " + exp + ";\n");
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
+	}
+
 	private void write_else(ElseInfo else_info) {
 		try {
+			write_tab();
 			fw.write("else {\n");
 			List<Info> infos = else_info.infos;
 			int len = infos.size();
 
+			num_tabs += 1;
 			for(int i = 0; i < len; ++i) {
 				Info info = infos.get(i);
 				write_info(info);
 			}
 
+			num_tabs -= 1;
+			write_tab();
 			fw.write("}\n");
 		}
 		catch(IOException e) {
@@ -120,6 +145,9 @@ public class Translater {
 		try {
 			write_tab();
 			String exp = replace_all_ops(while_info.exp);
+			exp = replace_all_ops(exp);
+			exp = replace_in_built_funcs(exp);
+
 			fw.write("while (" + exp + ") {\n");
 			List<Info> infos = while_info.infos;
 			int len = while_info.infos.size();
@@ -144,6 +172,9 @@ public class Translater {
 		try {
 			write_tab();
 			String exp = replace_all_ops(else_if_info.exp);
+			exp = replace_all_ops(exp);
+			exp = replace_in_built_funcs(exp);
+
 			fw.write("else if (" + exp + ") {\n");
 			List<Info> infos = else_if_info.infos;
 			int len = else_if_info.infos.size();
@@ -167,6 +198,9 @@ public class Translater {
 		try {
 			write_tab();
 			String exp = replace_all_ops(if_info.exp);
+			exp = replace_all_ops(exp);
+			exp = replace_in_built_funcs(exp);
+
 			fw.write("if (" + exp + ") {\n");
 			List<Info> infos = if_info.infos;
 			int len = if_info.infos.size();
@@ -189,6 +223,7 @@ public class Translater {
 	private void write_exp(ExpInfo exp_info) {
 		try {
 			String exp = replace_all_ops(exp_info.exp);
+			exp = replace_in_built_funcs(exp);
 			fw.write(exp + ";\n");
 		}
 		catch(IOException e) {
@@ -202,6 +237,7 @@ public class Translater {
 			String raw_value = var_assign_info.raw_value;
 
 			raw_value = replace_all_ops(raw_value);
+			raw_value = replace_in_built_funcs(raw_value);
 			name = replace_all_ops(name);
 
 			fw.write(name + " = { " + raw_value + " };\n");
@@ -263,6 +299,15 @@ public class Translater {
 		try {
 			write_func_sig(function_info);
 			fw.write(";\n");
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
+	}
+
+	private void write_others(OtherInfo other_info) {
+		try {
+			fw.write(other_info.str + ";\n");
 		}
 		catch(IOException e) {
 			System.out.println(e);

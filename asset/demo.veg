@@ -30,6 +30,7 @@ func main(argc: int, argv: char**) -> int {
 		}
 
 		i = i + 1;
+		continue;
 	}
 
 	if max > 0 {

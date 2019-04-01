@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
 			max = { nums[i] };
 		}
 		i = { i+1 };
+		continue;
 	}
 	if (max>0) {
 		printf("max > 0\n");
@@ -39,9 +40,10 @@ int main(int argc, char **argv) {
 	else if (max<0) {
 		printf("max < 0\n");
 	}
-else {
-	printf("max = 0\n");
-}
+	else {
+		printf("max = 0\n");
+	}
 	printf("Max: %d\n",max);
+	return 0;
 }
 
