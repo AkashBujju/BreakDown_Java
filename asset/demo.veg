@@ -13,73 +13,28 @@ Student::struct {
 	weight := 0.0;
 }
 
+
 func main(argc: int, argv: char**) -> int {
-	person_1: Person = "jay", 2;
-	person_2: Person = "jay", 2;
-	marks :int[] = 80, 90, 75, 30, 55;
-	student_1: Student = person_1, person_2, "001", 2, 3, 4.0, 5.0, ;
-	student_1 = person_1, person_2, "001", 2, 3;
+	printf("Enter 5 numbers: ");
 
-	student_2: Student = person_1, person_2, "002", 4, 5;
-	students := >> student_1, >> student_2;
+	nums: int[5] = 0, 0, 0, 0, 0;
+	i := 0;
+	max := nums[0];
 
-	student_1.person[0] = "akash", 3;
+	while i < 5 {
+		tmp := 0;
+		scanf("%d", >> tmp);
+		nums[i] = tmp;
 
-	student_1.usn = "0";
-	students[0]^height = 1.0;
-
-	numbers := 10, 12, 34, 56, 97, 100;
-	size := 6;
-	i := 1;
-	max := numbers[0];
-
-	if numbers[i] < max {
-		max = numbers[i];
-		tmp := 1;
-		if true {
-			tmp = 1;
+		if nums[i] > max {
+			max = nums[i];
 		}
+
+		i = i + 1;
 	}
 
-	printf("max: %d", max);
-	scanf("%d", >> max);
+	printf("Max: %s\n", max);
 
-	a := students[0]^person[0].name;
-	b := student_1.usn;
-	d := person_1.age;
-	e := students[0]^usn;
-	f := student_1.height;
-	g := student_1.person[1].name;
-
-	num := 0;
-	foo_2(>> num);
-
-	tmp_3 := << (>> num);
-
-	name := "1" + "2";
-
-	data_int := make_object(int*, foo_1(marks));
-	# (int**)(malloc(sizeof(int*) * foo_1(marks)));
-
-	data_persons := make_object(Person, 5);
-	free(<< data_int);
-
-	return num;
-}
-
-func append(s1: string, s2: string) -> string {
-	return s1 + s2;
-}
-
-func foo_2(a: int*) -> int {
 	return 0;
 }
 
-func foo_1(a: int[5]) -> int {
-
-	return 1;
-}
-
-func demo() -> void {
-	return void;
-}

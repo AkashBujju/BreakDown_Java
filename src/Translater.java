@@ -19,13 +19,20 @@ public class Translater {
 			write_header_files();
 			List<Info> infos = sa.infos;
 			int len = infos.size();
+			int num_enc_funcs = 0;
 
 			for(int i = 0; i < len; ++i) {
 				Info info = infos.get(i);
 				if(info.info_type == InfoType.STRUCT)
 					write_struct((StructInfo)(info));
-				else if(info.info_type == InfoType.FUNCTION)
+				else if(info.info_type == InfoType.FUNCTION) {
+					if(num_enc_funcs == 0) {
+						write_all_func_decls();
+						fw.write("\n");
+					}
 					write_function((FunctionInfo)(info));
+					num_enc_funcs += 1;
+				}
 				else if(info.info_type == InfoType.VAR_DECL)
 					write_var_decl((VarDeclInfo)(info));
 			}
@@ -35,6 +42,24 @@ public class Translater {
 		catch(IOException e) {
 			System.out.println("Unable to open file: " + filename);
 			e.printStackTrace();
+		}
+	}
+
+	private void write_all_structs() {
+		int len = sa.infos.size();
+		for(int i = 0; i < len; ++i) {
+			Info info = sa.infos.get(i);
+			if(info.info_type == InfoType.STRUCT)
+				write_struct((StructInfo)(info));
+		}
+	}
+
+	private void write_all_func_decls() {
+		int len = sa.infos.size();
+		for(int i = 0; i < len; ++i) {
+			Info info = sa.infos.get(i);
+			if(info.info_type == InfoType.FUNCTION)
+				write_func_decl((FunctionInfo)(info));
 		}
 	}
 
@@ -160,11 +185,20 @@ public class Translater {
 		}
 	}
 
-	private void write_function(FunctionInfo function_info) {
+	private void write_func_decl(FunctionInfo function_info) {
+		try {
+			write_func_sig(function_info);
+			fw.write(";\n");
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
+	}
+
+	private void write_func_sig(FunctionInfo function_info) {
 		try {
 			fw.write(function_info.return_type + " " + function_info.name + "(");
 
-			// Function arguments.
 			List<VarDeclInfo> var_decl_infos = function_info.var_args;
 			int var_args_len = var_decl_infos.size();
 			for(int i = 0; i < var_args_len; ++i) {
@@ -190,7 +224,17 @@ public class Translater {
 					fw.write(", ");
 			}
 
-			fw.write(") {\n");
+			fw.write(")");
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
+	}
+
+	private void write_function(FunctionInfo function_info) {
+		try {
+			write_func_sig(function_info);
+			fw.write(" {\n");
 
 			List<Info> infos = function_info.infos;
 			int infos_len = infos.size();
