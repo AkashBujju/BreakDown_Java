@@ -92,8 +92,28 @@ public class Translater {
 			write_ifs((IfInfo)(info));
 		else if(info.info_type == InfoType.ELSE_IF)
 			write_else_ifs((ElseIfInfo)(info));
+		else if(info.info_type == InfoType.ELSE)
+			write_else((ElseInfo)(info));
 		else if(info.info_type == InfoType.WHILE)
 			write_while((WhileInfo)(info));
+	}
+
+	private void write_else(ElseInfo else_info) {
+		try {
+			fw.write("else {\n");
+			List<Info> infos = else_info.infos;
+			int len = infos.size();
+
+			for(int i = 0; i < len; ++i) {
+				Info info = infos.get(i);
+				write_info(info);
+			}
+
+			fw.write("}\n");
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
 	}
 
 	private void write_while(WhileInfo while_info) {

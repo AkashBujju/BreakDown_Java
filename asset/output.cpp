@@ -36,9 +36,12 @@ int main(int argc, char **argv) {
 	if (max>0) {
 		printf("max > 0\n");
 	}
-	else if (max<=0) {
-		printf("max <= 0\n");
+	else if (max<0) {
+		printf("max < 0\n");
 	}
+else {
+	printf("max = 0\n");
+}
 	printf("Max: %d\n",max);
 }
 

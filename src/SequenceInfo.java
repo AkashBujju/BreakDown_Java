@@ -386,11 +386,12 @@ class SequenceTypeInfo {
 			return false;
 
 		int num_colons = Util.get_num_chars_outside_quotes(s, ':', quote_range_indices);
-		int indexOf_equals = s.indexOf('=');
+		int num_equals = Util.get_num_chars_outside_quotes(s, '=', quote_range_indices);
 
-		if(indexOf_equals == -1 && num_colons > 0)
+		if(num_equals == 0 && num_colons > 0)
 			return true;
-		else if(indexOf_equals != -1) {
+		else if(num_equals == 1) {
+			int indexOf_equals = s.indexOf('=');
 			char c = s.charAt(indexOf_equals - 1);
 			if(c != '<' && c != '>')
 				return true;
