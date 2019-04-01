@@ -385,16 +385,21 @@ class SequenceTypeInfo {
 		if(s.length() < 3)
 			return false;
 
-		int num_equals = Util.get_num_chars_outside_quotes(s, '=', quote_range_indices);
 		int num_colons = Util.get_num_chars_outside_quotes(s, ':', quote_range_indices);
+		int indexOf_equals = s.indexOf('=');
 
-		boolean is_var = true;
+		if(indexOf_equals == -1 && num_colons > 0)
+			return true;
+		else if(indexOf_equals != -1) {
+			char c = s.charAt(indexOf_equals - 1);
+			if(c != '<' && c != '>')
+				return true;
+			else if(num_colons > 0)
+				return true;
 
-		if(num_equals > 1)
-			is_var = false;
-		else if(num_equals == 0 && num_colons != 1)
-			is_var = false;
+			return false;
+		}
 
-		return is_var;
+		return false;
 	}
 }

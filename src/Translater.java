@@ -75,6 +75,74 @@ public class Translater {
 		}
 	}
 
+	private void write_info(Info info) {
+		if(info.info_type == InfoType.VAR_DECL) {
+			write_tab();
+			write_var_decl((VarDeclInfo)(info));
+		}
+		else if(info.info_type == InfoType.VAR_ASSIGN) {
+			write_tab();
+			write_var_assgn((VarAssignInfo)(info));
+		}
+		else if(info.info_type == InfoType.EXPRESSION) {
+			write_tab();
+			write_exp((ExpInfo)(info));
+		}
+		else if(info.info_type == InfoType.IF)
+			write_ifs((IfInfo)(info));
+		else if(info.info_type == InfoType.ELSE_IF)
+			write_else_ifs((ElseIfInfo)(info));
+		else if(info.info_type == InfoType.WHILE)
+			write_while((WhileInfo)(info));
+	}
+
+	private void write_while(WhileInfo while_info) {
+		try {
+			write_tab();
+			String exp = replace_all_ops(while_info.exp);
+			fw.write("while (" + exp + ") {\n");
+			List<Info> infos = while_info.infos;
+			int len = while_info.infos.size();
+
+			num_tabs += 1;
+			for(int i = 0; i < len; ++i) {
+				Info info = infos.get(i);
+				write_info(info);
+			}
+
+			num_tabs -= 1;
+			write_tab();
+			fw.write("}\n");
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
+
+	}
+
+	private void write_else_ifs(ElseIfInfo else_if_info) {
+		try {
+			write_tab();
+			String exp = replace_all_ops(else_if_info.exp);
+			fw.write("else if (" + exp + ") {\n");
+			List<Info> infos = else_if_info.infos;
+			int len = else_if_info.infos.size();
+
+			num_tabs += 1;
+			for(int i = 0; i < len; ++i) {
+				Info info = infos.get(i);
+				write_info(info);
+			}
+
+			num_tabs -= 1;
+			write_tab();
+			fw.write("}\n");
+		}
+		catch(IOException e) {
+			System.out.println(e);
+		}
+	}
+
 	private void write_ifs(IfInfo if_info) {
 		try {
 			write_tab();
@@ -86,21 +154,7 @@ public class Translater {
 			num_tabs += 1;
 			for(int i = 0; i < len; ++i) {
 				Info info = infos.get(i);
-
-				if(info.info_type == InfoType.VAR_DECL) {
-					write_tab();
-					write_var_decl((VarDeclInfo)(info));
-				}
-				else if(info.info_type == InfoType.VAR_ASSIGN) {
-					write_tab();
-					write_var_assgn((VarAssignInfo)(info));
-				}
-				else if(info.info_type == InfoType.EXPRESSION) {
-					write_tab();
-					write_exp((ExpInfo)(info));
-				}
-				else if(info.info_type == InfoType.IF)
-					write_ifs((IfInfo)(info));
+				write_info(info);
 			}
 
 			num_tabs -= 1;
@@ -240,20 +294,7 @@ public class Translater {
 			int infos_len = infos.size();
 			for(int i = 0; i < infos_len; i++) {
 				Info info = infos.get(i);
-				if(info.info_type == InfoType.VAR_DECL) {
-					write_tab();
-					write_var_decl((VarDeclInfo)(info));
-				}
-				else if(info.info_type == InfoType.VAR_ASSIGN) {
-					write_tab();
-					write_var_assgn((VarAssignInfo)(info));
-				}
-				else if(info.info_type == InfoType.EXPRESSION) {
-					write_tab();
-					write_exp((ExpInfo)(info));
-				}
-				else if(info.info_type == InfoType.IF)
-					write_ifs((IfInfo)(info));
+				write_info(info);
 			}
 
 			fw.write("}\n\n");
@@ -345,11 +386,11 @@ public class Translater {
 		// First, replacing ^ with ->
 		while(true) {
 			int indexOf_pointer_access = sb.indexOf("^");
-			
+
 			if(indexOf_pointer_access == -1)
 				break;
 			else if(!Util.is_index_inside_quotes(indexOf_pointer_access, sa.quotes_range_indices))
-			sb = sb.replace(indexOf_pointer_access, indexOf_pointer_access + 1, "->");
+				sb = sb.replace(indexOf_pointer_access, indexOf_pointer_access + 1, "->");
 		}
 
 		while(true) {
