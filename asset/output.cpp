@@ -3,47 +3,44 @@
 #include <stdio.h>
 using namespace std;
 
-int a = 10;
-struct Person {
-	string name = "null";
-	int age = 0;
-};
+void copy_str(string from, char to[]);
+void append_to_str(string str, char to[]);
+int main();
 
-struct Student {
-	Person person[2];
-	string usn;
-	int marks[2] = { 1,2 };
-	double height = 0.0;
-	double weight = 0.0;
-};
-
-int main(int argc, char **argv);
-
-int main(int argc, char **argv) {
-	printf("Enter 5 numbers: ");
-	int nums[5] = { 0,0,0,0,0 };
+void copy_str(string from, char to[]) {
 	int i = 0;
-	int max = nums[0];
-	while (i<5) {
-		int tmp = 0;
-		scanf("%d",&tmp);
-		nums[i] = { tmp };
-		if (nums[i]>max) {
-			max = { nums[i] };
-		}
+	char c = from[0];
+	while (c!='\0') {
+		to[i] = { c };
 		i = { i+1 };
-		continue;
+		c = { from[i] };
 	}
-	if (max>0) {
-		printf("max > 0\n");
+	return ;
+}
+
+void append_to_str(string str, char to[]) {
+	int i = 0;
+	char c = to[0];
+	while (c!='\0') {
+		i = { i+1 };
+		c = { to[i] };
 	}
-	else if (max<0) {
-		printf("max < 0\n");
+	c = { str[0] };
+	int j = 0;
+	while (c!='\0') {
+		to[i] = { c };
+		j = { j+1 };
+		i = { i+1 };
+		c = { str[j] };
 	}
-	else {
-		printf("max = 0\n");
-	}
-	printf("Max: %d\n",max);
+	return ;
+}
+
+int main() {
+	char name[20] = {  };
+	copy_str("Hello",name);
+	append_to_str(", World.",name);
+	printf("%s\n",name);
 	return 0;
 }
 

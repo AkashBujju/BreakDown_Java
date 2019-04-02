@@ -86,6 +86,7 @@ public class SymbolTable {
 		return true;
 	}
 
+
 	boolean add_global(String name, String type) {
 		boolean contains = global_name_scope_map.containsKey(name);
 		if(contains == true)
@@ -131,5 +132,20 @@ public class SymbolTable {
 		}
 
 		return "not_known";
+	}
+
+	void show_all() {
+		System.out.println();
+		System.out.println("SYMBOL TABLE");
+		System.out.println("-----------------------------");
+		Set<String> keyset = scopeNameAndVarName_var_map.keySet();
+		Iterator<String> it = keyset.iterator();
+		while(it.hasNext()) {
+			String key = it.next();
+			SymbolVar symbol_var = scopeNameAndVarName_var_map.get(key);
+			System.out.println("name: " + symbol_var.name + ", type: " + symbol_var.type + ", scope_name: " + symbol_var.scope_name);
+		}
+		System.out.println("-----------------------------");
+		System.out.println();
 	}
 }

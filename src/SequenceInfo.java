@@ -393,7 +393,7 @@ class SequenceTypeInfo {
 		else if(num_equals == 1) {
 			int indexOf_equals = s.indexOf('=');
 			char c = s.charAt(indexOf_equals - 1);
-			if(c != '<' && c != '>')
+			if(c != '<' && c != '>' && c != '!')
 				return true;
 			else if(num_colons > 0)
 				return true;

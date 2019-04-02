@@ -63,6 +63,7 @@ public class SemanticAnalyser {
 	void init_built_in_funcs() {
 		built_in_funcs.add(new BuiltInFunc("make_object", 2));
 		built_in_funcs.add(new BuiltInFunc("free", 1));
+		built_in_funcs.add(new BuiltInFunc("sizeof", 1));
 		built_in_funcs.add(new BuiltInFunc("printf", 100));
 		built_in_funcs.add(new BuiltInFunc("scanf", 100));
 	}
@@ -649,7 +650,7 @@ public class SemanticAnalyser {
 			if(res == -1)
 				return res;
 
-			String in_table_type = symbol_table.get_type(name, scope_name);
+			// String in_table_type = symbol_table.get_type(name, scope_name);
 			// System.out.println("IN_TABLE_TYPE <" + in_table_type + ">");
 			// System.out.println();
 
@@ -771,7 +772,7 @@ public class SemanticAnalyser {
 		}
 
 		// Checking of the variable was added correctly.
-		String in_table_type = symbol_table.get_type(name, scope_name);
+		// String in_table_type = symbol_table.get_type(name, scope_name);
 		// System.out.println("IN_TABLE_TYPE <" + in_table_type + ">");
 		// System.out.println();
 
@@ -780,6 +781,7 @@ public class SemanticAnalyser {
 
 	// @Note: 's' should contain just one value(literal \ variable).
 	String get_type_of_one_exp(String s, int line_number, String scope_name) {
+		// System.out.println("exp: " + s);
 		// Checking if it's a double literal. We don't wont that to get split.
 		String tmp_type = Util.get_primitive_type(s);
 		if(!tmp_type.equals("not_known"))
@@ -951,6 +953,7 @@ public class SemanticAnalyser {
 			for(int i = 1; i < len; ++i) {
 				String arg = all_args.get(i);
 				String type = get_type_of_exp(arg, scope_name, line_number);
+				type = Util.eat_pointers_and_array(type);
 
 				if(!symbol_table.is_primitive_type(type)) {
 					error_log.push("In Function 'print', only primitive 'Types' can be passed as arguments. But found argument '" + arg + "' with Type '" + type + "'.", "print(...., " + arg + ", ...", line_number);
@@ -993,6 +996,17 @@ public class SemanticAnalyser {
 			}
 
 			return "int";
+		}
+		else if(func_name.equals("sizeof")) {
+			if(all_args.size() != 1) {
+				push_func_invalid_error(func_name, all_args.size(), line_number);
+				return "not_known";
+			}
+
+			String arg_1 = all_args.get(0);
+			if(symbol_table.type_exists(arg_1) || !get_type_of_exp(arg_1, scope_name, line_number).equals("not_known")) {
+				return "int";
+			}
 		}
 
 		return "not_known";
@@ -1214,8 +1228,17 @@ public class SemanticAnalyser {
 	String get_iden_type(String s, String scopename, int line_number) {
 		String type = "";
 
-		boolean is_array = s.indexOf('[') != -1 && s.indexOf(']') != -1 ? true : false;
+		boolean is_array = s.indexOf('[') != -1 && s.lastIndexOf(']') != -1 ? true : false;
 		if(is_array) {
+			String arr_var_name = s.substring(0, s.indexOf('['));
+			String arr_var_type = symbol_table.get_type(arr_var_name, scopename);
+			if(arr_var_type.equals("string"))
+				return "char";
+			if(arr_var_type.indexOf("@array@") == -1) {
+				error_log.push("Using [] to a non-array variable '" + arr_var_name + "'.", s, line_number);
+				return "not_known";
+			}
+
 			type = get_array_call_type(s, scopename, line_number);
 			return type;
 		}

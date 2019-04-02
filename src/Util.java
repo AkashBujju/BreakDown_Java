@@ -859,15 +859,21 @@ public class Util {
 		int num_open_paren = 0;
 		int num_close_paren = 0;
 		int last_index = index_of_first_open_paren + 1;
+		int quotes_count = 0;
 		List<String> args = new ArrayList<>();
 
 		for(int i = index_of_first_open_paren + 1; i < len; ++i) {
 			char c = s.charAt(i);
-			if(c == '(')
+			if(c == '\"') {
+				if(i == 0 || (s.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
+			}
+			else if(c == '(')
 				num_open_paren += 1;
 			else if(c == ')')
 				num_close_paren += 1;
-			else if(num_open_paren == num_close_paren && c == ',') {
+			else if(quotes_count % 2 == 0 && num_open_paren == num_close_paren && c == ',') {
 				num_args += 1;
 				String arg = s.substring(last_index, i);
 				if(!args.equals(""))
@@ -937,6 +943,10 @@ public class Util {
 			if(op.equals("+"))
 				res = "string";
 		}
+		else if(type_1.equals("char") && type_2.equals("char")) {
+			if(op.equals("==") || op.equals("!="))
+				res = "bool";
+		}
 		else { // pointer arithmetic.
 			if(is_type_pointer(type_1) && type_2.equals("int"))
 				res = type_1;
@@ -973,6 +983,10 @@ public class Util {
 
 		if(type_1.equals("string") && type_2.equals("string")) {
 			if(op.equals("+"))
+				is_valid = true;
+		}
+		if(type_1.equals("char") && type_2.equals("char")) {
+			if(op.equals("==") || op.equals("!="))
 				is_valid = true;
 		}
 		else if(type_1.equals("bool") && type_2.equals("bool")) {
@@ -1071,10 +1085,16 @@ public class Util {
 		StringBuffer sb_tmp = new StringBuffer("");
 		List<String> all_exps = new ArrayList<>();
 		Stack<Character> stack = new Stack<>();
+		int quotes_count = 0;
 
 		for(int i = 0; i < sb_len; ++i) {
 			char c = sb.charAt(i);
-			if(c == '@' || c == ',') {
+			if(c == '\"') {
+				if(i == 0 || (sb.charAt(i - 1) != '\\')) {
+					quotes_count += 1;
+				}
+			}
+			if(c == '@' || (c == ',' && quotes_count % 2 == 0)) {
 				while(stack.size() != 0) {
 					char ch = stack.pop();
 					if(ch != '@' && ch != ',')

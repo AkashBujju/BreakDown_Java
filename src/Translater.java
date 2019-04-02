@@ -109,6 +109,9 @@ public class Translater {
 	private void write_return(ReturnInfo return_info) {
 		try {
 			String exp = return_info.exp;
+			if(exp.equals("void")) // @Hack: Fix.
+				exp = "";
+
 			exp = replace_all_ops(exp);
 			exp = replace_in_built_funcs(exp);
 

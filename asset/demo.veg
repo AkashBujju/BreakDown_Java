@@ -1,50 +1,43 @@
-a := 10;
 
-Person::struct {
-	name := "null";
-	age := 0;
-}
-
-Student::struct {
-	person: Person[2];
-	usn: string;
-	marks: int[2] = 1, 2;
-	height := 0.0;
-	weight := 0.0;
-}
-
-func main(argc: int, argv: char**) -> int {
-	printf("Enter 5 numbers: ");
-
-	nums: int[5] = 0, 0, 0, 0, 0;
+func copy_str(from: string, to: char[]) -> void {	
 	i := 0;
-	max := nums[0];
-
-	while i < 5 {
-		tmp := 0;
-		scanf("%d", >> tmp);
-		nums[i] = tmp;
-
-		if nums[i] > max {
-			max = nums[i];
-		}
-
+	c := from[0];
+	while c != '\0' {
+		to[i] = c;
 		i = i + 1;
-		continue;
+		c = from[i];
+	}
+	
+	return void;
+}
+
+func append_to_str(str: string, to: char[]) -> void {
+	i := 0;
+	c := to[0];
+	while c != '\0' {
+		i = i + 1;
+		c = to[i];
 	}
 
-	if max > 0 {
-		printf("max > 0\n");
-	}
-	else if max < 0 {
-		printf("max < 0\n");
-	}
-	else {
-		printf("max = 0\n");
-	}
+	c = str[0];
+	j := 0;
+	while c != '\0' {
+		to[i] = c;
+		j = j + 1;
+		i = i + 1;
 
-	printf("Max: %d\n", max);
+		c = str[j];
+	}
+	
+	return void;
+}
+
+func main() -> int {
+	name: char[20];
+	copy_str("Hello", name);
+	append_to_str(", World.", name);
+
+	printf("%s\n", name);
 
 	return 0;
 }
-

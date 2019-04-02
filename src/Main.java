@@ -14,6 +14,7 @@ public class Main {
 
 		boolean show_sequences = false;
 		boolean show_data = false;
+		boolean show_symbol_table = false;
 
 		// Processing command-line-arguments.
 		for(int i = 0; i < args.length; ++i) {
@@ -22,6 +23,8 @@ public class Main {
 				show_sequences = true;
 			else if(arg.equals("-show_data"))
 				show_data = true;
+			else if(arg.equals("-show_table"))
+				show_symbol_table = true;
 		}
 
 		Util.init_split_sequences();
@@ -94,10 +97,18 @@ public class Main {
 			Translater translater = new Translater(sa);
 			translater.translate("C:\\Users\\Akash\\Documents\\GitHub\\BreakDown_Java\\asset\\output.cpp");
 
+			System.out.println();
+			System.out.println("Translated.");
+			System.out.println("-----------------");
+			System.out.println();
+
 			Instant end_time = Instant.now();
 			long timeElapsed = Duration.between(start_time, end_time).toMillis();
 			System.out.println();
 			System.out.println("Took " + timeElapsed + " ms to compile.");
+
+			if(show_symbol_table)
+				sa.symbol_table.show_all();
 		}
 		catch (Exception e) {
 			System.out.println();
