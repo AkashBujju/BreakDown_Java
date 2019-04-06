@@ -347,7 +347,7 @@ public class EvalExp {
 
 						boolean valid_operation = Util.validate_operation(left_type, s);
 						if(!valid_operation)
-							return new MsgType("Unary operations involving '+' or '-', can be done only on 'int' or 'double'.", "not_known");
+							return new MsgType("Unary operations involving '+' or '-', can be done only on 'int' or 'double', not to Type '" + left_type + "'.", "not_known");
 
 						t = "@" + (t_list.size() + 1) + "@";
 						literal_type_map.put(t, "not_known");

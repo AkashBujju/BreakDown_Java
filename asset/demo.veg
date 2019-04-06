@@ -1,43 +1,38 @@
 
-func copy_str(from: string, to: char[]) -> void {	
-	i := 0;
-	c := from[0];
-	while c != '\0' {
-		to[i] = c;
-		i = i + 1;
-		c = from[i];
-	}
-	
-	return void;
-}
-
-func append_to_str(str: string, to: char[]) -> void {
-	i := 0;
-	c := to[0];
-	while c != '\0' {
-		i = i + 1;
-		c = to[i];
-	}
-
-	c = str[0];
-	j := 0;
-	while c != '\0' {
-		to[i] = c;
-		j = j + 1;
-		i = i + 1;
-
-		c = str[j];
-	}
-	
-	return void;
+Person::struct {
+	name := "none";
+	age := 0;
 }
 
 func main() -> int {
-	name: char[20];
-	copy_str("Hello", name);
-	append_to_str(", World.", name);
+	person := make_object(Person, 1);
+	person^name = "akash";
+	person^age = 20;
+	print_person(person);
 
-	printf("%s\n", name);
+	person_2: Person = "bujju", 21;
+	print_person(>> person_2);
 
 	return 0;
+}
+
+func print_person(person: Person*) -> void {
+	printf("Name: ");
+	print_str(person^name);
+	printf(", Age: %d\n", person^age);
+
+	return void;
+}
+
+func print_str(str: string) -> void {
+	i := 0;
+	c := str[i];
+
+	while c != '\0' {
+		printf("%c", c);
+		i = i + 1;
+		c = str[i];
+	}
+
+	return void;
 }

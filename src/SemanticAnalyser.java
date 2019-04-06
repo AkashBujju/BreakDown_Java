@@ -36,13 +36,13 @@ class BuiltInFunc {
 public class SemanticAnalyser {
 	List<Info> infos;	
 	SymbolTable symbol_table;
-	List<Integer> func_sig_indices;
 	List<RangeIndices> quotes_range_indices;
 	List<FuncNameArgs> func_name_args;
 	List<BuiltInFunc> built_in_funcs;
 	HashMap<String, StructVars> name_structvars_map;
 	HashMap<Integer, String> id_scope_map;
 	HashMap<Integer, FuncNameArgs> func_id_fna_map;
+	HashMap<String, Integer> func_name_num_args_map;
 	ErrorLog error_log;
 	String func_iden = "_func@";
 	String var_iden = "_var@";
@@ -50,13 +50,13 @@ public class SemanticAnalyser {
 	SemanticAnalyser(List<Info> infos, List<RangeIndices> quotes_range_indices) {
 		this.infos = infos;
 		this.quotes_range_indices = quotes_range_indices;
-		func_sig_indices = new ArrayList<>();
 		symbol_table = new SymbolTable();
 		func_name_args = new ArrayList<>();
 		error_log = new ErrorLog();
 		name_structvars_map = new HashMap<>();
 		func_id_fna_map = new HashMap<>();
 		id_scope_map = new HashMap<>();
+		func_name_num_args_map = new HashMap<>();
 		built_in_funcs = new ArrayList<>();
 	}
 
@@ -71,17 +71,16 @@ public class SemanticAnalyser {
 	public void start() throws FileNotFoundException {
 		init_built_in_funcs();
 
-		// Filling in func_name_args
-		int count = 0;
-		for(Info i: infos) {
-			if(i.info_type == InfoType.FUNCTION) {
-				func_sig_indices.add(count);
-				FunctionInfo func_info = (FunctionInfo)(i);
+		for(int i = 0; i < infos.size(); ++i) {
+			Info info = infos.get(i);
+			if(info.info_type == InfoType.FUNCTION) {
+				FunctionInfo func_info = (FunctionInfo)(info);
+				String scope_name = "_" + (func_info.id);
 				FuncNameArgs func_name_arg = new FuncNameArgs();
+
 				func_name_arg.name = func_info.name;
 				func_name_arg.return_type = func_info.return_type;
-				String scope_name = "_" + func_info.id;
-
+				// Function args
 				List<String> var_arg_types = new ArrayList<>();
 				for(VarDeclInfo var: func_info.var_args) {
 					int res = eval_var_decl(var, scope_name, true);
@@ -95,9 +94,15 @@ public class SemanticAnalyser {
 				func_name_arg.arg_types = var_arg_types;
 				func_name_args.add(func_name_arg);
 				func_id_fna_map.put(func_info.id, func_name_arg);
-			}
 
-			count += 1;
+				func_name_num_args_map.put(func_info.name, func_info.var_args.size());
+			}
+			else if(info.info_type == InfoType.STRUCT) {
+				StructInfo struct_info = (StructInfo)(info);
+				int res = eval_struct(struct_info, i);
+				if(res == -1)
+					return;
+			}
 		}
 
 		// Actual start
@@ -112,8 +117,7 @@ public class SemanticAnalyser {
 				error_res = eval_var_decl((VarDeclInfo)(info), "global", false);
 			else if(info.info_type == InfoType.FUNCTION)
 				error_res = eval_function((FunctionInfo)(info));
-			else if(info.info_type == InfoType.STRUCT)
-				error_res = eval_struct((StructInfo)(info), i);
+			else if(info.info_type == InfoType.STRUCT) {}  // Already processed.
 			else {
 				error_log.push("Invalid InfoType found.", info.get_info(), info.line_number);
 			}
@@ -131,11 +135,11 @@ public class SemanticAnalyser {
 			String struct_name = it.next();
 			StructVars struct_vars = name_structvars_map.get(struct_name);
 
-		//	System.out.println("StructName: " + struct_name);
-		//	for(VarDeclInfo var_decl_info: struct_vars.var_decl_infos) {
-		//		System.out.println("name: " + var_decl_info.name + ", type: " + var_decl_info.type);
-		//	}
-		//	System.out.println();
+			//	System.out.println("StructName: " + struct_name);
+			//	for(VarDeclInfo var_decl_info: struct_vars.var_decl_infos) {
+			//		System.out.println("name: " + var_decl_info.name + ", type: " + var_decl_info.type);
+			//	}
+			//	System.out.println();
 		}
 	}
 
@@ -277,9 +281,9 @@ public class SemanticAnalyser {
 		String scope_name = "_" + (func_info.id);
 		int num_returns = 0;
 
-		// @Note: Function args already evaluated.
 		String return_type = func_id_fna_map.get(func_info.id).return_type;
 
+		// function body
 		int infos_len = infos.size();
 		for(int i = 0; i < infos_len; ++i) {
 			Info info = infos.get(i);
@@ -1192,11 +1196,11 @@ public class SemanticAnalyser {
 	}
 
 	boolean func_with_num_args_exists(String name, int num_args) {
-		for(Integer i: func_sig_indices) {
-			FunctionInfo func_info = (FunctionInfo)(infos.get(i));	
-			if(func_info.name.equals(name) && num_args == func_info.var_args.size())
-				return true;
-		}
+		Integer arg_size = func_name_num_args_map.get(name);
+		if(arg_size == null)
+			return false;
+		if(arg_size == num_args)
+			return true;
 
 		return false;
 	}

@@ -3,44 +3,40 @@
 #include <stdio.h>
 using namespace std;
 
-void copy_str(string from, char to[]);
-void append_to_str(string str, char to[]);
+struct Person {
+	string name = "none";
+	int age = 0;
+};
+
 int main();
-
-void copy_str(string from, char to[]) {
-	int i = 0;
-	char c = from[0];
-	while (c!='\0') {
-		to[i] = { c };
-		i = { i+1 };
-		c = { from[i] };
-	}
-	return ;
-}
-
-void append_to_str(string str, char to[]) {
-	int i = 0;
-	char c = to[0];
-	while (c!='\0') {
-		i = { i+1 };
-		c = { to[i] };
-	}
-	c = { str[0] };
-	int j = 0;
-	while (c!='\0') {
-		to[i] = { c };
-		j = { j+1 };
-		i = { i+1 };
-		c = { str[j] };
-	}
-	return ;
-}
+void print_person(Person *person);
+void print_str(string str);
 
 int main() {
-	char name[20] = {  };
-	copy_str("Hello",name);
-	append_to_str(", World.",name);
-	printf("%s\n",name);
+	Person *person = { (Person*)(malloc(sizeof(Person) * 1)) };
+	person->name = { "akash" };
+	person->age = { 20 };
+	print_person(person);
+	Person person_2 = { "bujju",21 };
+	print_person(&person_2);
 	return 0;
+}
+
+void print_person(Person *person) {
+	printf("Name: ");
+	print_str(person->name);
+	printf(", Age: %d\n",person->age);
+	return ;
+}
+
+void print_str(string str) {
+	int i = 0;
+	char c = str[i];
+	while (c!='\0') {
+		printf("%c",c);
+		i = { i+1 };
+		c = { str[i] };
+	}
+	return ;
 }
 
