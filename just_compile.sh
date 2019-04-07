@@ -1,0 +1,15 @@
+file_1="src/Translater.java"
+file_2="src/EvalExp.java"
+file_3="src/SemanticAnalyser.java"
+file_4="src/LexicalAnalyser.java"
+file_5="src/Info.java"
+file_6="src/SymbolTable.java"
+file_7="src/ErrorLog.java"
+file_8="src/SyntaxAnalyser.java"
+file_9="src/InfixToPostFix.java"
+file_10="src/SequenceInfo.java"
+file_11="src/Main.java"
+file_12="src/MyFile.java"
+file_13="src/Util.java"
+
+javac -d out/ -cp out/ $file_1 $file_2 $file_3 $file_4 $file_5 $file_6 $file_7 $file_8 $file_9 $file_10 $file_11 $file_12 $file_13

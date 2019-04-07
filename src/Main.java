@@ -8,7 +8,7 @@ import java.time.Duration;
 
 public class Main {
 	public static void main(String[] args) {
-		String filename = "C:\\Users\\Akash\\Documents\\GitHub\\BreakDown_Java\\asset\\demo.veg";
+		String filename = "/home/akash/Documents/GitHub/BreakDown_Java-master/asset/demo.veg";
 		StringBuffer data;
 		MyFile my_file;
 
@@ -95,7 +95,7 @@ public class Main {
 			System.out.println();
 
 			Translater translater = new Translater(sa);
-			translater.translate("C:\\Users\\Akash\\Documents\\GitHub\\BreakDown_Java\\asset\\output.cpp");
+			translater.translate("/home/akash/Documents/GitHub/BreakDown_Java-master/asset/output.cpp");
 
 			System.out.println();
 			System.out.println("Translated.");
