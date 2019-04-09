@@ -5,15 +5,25 @@ Person::struct {
 }
 
 func main() -> int {
-	person := make_object(Person, 1);
-	person^name = "akash";
-	person^age = 20;
-	print_person(person);
+	# person := make_object(Person, 1);
+	# person^name = "akash";
+	# person^age = 20;
+	# print_person(person);
 
-	person_2: Person = "bujju", 21;
-	print_person(>> person_2);
+	# person_2: Person = "bujju", 21;
+	# print_person(>> person_2);
+
+	a := 10;
+	ptr := >> a;
+	foo := add(10 + (<< ptr), 20);
+
+	printf("foo: %d\n", foo);
 
 	return 0;
+}
+
+func add(a: int, b: int) -> int {
+	return a + b;
 }
 
 func print_person(person: Person*) -> void {

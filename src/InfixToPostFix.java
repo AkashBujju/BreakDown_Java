@@ -63,6 +63,7 @@ public class InfixToPostFix {
 		/*
 		System.out.println("exp: " + exp);
 		System.out.println("-------------------");
+		System.out.println();
 		*/
 
 		for(String s: exp) {

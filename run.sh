@@ -1,2 +1,2 @@
 clear
-java -cp out/ Main
+java -cp out/ Main $*

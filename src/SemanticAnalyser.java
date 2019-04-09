@@ -1040,7 +1040,6 @@ public class SemanticAnalyser {
 
 			List<String> exps = names_na_indices.names;
 			List<RangeIndices> ignore_indices = names_na_indices.range_indices;
-
 			for(String exp: exps) {
 				String type = get_type_of_one_exp(exp, line_number, scope_name);
 				type = Util.remove_str_in_string(type, var_iden);
@@ -1061,7 +1060,6 @@ public class SemanticAnalyser {
 		}
 
 		// @Note: new_arg needs to be enclosed by function name and parenthesis.
-		// @Note: new_arg needs to be enclosed by function name and parenthesis.
 		StringBuffer tmp_func_call = new StringBuffer(func_name + "(");
 		int new_args_len = new_args.size();
 		for(int i = 0; i < new_args_len; ++i) {
@@ -1078,7 +1076,6 @@ public class SemanticAnalyser {
 		return final_func_type;
 	}
 
-	// Returns the return_type of func, with all the function calls evaluated and expressions evaluated.
 	// Returns the return_type of func, with all the function calls evaluated and expressions evaluated.
 	String iter_eval_type_util_end(String func, int line_number, String scope_name) {
 		String final_str =  func;

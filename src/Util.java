@@ -59,6 +59,7 @@ public class Util {
 
 	static List<String> split_with_ops_the_types(String s) {
 		List<String> exps = split_with_ops(s);
+
 		for(int i = 0; i < exps.size(); ++i) {
 			String str = exps.get(i);
 			int ops_count = 0;
@@ -74,9 +75,7 @@ public class Util {
 
 				int x = 0;
 				String new_str = exps.get(i - 1);
-				int end_index = j;
-				if(j < exps.size())
-					end_index = j - 1;
+				int end_index = j - 1;
 
 				for(x = i; x < end_index; ++x) {
 					new_str += "*";

@@ -314,7 +314,6 @@ public class EvalExp {
 						return new MsgType("Type 'not_known' found.", "not_known");
 
 					else if(s.equals(">>") && (right_type.charAt(0) == '@' || !is_var || is_func)) {
-						System.out.println("INSIDE: " + right_type);
 						return new MsgType("Cannot apply '>>' to literals  or expressions or functions. ie: type <" + right_type + ">.", "not_known");
 					}
 
@@ -346,14 +345,17 @@ public class EvalExp {
 							return new MsgType("Type 'not_known' found.", "not_known");
 
 						boolean valid_operation = Util.validate_operation(left_type, s);
-						if(!valid_operation)
+						if(!valid_operation) {
 							return new MsgType("Unary operations involving '+' or '-', can be done only on 'int' or 'double', not to Type '" + left_type + "'.", "not_known");
+						}
 
 						t = "@" + (t_list.size() + 1) + "@";
 						literal_type_map.put(t, "not_known");
 
 						exp_ops_list.add(s);
 						exp_ops_list.add(left_type);
+
+						// System.out.println("exp_ops_list: " + exp_ops_list + ", t: " + t);
 					}
 					else { // binary operation
 						if(st.isEmpty()) {

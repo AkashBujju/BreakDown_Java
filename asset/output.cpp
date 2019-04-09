@@ -9,17 +9,20 @@ struct Person {
 };
 
 int main();
+int add(int a, int b);
 void print_person(Person *person);
 void print_str(string str);
 
 int main() {
-	Person *person = { (Person*)(malloc(sizeof(Person) * 1)) };
-	person->name = { "akash" };
-	person->age = { 20 };
-	print_person(person);
-	Person person_2 = { "bujju",21 };
-	print_person(&person_2);
+	int a = 10;
+	int *ptr = &a;
+	int foo = add(10+(*ptr),20);
+	printf("foo: %d\n",foo);
 	return 0;
+}
+
+int add(int a, int b) {
+	return a+b;
 }
 
 void print_person(Person *person) {
