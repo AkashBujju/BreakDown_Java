@@ -5,17 +5,22 @@ Person::struct {
 }
 
 func main() -> int {
-	# person := make_object(Person, 1);
-	# person^name = "akash";
-	# person^age = 20;
-	# print_person(person);
+	 person := make_object(Person, 1);
+	 person^name = "akash";
+	 person^age = 20;
+	 print_person(person);
 
-	# person_2: Person = "bujju", 21;
-	# print_person(>> person_2);
+	 person_2: Person = "bujju", 21;
+	 print_person(>> person_2);
 
 	a := 10;
 	ptr := >> a;
 	foo := add(10 + (<< ptr), 20);
+
+	ptr_1 := >> person_2;
+	ptr_2 := >> ptr_1;
+
+	print_person(>> ptr_2);
 
 	printf("foo: %d\n", foo);
 

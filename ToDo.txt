@@ -1,6 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-	-1) Util.split_with_ops_the_types is not working .......
+	-1) Goto line demo.veg add(>> ptr, 10);
 	0) @NotWorking: 10 + (>> ptr). Here Type of (>> ptr) is still unresolved
 	and remains as @2@.
 

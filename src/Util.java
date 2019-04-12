@@ -65,7 +65,7 @@ public class Util {
 			int ops_count = 0;
 			if(str.equals("*")) {
 				int j = i + 1;
-				while(j < exps.size() && Util.is_operator(exps.get(j))) {
+				while(j < exps.size() && exps.get(j).equals("*")) {
 					ops_count += 1;
 					j += 1;
 				}
@@ -73,13 +73,18 @@ public class Util {
 				if((i - 1) < 0)
 					continue;
 
-				int x = 0;
 				String new_str = exps.get(i - 1);
 				int end_index = j - 1;
 
-				for(x = i; x < end_index; ++x) {
+				if(ops_count == 0) {
 					new_str += "*";
 					exps.remove((int)(i));
+				}
+				else {
+					for(int x = 0; x < ops_count + 1; ++x) {
+						new_str += "*";
+						exps.remove((int)(i));
+					}
 				}
 
 				exps.set(i - 1, new_str);
@@ -1150,12 +1155,12 @@ public class Util {
 		}
 
 		/*
-			System.out.print("final_all_exps: ");
-			for(int i = 0; i < final_all_exps.size(); ++i) {
-			System.out.print("< " + final_all_exps.get(i) + " > ");
-			}
-			System.out.println();
-			*/
+			 System.out.print("final_all_exps: ");
+			 for(int i = 0; i < final_all_exps.size(); ++i) {
+			 System.out.print("< " + final_all_exps.get(i) + " > ");
+			 }
+			 System.out.println();
+		 */
 
 		// Note: We have to sort the array list in descending to ascending order in terms of size...
 		// Sorting
