@@ -1,7 +1,7 @@
 @echo off
 
 cd out
-rm *.class
+del *.class
 
 cd ..
 

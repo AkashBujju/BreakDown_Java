@@ -22,10 +22,9 @@ int main() {
 	print_person(&person_2);
 	int a = 10;
 	int *ptr = &a;
-	int foo = add(10+(*ptr),20);
 	Person *ptr_1 = { &person_2 };
 	Person **ptr_2 = { &ptr_1 };
-	print_person(*ptr_2);
+	int foo = add(10+(*ptr),20);
 	printf("foo: %d\n",foo);
 	return 0;
 }
