@@ -1,6 +1,6 @@
 @echo off
 cd asset
-g++ -std=c++14 output.cpp -o output
-IF %ERRORLEVEL% EQU 0 output.exe
+g++ -std=c++14 %1.cpp -o %1
+IF %ERRORLEVEL% EQU 0 %1.exe
 cd ..
 echo:
