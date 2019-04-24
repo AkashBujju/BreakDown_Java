@@ -271,6 +271,7 @@ public class Translater {
 			}
 			else if(type.indexOf('[') != -1) {
 				arr_str = type.substring(type.indexOf('['), type.lastIndexOf(']') + 1);
+				ptr_str = type.substring(type.indexOf('*'), type.lastIndexOf('*') + 1);
 				type = type.substring(0, type.indexOf('['));
 				is_array = true;
 			}

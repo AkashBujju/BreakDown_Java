@@ -42,13 +42,6 @@ public class Main {
 			data = my_file.get_data(filename);
 			Util.quotes_range_indices = Util.get_range_indices_of_quotes(data.toString());
 
-			if(show_data) {
-				System.out.println("data: " + data);
-				System.out.println("Size: " + data.length());
-				System.out.println("Lines: " + my_file.line_number);
-				System.out.println("----------------------------------------------");
-				System.out.println();
-			}
 
 			List<String> tokens = LexicalAnalyser.split(data.toString(), Util.split_sequences, Util.quotes_range_indices);
 			List<SequenceType> st_li = SequenceTypeInfo.get_sequence_types(tokens, Util.quotes_range_indices);
@@ -63,15 +56,6 @@ public class Main {
 			HashMap<Integer, Integer> id_number = my_file.get_index_map(sq_info);
 			HashMap<Integer, Integer> id_char_index = my_file.get_char_index_map(sq_info);
 
-			if(show_sequences) {
-				System.out.println("Num Sequences: "+ sq_info.size());
-				System.out.println();
-				for(SequenceInfo sq: sq_info) {
-					System.out.println("<" + sq.str + "> -------->  " + SequenceTypeInfo.get_in_str(sq.seq_type));
-				}
-				System.out.println();
-				System.out.println();
-			}
 
 			SyntaxAnalyser sc = new SyntaxAnalyser(sq_arr, my_file, Util.quotes_range_indices, id_number, id_char_index);
 			ErrorLog error_log = sc.validate_syntax();
@@ -81,11 +65,6 @@ public class Main {
 				return;
 			}
 
-			System.out.println();
-			System.out.println("No Syntax errors.");
-			System.out.println("-----------------");
-			System.out.println();
-
 			SemanticAnalyser sa = new SemanticAnalyser(sc.infos, Util.quotes_range_indices);
 			sa.start();
 			error_log = sa.error_log;
@@ -94,23 +73,37 @@ public class Main {
 				return;
 			}
 
-			System.out.println();
-			System.out.println("No Semantic errors.");
-			System.out.println("-----------------");
-			System.out.println();
-
 			Translater translater = new Translater(sa);
 			translater.translate("C:\\Users\\akash\\Documents\\GitHub\\BreakDown_Java\\asset\\" + args[0] + ".cpp");
-
-			System.out.println();
-			System.out.println("Translated.");
-			System.out.println("-----------------");
-			System.out.println();
 
 			Instant end_time = Instant.now();
 			long timeElapsed = Duration.between(start_time, end_time).toMillis();
 			System.out.println();
 			System.out.println("Took " + timeElapsed + " ms to compile.");
+			System.out.println("----------------------");
+			System.out.println();
+
+			// OPTIONS
+			if(show_data) {
+				System.out.println("data: " + data);
+				System.out.println("Size: " + data.length());
+				System.out.println("Lines: " + my_file.line_number);
+				System.out.println("----------------------------------------------");
+				System.out.println();
+			}
+
+			if(show_sequences) {
+				System.out.println("Num Sequences: "+ sq_info.size());
+				System.out.println();
+				int max_len = get_max_len(sq_info);
+				for(SequenceInfo sq: sq_info) {
+					System.out.print(sq.str);
+					print_n_spaces(max_len - sq.str.length() + 2);
+					System.out.println(SequenceTypeInfo.get_in_str(sq.seq_type));
+				}
+				System.out.println();
+				System.out.println();
+			}
 
 			if(show_symbol_table)
 				sa.symbol_table.show_all();
@@ -123,5 +116,21 @@ public class Main {
 			e.printStackTrace();
 			System.out.println("--------------------------------");
 		}
+	}
+
+	public static int get_max_len(List<SequenceInfo> sq_infos) {
+		int max_len = 0;
+		for(SequenceInfo sq_info: sq_infos) {
+			int len = sq_info.str.length();
+			if(len > max_len)
+				max_len = len;
+		}
+
+		return max_len;
+	}
+
+	public static void print_n_spaces(int n) {
+		for(int i = 0; i < n; ++i)
+			System.out.print(" ");
 	}
 }

@@ -8,15 +8,19 @@ func main() -> int {
 	person := make_object(Person, 1);
 	person^name = "akash";
 	person^age = 20;
-	print_person(person);
-
 	person_2: Person = "bujju", 21;
+
+	print_person(person);
 	print_person(>> person_2);
 
 	a := 10;
 	ptr := >> a;
 	ptr_1 := >> person_2;
 	ptr_2 := >> ptr_1;
+
+	tmp: char[11]**;
+
+	# char **tmp[11];
 
 	foo := add(10 + (<< ptr), 20);
 	printf("foo: %d\n", foo);

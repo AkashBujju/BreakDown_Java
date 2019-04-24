@@ -1,19 +1,6 @@
 --------------------------------------------------------------
 ToDo:
-	-1) Goto line demo.veg add(>> ptr, 10);
-	0) @NotWorking: 10 + (>> ptr). Here Type of (>> ptr) is still unresolved
-	and remains as @2@.
-
-	1) Take away quotes_range_indices if possible ... There seems to be
-	problems with it !!!!!!!
-
-	2) From where does the relative path of files start, inside the code.....
-	??????
+	0) [] operator not working for pointers, it works for arrays 
+		and strings. Goto SemanticAnalyzer line 1229.
 --------------------------------------------------------------
 
---------------------------------------------------------------
-
-Done:
-	1) Split into tokens
-	2) SyntaxAnalysis and form Info List
---------------------------------------------------------------

@@ -1235,7 +1235,7 @@ public class SemanticAnalyser {
 			String arr_var_type = symbol_table.get_type(arr_var_name, scopename);
 			if(arr_var_type.equals("string"))
 				return "char";
-			if(arr_var_type.indexOf("@array@") == -1) {
+			if(arr_var_type.indexOf("@array@") == -1 && arr_var_type.indexOf('*') == -1) {
 				error_log.push("Using [] to a non-array variable '" + arr_var_name + "'.", s, line_number);
 				return "not_known";
 			}
@@ -1244,11 +1244,15 @@ public class SemanticAnalyser {
 			return type;
 		}
 
-		type = Util.get_primitive_type(s);
+		String name = s;
+		if(s.lastIndexOf('*') != -1)
+			name = s.substring(0, s.indexOf('*'));
+
+		type = Util.get_primitive_type(name);
 		if(!type.equals("not_known"))
 			return type;
 
-		type = symbol_table.get_type(s, scopename);
+		type = symbol_table.get_type(name, scopename);
 		if(!type.equals("not_known"))
 			return type;
 
@@ -1282,6 +1286,9 @@ public class SemanticAnalyser {
 			error_log.push("Unknown identifier '" + var_name + "' found.", var_name, line_number);
 			return "not_known";
 		}
+
+		if(type.indexOf('*') != -1)
+			return type.substring(0, type.indexOf('*'));
 
 		return type;
 	}

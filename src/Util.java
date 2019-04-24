@@ -1022,12 +1022,13 @@ public class Util {
 
 			if(is_type_pointer(type_1)) {
 				String typename = type_1.substring(0, type_1.indexOf("*"));
-				if((typename.equals("int") || typename.equals("double")) && type_2.equals("int"))
+				if(type_2.equals("int"))
 					is_valid = true;
 			}
 			else if(is_type_pointer(type_2)) {
 				String typename = type_2.substring(0, type_2.indexOf("*"));
-				if((typename.equals("int") || typename.equals("double")) && type_1.equals("int"))
+				if(type_1.equals("int"))
+					is_valid = true;
 					is_valid = true;
 			}
 		}

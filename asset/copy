@@ -1,0 +1,23 @@
+
+func main() -> int {
+	str := make_object(char, 50);
+	copy("hello", str);
+
+	printf("str: %s\n", str);
+
+	free(str);
+	
+	return 0;
+}
+
+func copy(str_1: string, str_2: char*) -> void {
+	i := 0;
+	while str_1[i] != '\0' {
+		str_2[i] = str_1[i];
+		i = i + 1;
+	}
+
+	str_2[i] = '\0';
+	
+	return void;
+}

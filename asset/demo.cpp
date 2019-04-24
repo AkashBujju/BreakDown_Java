@@ -17,13 +17,14 @@ int main() {
 	Person *person = { (Person*)(malloc(sizeof(Person) * 1)) };
 	person->name = { "akash" };
 	person->age = { 20 };
-	print_person(person);
 	Person person_2 = { "bujju",21 };
+	print_person(person);
 	print_person(&person_2);
 	int a = 10;
 	int *ptr = &a;
 	Person *ptr_1 = { &person_2 };
 	Person **ptr_2 = { &ptr_1 };
+	char **tmp[11] = {  };
 	int foo = add(10+(*ptr),20);
 	printf("foo: %d\n",foo);
 	return 0;
