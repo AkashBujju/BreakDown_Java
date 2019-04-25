@@ -948,7 +948,7 @@ public class SemanticAnalyser {
 			arg_1_type = Util.remove_str_in_string(arg_1_type, var_iden);
 
 			if(!arg_1_type.equals("string")) {
-				error_log.push("Function 'print' needs it's 1st argument Type as 'string' literal.", func_name + "(" + arg_1 + ", ....", line_number);
+				error_log.push("Function 'printf' needs it's 1st argument Type as 'string' literal.", func_name + "(" + arg_1 + ", ....", line_number);
 				return "not_known";
 			}
 
@@ -960,7 +960,7 @@ public class SemanticAnalyser {
 				type = Util.eat_pointers_and_array(type);
 
 				if(!symbol_table.is_primitive_type(type)) {
-					error_log.push("In Function 'print', only primitive 'Types' can be passed as arguments. But found argument '" + arg + "' with Type '" + type + "'.", "print(...., " + arg + ", ...", line_number);
+					error_log.push("In Function 'printf', only primitive 'Types' can be passed as arguments. But found argument '" + arg + "' with Type '" + type + "'.", "print(...., " + arg + ", ...", line_number);
 					return "not_known";
 				}
 			}
@@ -978,7 +978,7 @@ public class SemanticAnalyser {
 			arg_1_type = Util.remove_str_in_string(arg_1_type, var_iden);
 
 			if(!arg_1_type.equals("string")) {
-				error_log.push("Function 'scan' needs it's 1st argument Type as 'string' literal.", func_name + "(" + arg_1 + ", ....", line_number);
+				error_log.push("Function 'scanf' needs it's 1st argument Type as 'string' literal.", func_name + "(" + arg_1 + ", ....", line_number);
 				return "not_known";
 			}
 
@@ -989,12 +989,12 @@ public class SemanticAnalyser {
 				String type = get_type_of_exp(arg, scope_name, line_number);
 
 				if(!symbol_table.is_primitive_type(type)) {
-					error_log.push("In Function 'print', only primitive 'Types' can be passed as arguments. But found argument '" + arg + "' with Type '" + type + "'.", "print(...., " + arg + ", ...", line_number);
+					error_log.push("In Function 'scanf', only primitive 'Types' can be passed as arguments. But found argument '" + arg + "' with Type '" + type + "'.", "print(...., " + arg + ", ...", line_number);
 					return "not_known";
 				}
 
 				if(type.lastIndexOf('*') == -1) {
-					error_log.push("Function 'scan' takes pointers to variables, but found argument '" + arg + "' of Type '" + type + "'.", func_name + "( ..., " + arg + ", ...)", line_number);
+					error_log.push("Function 'scanf' takes pointers to variables, but found argument '" + arg + "' of Type '" + type + "'.", func_name + "( ..., " + arg + ", ...)", line_number);
 					return "not_known";
 				}
 			}

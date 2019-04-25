@@ -20,6 +20,7 @@ public class Main {
 		boolean show_sequences = false;
 		boolean show_data = false;
 		boolean show_symbol_table = false;
+		boolean silent_compile = false;
 
 		// Processing command-line-arguments.
 		for(int i = 0; i < args.length; ++i) {
@@ -30,6 +31,8 @@ public class Main {
 				show_data = true;
 			else if(arg.equals("-show_table"))
 				show_symbol_table = true;
+			else if(arg.equals("-silent"))
+				silent_compile = true;
 		}
 
 		Util.init_split_sequences();
@@ -78,10 +81,12 @@ public class Main {
 
 			Instant end_time = Instant.now();
 			long timeElapsed = Duration.between(start_time, end_time).toMillis();
-			System.out.println();
-			System.out.println("Took " + timeElapsed + " ms to compile.");
-			System.out.println("----------------------");
-			System.out.println();
+			if(!silent_compile) {
+				System.out.println();
+				System.out.println("Took " + timeElapsed + " ms to compile.");
+				System.out.println("----------------------");
+				System.out.println();
+			}
 
 			// OPTIONS
 			if(show_data) {

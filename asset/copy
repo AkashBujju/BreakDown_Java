@@ -4,6 +4,7 @@ func main() -> int {
 	copy("hello", str);
 
 	printf("str: %s\n", str);
+	printf("str: %c\n", str[0]);
 
 	free(str);
 	

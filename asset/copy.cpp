@@ -10,6 +10,7 @@ int main() {
 	char *str = (char*)(malloc(sizeof(char) * 50));
 	copy("hello",str);
 	printf("str: %s\n",str);
+	printf("str: %c\n",str[0]);
 	free(str);
 	return 0;
 }
