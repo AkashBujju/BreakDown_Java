@@ -20,6 +20,12 @@ int main() {
 	Person person_2 = { "bujju",21 };
 	print_person(person);
 	print_person(&person_2);
+	if (true) {
+		return 0;
+	}
+	else {
+		return 1;
+	}
 	int a = 10;
 	int *ptr = &a;
 	Person *ptr_1 = { &person_2 };

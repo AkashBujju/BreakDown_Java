@@ -1,0 +1,40 @@
+Person::struct {
+	name: char*;
+	age := 0;
+}
+
+func main() -> int {
+	person_1 := make_person("p1", 10);
+	print_person(person_1);
+	
+	return 0;
+}
+
+func copy(str_1: string, str_2: char*) -> void {
+	i := 0;
+	while str_1[i] != '\0' {
+		str_2[i] = str_1[i];
+		i = i + 1;
+	}
+
+	str_2[i] = '\0';
+	
+	return void;
+}
+
+func print_person(person: Person*) -> void {
+	printf("Name: %s, Age %d\n", person^name, person^age);
+	
+	return void;
+}
+
+func make_person(name: string, age: int) -> Person* {
+	person := make_object(Person, 1);
+	person_name := make_object(char, 50);
+
+	copy(name, person_name);
+	person^name = person_name;
+	person^age = age;
+	
+	return person;
+}

@@ -1,0 +1,9 @@
+func main() -> int {
+	printf("Enter name: ");
+	name := make_object(char, 50);
+	scanf("%s", name);
+
+	printf("Hi %s\n", name);
+	
+	return 0;
+}
